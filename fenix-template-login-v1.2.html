@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#041273" />
+  <title>Fênix — Acesso</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,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" />
+
+  <style>
+    /* =============================================================
+       FÊNIX — MÓDULO DE ACESSO (login / cadastro / recuperar senha)
+       Template v1.2 — usa SOMENTE a paleta oficial Fênix.
+       Fonte: do sistema (sem Google Fonts, funciona offline).
+    ============================================================= */
+    :root {
+      /* Paleta oficial */
+      --fenix-azul:      #041273;   /* Azul Fênix — marca */
+      --fenix-thauane:   #040798;   /* Azul Thauane — início do degradê */
+      --fenix-dell:      #0076CE;   /* Dell Azul — botões / fim do degradê */
+      --fenix-amarelo:   #ffcb00;   /* Amarelo — destaque, alerta, hover */
+      --fenix-bg:        #F3F4F9;   /* fundo da página */
+      --fenix-card:      #ffffff;   /* cards */
+      --fenix-texto:     #020733;   /* texto principal */
+      --fenix-input-txt: #000000;   /* fonte dos inputs */
+      --fenix-branco:    #ffffff;   /* fonte de barra e rodapé */
+      --fenix-degrade:   linear-gradient(135deg, #040798, #0076CE);
+
+      /* Tons derivados da própria paleta (transparência) */
+      --auth-border:     rgba(4,18,115,.22);
+      --auth-muted:      rgba(2,7,51,.62);
+      --auth-track:      rgba(4,18,115,.10);
+
+      --auth-radius:     12px;
+      --auth-radius-sm:  8px;
+      --auth-font:       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --auth-transition: .22s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      font-family: var(--auth-font);
+      background: var(--fenix-bg);
+      color: var(--fenix-texto);
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    /* ---------- CARD ---------- */
+    .auth-card {
+      background: var(--fenix-card);
+      border-radius: var(--auth-radius);
+      width: 100%;
+      max-width: 420px;
+      overflow: hidden;
+      box-shadow: 0 6px 24px rgba(4,18,115,.14), 0 1px 3px rgba(4,18,115,.10);
+    }
+    .auth-hero {
+      background: var(--fenix-degrade);
+      padding: 1.6rem 1rem 1.3rem;
+      text-align: center;
+      color: var(--fenix-branco);
+    }
+    .auth-logo { display: block; width: 180px; max-width: 70%; height: auto; margin: 0 auto .8rem; }
+    .auth-brand-name { font-size: 1rem; font-weight: 600; letter-spacing: .01em; }
+    .auth-hero::after {
+      content: ''; display: block; width: 44px; height: 3px; border-radius: 99px;
+      background: var(--fenix-amarelo); margin: .7rem auto 0;
+    }
+    .auth-body { padding: 2rem; }
+
+    .auth-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; color: var(--fenix-texto); margin-bottom: .35rem; line-height: 1.2; }
+    .auth-subtitle { font-size: .88rem; color: var(--auth-muted); margin-bottom: 1.4rem; line-height: 1.5; }
+
+    /* ---------- ABAS ---------- */
+    .auth-tabs {
+      display: flex; gap: 4px; background: var(--auth-track);
+      border-radius: var(--auth-radius-sm); padding: 4px; margin-bottom: 1.6rem;
+    }
+    .auth-tab {
+      flex: 1; text-align: center; padding: .55rem; border-radius: 6px;
+      font-size: .85rem; font-weight: 600; cursor: pointer; color: var(--auth-muted);
+      transition: background var(--auth-transition), color var(--auth-transition); user-select: none;
+    }
+    .auth-tab.active { background: var(--fenix-dell); color: var(--fenix-branco); }
+
+    .auth-form { display: none; flex-direction: column; gap: 1rem; }
+    .auth-form.active { display: flex; }
+
+    /* ---------- CAMPOS ---------- */
+    .auth-field { display: flex; flex-direction: column; gap: .4rem; }
+    .auth-label { font-size: .8rem; font-weight: 600; color: var(--fenix-texto); letter-spacing: .01em; }
+    .auth-input-wrap { position: relative; }
+    .auth-input-wrap > svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--auth-muted); pointer-events: none; transition: color var(--auth-transition);
+    }
+    .auth-input {
+      width: 100%; padding: .72rem .9rem .72rem 2.5rem;
+      background: var(--fenix-card); border: 1px solid var(--auth-border);
+      border-radius: var(--auth-radius-sm);
+      color: var(--fenix-input-txt);            /* fonte dos inputs — padrão Fênix */
+      font-family: var(--auth-font); font-size: .95rem; outline: none;
+      transition: border-color var(--auth-transition), box-shadow var(--auth-transition);
+      -webkit-appearance: none; appearance: none;
+    }
+    .auth-input::placeholder { color: rgba(0,0,0,.38); }
+    .auth-input:focus { border-color: var(--fenix-dell); box-shadow: 0 0 0 3px rgba(0,118,206,.22); }
+    .auth-input.error { border-color: var(--fenix-amarelo); box-shadow: 0 0 0 3px rgba(255,203,0,.35); }
+    .auth-input-wrap:focus-within > svg { color: var(--fenix-dell); }
+
+    .auth-eye {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      cursor: pointer; color: var(--auth-muted); background: none; border: none; padding: 4px;
+      display: flex; align-items: center;
+    }
+    .auth-eye:hover { color: var(--fenix-dell); }
+
+    .auth-field-error {
+      font-size: .78rem; font-weight: 600; color: var(--fenix-texto); display: none;
+      padding-left: .55rem; border-left: 3px solid var(--fenix-amarelo);
+    }
+    .auth-field-error.visible { display: block; }
+
+    .auth-row-forgot { display: flex; justify-content: flex-end; margin-top: -.3rem; }
+    .auth-link {
+      font-size: .82rem; color: var(--fenix-dell); cursor: pointer; background: none; border: none;
+      padding: 0; text-decoration: underline; text-underline-offset: 2px; font-family: var(--auth-font);
+    }
+    .auth-link:hover { color: var(--fenix-azul); }
+
+    .auth-divider { display: flex; align-items: center; gap: .8rem; color: var(--auth-muted); font-size: .78rem; }
+    .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--auth-border); }
+
+    /* ---------- BOTÕES ---------- */
+    .auth-btn {
+      width: 100%; padding: .78rem; border: none; border-radius: var(--auth-radius-sm);
+      font-family: var(--auth-font); font-size: .95rem; font-weight: 600; cursor: pointer;
+      transition: background var(--auth-transition), color var(--auth-transition), transform var(--auth-transition), opacity var(--auth-transition);
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+    }
+    .auth-btn-primary { background: var(--fenix-dell); color: var(--fenix-branco); }
+    .auth-btn-primary:hover { background: var(--fenix-amarelo); color: var(--fenix-texto); }   /* hover = amarelo (padrão Fênix) */
+    .auth-btn-primary:active { transform: scale(.98); }
+    .auth-btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+    .auth-btn-social {
+      background: var(--fenix-card); border: 1px solid var(--auth-border); color: var(--fenix-texto);
+      flex: 1; font-size: .88rem;
+    }
+    .auth-btn-social:hover { border-color: var(--fenix-dell); background: var(--auth-track); }
+    .auth-socials { display: flex; gap: .7rem; }
+
+    .auth-spinner {
+      width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+      border-radius: 50%; animation: spin .6s linear infinite; display: none;
+    }
+    .auth-btn.loading .auth-spinner { display: block; }
+    .auth-btn.loading .auth-btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- ALERTAS ---------- */
+    .auth-alert { padding: .7rem 1rem; border-radius: var(--auth-radius-sm); font-size: .85rem; display: none; line-height: 1.4; }
+    .auth-alert.visible { display: block; }
+    .auth-alert.error   { background: rgba(255,203,0,.20); border: 1px solid var(--fenix-amarelo); color: var(--fenix-texto); font-weight: 600; }
+    .auth-alert.success { background: rgba(0,118,206,.10); border: 1px solid var(--fenix-dell);    color: var(--fenix-azul);  font-weight: 600; }
+
+    /* ---------- FORÇA DA SENHA ---------- */
+    .auth-strength { margin-top: .1rem; }
+    .auth-strength-bars { display: flex; gap: 4px; margin-bottom: .3rem; }
+    .auth-strength-bar { flex: 1; height: 4px; border-radius: 99px; background: var(--auth-track); transition: background var(--auth-transition); }
+    .auth-strength-label { font-size: .75rem; font-weight: 600; color: var(--auth-muted); }
+
+    .auth-terms { display: flex; align-items: flex-start; gap: .6rem; font-size: .8rem; color: var(--auth-muted); line-height: 1.4; }
+    .auth-terms input[type="checkbox"] { margin-top: 2px; accent-color: var(--fenix-dell); flex-shrink: 0; }
+    .auth-footer { text-align: center; font-size: .82rem; color: var(--auth-muted); margin-top: 1.2rem; }
+
+    /* ---------- RODAPÉ PADRÃO FÊNIX ---------- */
+    .fenix-footer {
+      background: linear-gradient(90deg, #040798, #0076CE);
+      color: var(--fenix-branco);
+      text-align: center; font-size: .8rem; padding: .85rem 1rem;
+      padding-bottom: calc(.85rem + env(safe-area-inset-bottom, 0px));
+    }
+    .fenix-footer a { color: var(--fenix-branco); text-decoration: none; }
+    .fenix-footer a:hover { color: var(--fenix-amarelo); }
+
+    @media (max-width: 460px) {
+      .auth-body { padding: 1.5rem 1.25rem; }
+      .auth-title { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<main>
+<div class="auth-card" id="authCard" role="main" aria-label="Autenticação">
+
+  <!-- MARCA: logo oficial (águia) em base64 + nome do app -->
+  <div class="auth-hero">
+    <img class="auth-logo" alt="Fênix Soluções Tecnológicas" src="data:image/png;base64,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" />
+    <span class="auth-brand-name">Nome do App</span>
+  </div>
+
+  <div class="auth-body">
+
+  <!-- ABAS -->
+  <div class="auth-tabs" role="tablist" aria-label="Modo de acesso">
+    <div class="auth-tab active" role="tab" tabindex="0" id="tab-login" aria-selected="true"  aria-controls="form-login"    onclick="switchTab('login')"    onkeydown="tabKey(event,'login')">Entrar</div>
+    <div class="auth-tab"        role="tab" tabindex="0" id="tab-register" aria-selected="false" aria-controls="form-register" onclick="switchTab('register')" onkeydown="tabKey(event,'register')">Criar conta</div>
+  </div>
+
+  <!-- ========== FORM: LOGIN ========== -->
+  <form class="auth-form active" id="form-login" role="tabpanel" aria-labelledby="tab-login" novalidate>
+    <h1 class="auth-title">Bem-vindo de volta</h1>
+    <p class="auth-subtitle">Acesse sua conta para continuar.</p>
+    <div class="auth-alert" id="login-alert" role="alert"></div>
+
+    <div class="auth-field">
+      <label class="auth-label" for="login-email">E-mail</label>
+      <div class="auth-input-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/></svg>
+        <input class="auth-input" id="login-email" name="email" type="email" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+      <span class="auth-field-error" id="login-email-err">Informe um e-mail válido.</span>
+    </div>
+
+    <div class="auth-field">
+      <label class="auth-label" for="login-password">Senha</label>
+      <div class="auth-input-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <input class="auth-input" id="login-password" name="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+        <button type="button" class="auth-eye" onclick="togglePwd('login-password',this)" aria-label="Mostrar senha">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12C3.5 5 20.5 5 23 12c-2.5 7-19.5 7-22 0z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <span class="auth-field-error" id="login-password-err">Informe sua senha.</span>
+    </div>
+
+    <div class="auth-row-forgot">
+      <button type="button" class="auth-link" onclick="switchTab('forgot')">Esqueceu a senha?</button>
+    </div>
+
+    <button type="submit" class="auth-btn auth-btn-primary" id="login-btn">
+      <div class="auth-spinner" aria-hidden="true"></div>
+      <span class="auth-btn-text">Entrar</span>
+    </button>
+
+    <div class="auth-divider">ou continue com</div>
+
+    <div class="auth-socials">
+      <button type="button" class="auth-btn auth-btn-social" onclick="socialLogin('Google')">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M5.27 9.76A7.08 7.08 0 0 1 12 4.93c1.84 0 3.49.67 4.77 1.76l3.55-3.55A11.96 11.96 0 0 0 12 .96C7.32.96 3.26 3.75 1.27 7.74l4 3.02z"/><path fill="#34A853" d="M12 23.04c3.24 0 5.95-1.07 7.94-2.91l-3.77-3.04A7.18 7.18 0 0 1 12 19.11c-3.44 0-6.36-2.31-7.4-5.43l-4.01 3.08C2.61 20.35 6.97 23.04 12 23.04z"/><path fill="#4A90D9" d="M23.04 12c0-.8-.07-1.58-.2-2.33H12v4.66h6.19c-.27 1.42-1.08 2.63-2.3 3.44l3.77 3.04C21.73 18.75 23.04 15.6 23.04 12z"/><path fill="#FBBC05" d="M4.6 13.68A7.18 7.18 0 0 1 4.22 12c0-.59.08-1.16.22-1.71L.44 7.26A11.94 11.94 0 0 0 .04 12c0 1.61.3 3.16.84 4.6l3.72-2.92z"/></svg>
+        Google
+      </button>
+      <!-- Padrão Fênix: apenas Google como login social -->
+    </div>
+  </form>
+
+  <!-- ========== FORM: CADASTRO ========== -->
+  <form class="auth-form" id="form-register" role="tabpanel" aria-labelledby="tab-register" novalidate>
+    <h1 class="auth-title">Criar conta</h1>
+    <p class="auth-subtitle">Informe e-mail e senha para começar. Seu nome será pedido no primeiro acesso.</p>
+    <div class="auth-alert" id="register-alert" role="alert"></div>
+
+    <div class="auth-field">
+      <label class="auth-label" for="reg-email">E-mail</label>
+      <div class="auth-input-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/></svg>
+        <input class="auth-input" id="reg-email" name="email" type="email" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+      <span class="auth-field-error" id="reg-email-err">Informe um e-mail válido.</span>
+    </div>
+
+    <div class="auth-field">
+      <label class="auth-label" for="reg-password">Senha</label>
+      <div class="auth-input-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <input class="auth-input" id="reg-password" name="password" type="password" placeholder="Mín. 8 caracteres" autocomplete="new-password" oninput="checkStrength(this.value)" />
+        <button type="button" class="auth-eye" onclick="togglePwd('reg-password',this)" aria-label="Mostrar senha">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12C3.5 5 20.5 5 23 12c-2.5 7-19.5 7-22 0z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <span class="auth-field-error" id="reg-password-err">A senha deve ter ao menos 8 caracteres.</span>
+      <div class="auth-strength" id="strength-wrap" aria-live="polite">
+        <div class="auth-strength-bars">
+          <div class="auth-strength-bar" id="sb1"></div>
+          <div class="auth-strength-bar" id="sb2"></div>
+          <div class="auth-strength-bar" id="sb3"></div>
+          <div class="auth-strength-bar" id="sb4"></div>
+        </div>
+        <span class="auth-strength-label" id="strength-label"></span>
+      </div>
+    </div>
+
+    <div class="auth-field">
+      <label class="auth-label" for="reg-confirm">Confirmar senha</label>
+      <div class="auth-input-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <input class="auth-input" id="reg-confirm" name="confirm" type="password" placeholder="Repita a senha" autocomplete="new-password" />
+      </div>
+      <span class="auth-field-error" id="reg-confirm-err">As senhas não coincidem.</span>
+    </div>
+
+    <label class="auth-terms">
+      <input type="checkbox" id="reg-terms" />
+      <span>Concordo com os <a class="auth-link" href="https://fenicris-dev.github.io/Fenix-Core/fenix-termos-de-uso.html" target="_blank" rel="noopener">Termos de Uso</a> e a <a class="auth-link" href="https://fenicris-dev.github.io/Fenix-Core/fenix-politica-de-privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
+    </label>
+    <span class="auth-field-error" id="reg-terms-err">Você precisa aceitar os termos.</span>
+
+    <button type="submit" class="auth-btn auth-btn-primary" id="register-btn">
+      <div class="auth-spinner" aria-hidden="true"></div>
+      <span class="auth-btn-text">Criar conta</span>
+    </button>
+  </form>
+
+  <!-- ========== FORM: RECUPERAR SENHA ========== -->
+  <form class="auth-form" id="form-forgot" novalidate>
+    <button type="button" class="auth-link" style="width:fit-content;margin-bottom:.8rem;font-size:.83rem;display:flex;align-items:center;gap:.3rem;" onclick="switchTab('login')">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      Voltar ao login
+    </button>
+    <h1 class="auth-title">Recuperar senha</h1>
+    <p class="auth-subtitle">Enviaremos um link de redefinição para seu e-mail.</p>
+    <div class="auth-alert" id="forgot-alert" role="alert"></div>
+
+    <div class="auth-field">
+      <label class="auth-label" for="forgot-email">E-mail</label>
+      <div class="auth-input-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/></svg>
+        <input class="auth-input" id="forgot-email" name="email" type="email" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+      <span class="auth-field-error" id="forgot-email-err">Informe um e-mail válido.</span>
+    </div>
+
+    <button type="submit" class="auth-btn auth-btn-primary" id="forgot-btn">
+      <div class="auth-spinner" aria-hidden="true"></div>
+      <span class="auth-btn-text">Enviar link</span>
+    </button>
+  </form>
+
+  <!-- FOOTER DO CARD -->
+  <p class="auth-footer" id="auth-footer">
+    Não tem conta? <button type="button" class="auth-link" onclick="switchTab('register')">Criar agora</button>
+  </p>
+
+  </div><!-- /auth-body -->
+</div>
+</main>
+
+<!-- RODAPÉ PADRÃO FÊNIX -->
+<footer class="fenix-footer">
+  <span id="footer-year"></span>
+  <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a>
+  |
+  <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a>
+  · v1.2
+</footer>
+
+<script>
+var $ = function (id) { return document.getElementById(id); };
+$('footer-year').textContent = new Date().getFullYear();
+
+function showAlert(id, msg, type) {
+  var el = $(id);
+  el.textContent = msg;
+  el.className = 'auth-alert visible ' + (type || 'error');
+}
+function hideAlert(id) { $(id).className = 'auth-alert'; }
+function fieldError(id, show) { $(id).className = 'auth-field-error' + (show ? ' visible' : ''); }
+function markInput(id, hasError) {
+  var el = $(id);
+  if (hasError) el.classList.add('error'); else el.classList.remove('error');
+}
+function setLoading(btnId, loading) {
+  var btn = $(btnId);
+  btn.classList.toggle('loading', loading);
+  btn.disabled = loading;
+}
+function fakeRequest(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+
+function switchTab(tab) {
+  ['login', 'register', 'forgot'].forEach(function (t) {
+    var f = $('form-' + t), b = $('tab-' + t);
+    if (f) f.classList.remove('active');
+    if (b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); }
+  });
+  var form = $('form-' + tab), tabEl = $('tab-' + tab);
+  if (form) form.classList.add('active');
+  if (tabEl) { tabEl.classList.add('active'); tabEl.setAttribute('aria-selected', 'true'); }
+
+  var footer = $('auth-footer');
+  if (tab === 'login')    footer.innerHTML = 'Não tem conta? <button type="button" class="auth-link" onclick="switchTab(\'register\')">Criar agora</button>';
+  if (tab === 'register') footer.innerHTML = 'Já tem conta? <button type="button" class="auth-link" onclick="switchTab(\'login\')">Entrar</button>';
+  if (tab === 'forgot')   footer.innerHTML = '';
+}
+function tabKey(e, tab) { if (e.key === 'Enter' || e.key === ' ') switchTab(tab); }
+
+function togglePwd(inputId, btn) {
+  var input = $(inputId);
+  var isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.querySelector('svg').innerHTML = isHidden
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12C3.5 5 20.5 5 23 12c-2.5 7-19.5 7-22 0z"/><circle cx="12" cy="12" r="3"/>';
+}
+
+/* Força da senha — cores da paleta Fênix: amarelo (fraca) → Dell Azul → Azul Thauane (forte) */
+function checkStrength(val) {
+  var score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  var bars   = ['', '#ffcb00', '#ffcb00', '#0076CE', '#040798'];
+  var labels = ['', 'Fraca', 'Razoável', 'Boa', 'Forte'];
+  var texts  = ['', '#020733', '#020733', '#0076CE', '#040798'];
+  for (var i = 1; i <= 4; i++) {
+    $('sb' + i).style.background = i <= score ? bars[score] : '';
+  }
+  $('strength-label').textContent = val.length ? labels[score] : '';
+  $('strength-label').style.color = texts[score];
+}
+
+function validateEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
+
+$('form-login').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  var email = $('login-email').value;
+  var pwd   = $('login-password').value;
+  var ok = true;
+
+  hideAlert('login-alert');
+  fieldError('login-email-err', false);    markInput('login-email', false);
+  fieldError('login-password-err', false); markInput('login-password', false);
+
+  if (!validateEmail(email)) { fieldError('login-email-err', true);    markInput('login-email', true);    ok = false; }
+  if (!pwd)                  { fieldError('login-password-err', true); markInput('login-password', true); ok = false; }
+  if (!ok) return;
+
+  setLoading('login-btn', true);
+  await fakeRequest(1200);
+  setLoading('login-btn', false);
+
+  /* ── substituir pela autenticação real (Fênix Core / Firebase Auth) ── */
+  showAlert('login-alert', 'Credenciais inválidas. Tente novamente.', 'error');
+});
+
+$('form-register').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  var email   = $('reg-email').value.trim();
+  var pwd     = $('reg-password').value;
+  var confirm = $('reg-confirm').value;
+  var terms   = $('reg-terms').checked;
+  var ok = true;
+
+  hideAlert('register-alert');
+  ['reg-email', 'reg-password', 'reg-confirm'].forEach(function (id) {
+    markInput(id, false);
+    fieldError(id + '-err', false);
+  });
+  fieldError('reg-terms-err', false);
+
+  if (!validateEmail(email)) { fieldError('reg-email-err', true);    markInput('reg-email', true);    ok = false; }
+  if (pwd.length < 8)        { fieldError('reg-password-err', true); markInput('reg-password', true); ok = false; }
+  if (pwd !== confirm)       { fieldError('reg-confirm-err', true);  markInput('reg-confirm', true);  ok = false; }
+  if (!terms)                { fieldError('reg-terms-err', true);                                     ok = false; }
+  if (!ok) return;
+
+  setLoading('register-btn', true);
+  await fakeRequest(1400);
+  setLoading('register-btn', false);
+
+  /* ── substituir pela criação de conta real (Fênix Core / Firebase Auth) ── */
+  showAlert('register-alert', 'Conta criada com sucesso! Verifique seu e-mail.', 'success');
+});
+
+$('form-forgot').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  var email = $('forgot-email').value;
+  hideAlert('forgot-alert');
+  fieldError('forgot-email-err', false); markInput('forgot-email', false);
+
+  if (!validateEmail(email)) { fieldError('forgot-email-err', true); markInput('forgot-email', true); return; }
+
+  setLoading('forgot-btn', true);
+  await fakeRequest(1200);
+  setLoading('forgot-btn', false);
+
+  /* ── substituir pelo envio real de redefinição (Fênix Core / Firebase Auth) ── */
+  showAlert('forgot-alert', 'Link enviado! Verifique sua caixa de entrada.', 'success');
+});
+
+function socialLogin(provider) {
+  console.log('Login com', provider);
+  /* substituir pelo login social real (Google) */
+}
+</script>
+</body>
+</html>

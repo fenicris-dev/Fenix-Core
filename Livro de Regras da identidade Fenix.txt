@@ -1,0 +1,63 @@
+Aqui está o livro de regras atualizado, com a máscara do celular nova na Regra 23.
+
+## 1. Arquitetura
+1. **Fênix Core centralizado:** todos os apps, novos e existentes, carregam o core de `https://fenicris-dev.github.io/Fenix-Core/fenix-core.js`. Uma correção no core vale para todos, sem trocar a versão dos apps.
+2. **Stack:** HTML/CSS/JS em arquivo único ou multi-file, PWA, Firebase (Auth + Firestore), localStorage, jsPDF e offline-first.
+3. **Hospedagem:** GitHub Pages.
+
+## 2. Versionamento e entrega
+4. **Sequência:** 1.0 → 1.1 → … → 1.9 → 2.0 → 2.1. Nunca se pula versão e se usa só uma casa decimal.
+5. **Toda alteração sobe a versão,** inclusive no arquivo de código baixável.
+6. **A versão vai explícita no texto da resposta** sempre que eu entregar uma alteração ou arquivo.
+7. **Nome do arquivo:** `fenix-nome-do-app-vX.X.html`, com prefixo `fenix-` e hífens. Nunca nome genérico, como `app.html`.
+8. **Exceção:** `fenix-core.js` e `index.html` não levam versão ao final. O histórico do core fica só no cabeçalho interno.
+
+## 3. Identidade visual
+9. **Paleta:**
+   - Degradê de menu e rodapé: `#040798` → `#0076CE`
+   - Marca (Azul Fênix): `#041273`
+   - Botões (Dell Azul): `#0076CE`
+   - Destaque, alerta e hover: `#ffcb00`
+   - Texto dos inputs: `#000000`
+   - Texto de barra e rodapé: `#ffffff`
+10. **Degradê:** sempre que houver menu lateral ou superior e rodapé. A direção é horizontal no rodapé e vertical ou diagonal no menu.
+11. **Fundo e superfícies:**
+    - Fundo da página: `#F3F4F9`
+    - Cards: brancos, com sombra suave
+    - Texto principal: `#020733`
+12. **Ícone oficial** em base64 inline: 64px como favicon e 128px no cabeçalho. Nunca depende de arquivo externo. Os ícones da interface são lineares.
+13. **Layout:** menu lateral ou superior mais cards. As seções colapsáveis (accordion) vêm sempre fechadas.
+14. **Mobile:** barra de abas fixa embaixo, com o ícone central em destaque.
+15. **Splash de abertura:** tela azul Fênix com ícone e nome do sistema, barrinha animada de vai e vem. Some quando a tela certa estiver pronta, com teto de 1,2 s.
+16. **Templates de referência:** `fenix-template-login-v1.0.html` (Login, Criar conta e Recuperar senha em abas, só Google) e `fenix-template-layout-menu-v1.0.html` (menu, cabeçalho, cards e rodapé).
+17. **Rodapé:** degradê com texto branco, no formato `{ANO} <Cristiano Fênix/> | © Fênix Soluções Tecnológicas`.
+    - O ano é dinâmico via JS.
+    - `<Cristiano Fênix/>` abre o WhatsApp e o "©" abre o Instagram.
+    - A versão do app fica visível.
+
+## 4. Cadastros e dados
+18. **Cadastro PF:** nome, CPF, RG, nascimento, telefone/WhatsApp, e-mail, CEP e endereço completo (logradouro, número, complemento, referência, bairro, cidade, UF).
+19. **Cadastro PJ:** razão social, nome fantasia, CNPJ, inscrição estadual/municipal (quando aplicável), telefone/WhatsApp, e-mail, endereço completo e responsável/contato.
+20. **Fluxo PJ:** o CNPJ consulta a BrasilAPI e preenche os dados. Se o endereço vier incompleto, o usuário redigita o CEP e o ViaCEP corrige. Tudo continua editável.
+21. **Toggle PF/PJ** com os campos comuns compartilhados.
+22. **Aviso abaixo do CPF e do CNPJ:** "O CPF/CNPJ é usado apenas para emissão de Notas Fiscais e/ou Recibos."
+23. **Máscaras:**
+    - CPF: `000.000.000-00`
+    - CNPJ: `00.000.000/0000-00`
+    - CEP: `00000-000`
+    - **Celular: `(00) 0 0000-0000`**
+    - Fixo: `(00) 0000-0000`
+    - Os dígitos verificadores de CPF e CNPJ são validados, não só o formato.
+24. **Moeda ABNT:** `R$ 0.000,00`, em exibição e nos campos enquanto o usuário digita.
+25. **Ficha de produto ou equipamento:** a base é Marca, Modelo e Série. Os campos extras (IP, Local, Senha, Zonas) variam por categoria.
+
+## 5. Segurança e qualidade
+26. **Ações destrutivas** exigem digitar uma palavra de confirmação, como "APAGAR". Não se usa o `confirm()` do navegador.
+27. **Antes de entregar:** `node --check` retorna 0 e as chaves estão balanceadas.
+28. **Handlers inline no HTML** usam `var` ou `function`, nunca `const` nem arrow function.
+29. **Pontos de atenção de regressão:** o escape do Python pode corromper template literals de JS, e blocos órfãos depois de refatoração quebram botões.
+
+## 6. Processo
+30. **Documento vivo:** é atualizado sempre que um padrão novo for definido. Em cada app novo, levanto: nome, funcionalidade principal, PF/PJ/ambos, Firebase desde a v1 ou local-first, outras APIs e observações de layout.
+
+Pode mandar a próxima regra, que será a 31.
