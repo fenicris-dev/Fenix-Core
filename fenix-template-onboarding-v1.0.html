@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#041273" />
+  <meta name="fenix-versao" content="1.0" />
+  <title>Fênix — Primeiros passos</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,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" />
+
+  <style>
+    /* =============================================================
+       FÊNIX — TELA DE ONBOARDING (primeiro acesso)
+       Template v1.0 — usa SOMENTE a paleta oficial Fênix.
+       Fonte: do sistema (sem Google Fonts, funciona offline).
+    ============================================================= */
+    :root {
+      --fenix-azul:      #041273;
+      --fenix-thauane:   #040798;
+      --fenix-dell:      #0076CE;
+      --fenix-amarelo:   #ffcb00;
+      --fenix-bg:        #F3F4F9;
+      --fenix-card:      #ffffff;
+      --fenix-texto:     #020733;
+      --fenix-input-txt: #000000;
+      --fenix-branco:    #ffffff;
+      --fenix-degrade:   linear-gradient(135deg, #040798, #0076CE);
+
+      --ob-border:  rgba(4,18,115,.22);
+      --ob-muted:   rgba(2,7,51,.62);
+      --ob-track:   rgba(4,18,115,.08);
+      --ob-radius:  12px;
+      --ob-radius-sm: 8px;
+      --ob-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --ob-transition: .22s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      font-family: var(--ob-font); background: var(--fenix-bg); color: var(--fenix-texto);
+      min-height: 100%; display: flex; flex-direction: column;
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+
+    .ob-card {
+      background: var(--fenix-card); border-radius: var(--ob-radius); width: 100%; max-width: 460px; overflow: hidden;
+      box-shadow: 0 6px 24px rgba(4,18,115,.14), 0 1px 3px rgba(4,18,115,.10);
+    }
+    .ob-hero { background: var(--fenix-degrade); padding: 1.6rem 1rem 1.3rem; text-align: center; color: var(--fenix-branco); }
+    .ob-logo { display: block; width: 180px; max-width: 70%; height: auto; margin: 0 auto .8rem; }
+    .ob-brand-name { font-size: 1rem; font-weight: 600; }
+    .ob-hero::after { content: ''; display: block; width: 44px; height: 3px; border-radius: 99px; background: var(--fenix-amarelo); margin: .7rem auto 0; }
+    .ob-body { padding: 1.8rem 2rem 2rem; }
+
+    .ob-title { font-size: 1.45rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; margin-bottom: .35rem; }
+    .ob-subtitle { font-size: .9rem; color: var(--ob-muted); line-height: 1.5; margin-bottom: 1.3rem; }
+
+    .ob-form { display: flex; flex-direction: column; gap: 1rem; }
+    .ob-field { display: flex; flex-direction: column; gap: .4rem; }
+    .ob-label { font-size: .82rem; font-weight: 600; }
+    .ob-opt { font-weight: 400; color: var(--ob-muted); }
+    .ob-input {
+      width: 100%; min-height: 46px; padding: .7rem .9rem; background: var(--fenix-card);
+      border: 1px solid var(--ob-border); border-radius: var(--ob-radius-sm);
+      color: var(--fenix-input-txt); font-family: var(--ob-font); font-size: .95rem; outline: none;
+      transition: border-color var(--ob-transition), box-shadow var(--ob-transition);
+      -webkit-appearance: none; appearance: none;
+    }
+    .ob-input::placeholder { color: rgba(0,0,0,.38); }
+    .ob-input:focus { border-color: var(--fenix-dell); box-shadow: 0 0 0 3px rgba(0,118,206,.22); }
+    .ob-input.error { border-color: var(--fenix-amarelo); box-shadow: 0 0 0 3px rgba(255,203,0,.35); }
+    .ob-input[readonly] { background: var(--ob-track); }
+    .ob-field-error {
+      display: none; font-size: .78rem; font-weight: 600; padding-left: .55rem; border-left: 3px solid var(--fenix-amarelo);
+    }
+    .ob-field-error.visible { display: block; }
+    .ob-hint { font-size: .78rem; color: var(--ob-muted); line-height: 1.4; }
+    .ob-status { font-size: .82rem; font-weight: 600; min-height: 1.1em; }
+    .ob-status.info { color: var(--fenix-dell); }
+    .ob-status.alerta { padding: .5rem .7rem; border-radius: var(--ob-radius-sm); background: rgba(255,203,0,.20); border: 1px solid var(--fenix-amarelo); color: var(--fenix-texto); }
+    .ob-status.ok { color: var(--fenix-azul); }
+
+    .ob-empresa { display: none; flex-direction: column; gap: .8rem; padding: 1rem; border: 1px solid var(--ob-border); border-radius: var(--ob-radius-sm); background: var(--ob-track); }
+    .ob-empresa.visible { display: flex; }
+    .ob-empresa h2 { font-size: .9rem; color: var(--fenix-azul); }
+    .ob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+    .ob-grid .full { grid-column: 1 / -1; }
+    .ob-link { color: var(--fenix-dell); }
+    .ob-link:hover { color: var(--fenix-azul); }
+    .ob-terms { font-size: .8rem; color: var(--ob-muted); line-height: 1.45; }
+
+    .ob-btn {
+      width: 100%; min-height: 48px; padding: .78rem; border: none; border-radius: var(--ob-radius-sm);
+      font-family: var(--ob-font); font-size: .95rem; font-weight: 600; cursor: pointer;
+      background: var(--fenix-dell); color: var(--fenix-branco);
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      transition: background var(--ob-transition), color var(--ob-transition), transform var(--ob-transition), opacity var(--ob-transition);
+    }
+    .ob-btn:hover { background: var(--fenix-amarelo); color: var(--fenix-texto); }
+    .ob-btn:active { transform: scale(.98); }
+    .ob-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .ob-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; display: none; }
+    .ob-btn.loading .ob-spinner { display: block; }
+    .ob-btn.loading .ob-btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .ob-pronto { display: none; text-align: center; }
+    .ob-pronto.visible { display: block; }
+    .ob-resumo { text-align: left; margin: 1rem 0 1.3rem; padding: .9rem 1rem; border-radius: var(--ob-radius-sm); background: var(--ob-track); font-size: .88rem; line-height: 1.6; }
+    .ob-resumo strong { color: var(--fenix-azul); }
+
+    .fenix-footer {
+      background: linear-gradient(90deg, #040798, #0076CE); color: var(--fenix-branco); text-align: center;
+      font-size: .8rem; padding: .85rem 1rem; padding-bottom: calc(.85rem + env(safe-area-inset-bottom, 0px));
+    }
+    .fenix-footer a { color: var(--fenix-branco); text-decoration: none; }
+    .fenix-footer a:hover { color: var(--fenix-amarelo); }
+
+    @media (max-width: 460px) { .ob-body { padding: 1.4rem 1.25rem 1.6rem; } .ob-title { font-size: 1.3rem; } .ob-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<main>
+<div class="ob-card" id="obCard" role="main" aria-label="Primeiros passos">
+
+  <div class="ob-hero">
+    <img class="ob-logo" alt="Fênix Soluções Tecnológicas" src="data:image/png;base64,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" />
+    <span class="ob-brand-name">Nome do App</span>
+  </div>
+
+  <div class="ob-body">
+
+    <!-- ========== FORMULÁRIO ========== -->
+    <div id="ob-formulario">
+      <h1 class="ob-title" id="ob-titulo">Vamos começar</h1>
+      <p class="ob-subtitle" id="ob-subtitulo">Só precisamos de algumas informações para deixar tudo pronto para você.</p>
+
+      <form class="ob-form" id="ob-form" novalidate>
+
+        <div class="ob-field" id="ob-campo-nome">
+          <label class="ob-label" for="ob-nome">Primeiro nome</label>
+          <input class="ob-input" id="ob-nome" name="nome" type="text" placeholder="Seu primeiro nome" autocomplete="given-name" />
+          <span class="ob-field-error" id="ob-nome-err">Informe seu primeiro nome.</span>
+        </div>
+
+        <div class="ob-field" id="ob-campo-email">
+          <label class="ob-label" for="ob-email">E-mail</label>
+          <input class="ob-input" id="ob-email" name="email" type="email" placeholder="seu@email.com" autocomplete="email" />
+          <span class="ob-field-error" id="ob-email-err">Informe um e-mail válido.</span>
+        </div>
+
+        <div class="ob-field">
+          <label class="ob-label" for="ob-cnpj">CNPJ <span class="ob-opt">(se tiver)</span></label>
+          <input class="ob-input" id="ob-cnpj" name="cnpj" type="text" inputmode="numeric" placeholder="00.000.000/0000-00" autocomplete="off" maxlength="18" />
+          <span class="ob-field-error" id="ob-cnpj-err">CNPJ inválido. Confira os números.</span>
+          <span class="ob-status" id="ob-cnpj-status" aria-live="polite"></span>
+          <span class="ob-hint" id="ob-aviso-cnpj">O CPF/CNPJ é usado apenas para emissão de Notas Fiscais e/ou Recibos.</span>
+        </div>
+
+        <!-- Dados da empresa: preenchidos pela consulta do CNPJ, tudo editável -->
+        <div class="ob-empresa" id="ob-empresa">
+          <h2>Dados da empresa</h2>
+          <div class="ob-grid">
+            <div class="ob-field full"><label class="ob-label" for="ob-razao">Razão social</label><input class="ob-input" id="ob-razao" type="text" /></div>
+            <div class="ob-field full"><label class="ob-label" for="ob-fantasia">Nome fantasia</label><input class="ob-input" id="ob-fantasia" type="text" /></div>
+            <div class="ob-field"><label class="ob-label" for="ob-cep">CEP</label><input class="ob-input" id="ob-cep" type="text" inputmode="numeric" maxlength="9" placeholder="00000-000" /></div>
+            <div class="ob-field"><label class="ob-label" for="ob-numero">Número</label><input class="ob-input" id="ob-numero" type="text" /></div>
+            <div class="ob-field full"><label class="ob-label" for="ob-logradouro">Logradouro</label><input class="ob-input" id="ob-logradouro" type="text" /></div>
+            <div class="ob-field full"><label class="ob-label" for="ob-complemento">Complemento</label><input class="ob-input" id="ob-complemento" type="text" /></div>
+            <div class="ob-field"><label class="ob-label" for="ob-bairro">Bairro</label><input class="ob-input" id="ob-bairro" type="text" /></div>
+            <div class="ob-field"><label class="ob-label" for="ob-cidade">Cidade</label><input class="ob-input" id="ob-cidade" type="text" /></div>
+            <div class="ob-field"><label class="ob-label" for="ob-uf">UF</label><input class="ob-input" id="ob-uf" type="text" maxlength="2" /></div>
+          </div>
+          <span class="ob-status" id="ob-cep-status" aria-live="polite"></span>
+        </div>
+
+        <p class="ob-terms">
+          Ao continuar, você concorda com os
+          <a class="ob-link" href="https://fenicris-dev.github.io/Fenix-Core/fenix-termos-de-uso.html" target="_blank" rel="noopener">Termos de Uso</a>
+          e a
+          <a class="ob-link" href="https://fenicris-dev.github.io/Fenix-Core/fenix-politica-de-privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.
+        </p>
+
+        <button type="submit" class="ob-btn" id="ob-btn">
+          <div class="ob-spinner" aria-hidden="true"></div>
+          <span class="ob-btn-text">Continuar</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- ========== TELA FINAL ========== -->
+    <div class="ob-pronto" id="ob-pronto">
+      <h1 class="ob-title" id="ob-pronto-titulo">Tudo pronto!</h1>
+      <p class="ob-subtitle">Seus dados foram salvos. Você pode ajustá-los depois no seu perfil.</p>
+      <div class="ob-resumo" id="ob-resumo"></div>
+      <button type="button" class="ob-btn" id="ob-entrar"><span class="ob-btn-text">Entrar no app</span></button>
+    </div>
+
+  </div>
+</div>
+</main>
+
+<footer class="fenix-footer">
+  <span id="footer-year"></span>
+  <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a>
+  |
+  <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a>
+  · v1.0
+</footer>
+
+<script>
+/* ---------------------------------------------------------------
+   COMO USAR NO APP
+   1) Antes de abrir esta tela, o app define o perfil que já conhece (login):
+        window.FENIX_PERFIL_INICIAL = { nome: 'Cristiano Rodrigues', email: 'a@b.com' };
+      Com login pelo Google, nome e e-mail já vêm da conta: a tela mostra só o CNPJ.
+      Com login por e-mail, deixe o nome vazio: a tela pede primeiro nome e e-mail.
+   2) Ao concluir, a tela dispara o evento "fenix:onboarding-concluido" com o perfil
+      em event.detail. Ligue o salvamento real em salvarPerfil() (Fênix Core).
+   3) O onboarding aparece UMA vez: o app só abre esta tela se
+      perfil.onboardingConcluido não for verdadeiro.
+   Demonstração no navegador: ?demo=google  (nome e e-mail vindos da conta)
+--------------------------------------------------------------- */
+var $ = function (id) { return document.getElementById(id); };
+$('footer-year').textContent = new Date().getFullYear();
+
+/* ---------- utilidades (usam o Fênix Core quando ele estiver carregado) ---------- */
+var PREPOSICOES = ['de', 'da', 'do', 'das', 'dos', 'e'];
+function core() { return window.FenixCore || null; }
+function somenteDigitos(v) { return String(v || '').replace(/\D/g, ''); }
+
+function titulo(texto) {
+  if (core() && core().formatarTitulo) return core().formatarTitulo(texto);
+  return String(texto || '').toLowerCase().split(/\s+/).filter(Boolean).map(function (p, i) {
+    return (i > 0 && PREPOSICOES.indexOf(p) >= 0) ? p : p.charAt(0).toUpperCase() + p.slice(1);
+  }).join(' ');
+}
+function maiusculo(texto) {
+  if (core() && core().formatarNomeMaiusculo) return core().formatarNomeMaiusculo(texto);
+  return String(texto || '').trim().toUpperCase();
+}
+function primeiroNome(texto) {
+  var p = String(texto || '').trim().split(/\s+/)[0] || '';
+  return titulo(p);
+}
+function mascaraCNPJ(v) {
+  var d = somenteDigitos(v).slice(0, 14);
+  return d.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+          .replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2');
+}
+function mascaraCEP(v) { return somenteDigitos(v).slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2'); }
+
+function validarCNPJ(v) {
+  if (core() && core().validarCNPJ) return core().validarCNPJ(v);
+  var d = somenteDigitos(v);
+  if (d.length !== 14 || /^(\d)\1+$/.test(d)) return false;
+  function dig(base) {
+    var pesos = base.length === 12 ? [5,4,3,2,9,8,7,6,5,4,3,2] : [6,5,4,3,2,9,8,7,6,5,4,3,2];
+    var soma = 0; for (var i = 0; i < pesos.length; i++) soma += Number(base.charAt(i)) * pesos[i];
+    var r = soma % 11; return r < 2 ? 0 : 11 - r;
+  }
+  var d1 = dig(d.slice(0, 12)); var d2 = dig(d.slice(0, 12) + d1);
+  return d.charAt(12) == d1 && d.charAt(13) == d2;
+}
+function emailValido(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim()); }
+
+/* ---------- consultas (Regra: usar o Fênix Core; o fallback abaixo é só para testar este arquivo sozinho) ---------- */
+function consultarCNPJ(cnpj) {
+  if (core() && core().pessoas && core().pessoas.buscarNaReceita) return core().pessoas.buscarNaReceita(cnpj);
+  return fetch('https://brasilapi.com.br/api/cnpj/v1/' + somenteDigitos(cnpj)).then(function (r) {
+    if (!r.ok) return null;
+    return r.json().then(function (d) {
+      return { razaoSocial: d.razao_social || '', nomeFantasia: d.nome_fantasia || '',
+        endereco: { cep: d.cep || '', logradouro: ((d.descricao_tipo_de_logradouro || '') + ' ' + (d.logradouro || '')).trim(),
+          numero: d.numero || '', complemento: d.complemento || '', bairro: d.bairro || '', cidade: d.municipio || '', uf: d.uf || '' } };
+    });
+  });
+}
+function consultarCEP(cep) {
+  if (core() && core().localidades && core().localidades.buscarPorCEP) return core().localidades.buscarPorCEP(cep);
+  return fetch('https://viacep.com.br/ws/' + somenteDigitos(cep) + '/json/').then(function (r) { return r.json(); }).then(function (d) {
+    if (d.erro) return null;
+    return { logradouro: d.logradouro || '', bairro: d.bairro || '', cidade: d.localidade || '', uf: d.uf || '' };
+  });
+}
+
+/* ---------- perfil inicial (vem do login) ---------- */
+var perfilInicial = window.FENIX_PERFIL_INICIAL || {};
+if (!window.FENIX_PERFIL_INICIAL && /[?&]demo=google/.test(location.search)) {
+  perfilInicial = { nome: 'Cristiano Rodrigues', email: 'cristiano@exemplo.com' };
+}
+var temContaCompleta = !!(perfilInicial.nome && perfilInicial.email);
+if (perfilInicial.nome) $('ob-nome').value = primeiroNome(perfilInicial.nome);
+if (perfilInicial.email) $('ob-email').value = perfilInicial.email;
+if (temContaCompleta) {
+  $('ob-campo-nome').style.display = 'none';
+  $('ob-campo-email').style.display = 'none';
+  $('ob-titulo').textContent = 'Olá, ' + primeiroNome(perfilInicial.nome) + '!';
+  $('ob-subtitulo').textContent = 'Falta só um dado para deixar tudo pronto. Se você tiver CNPJ, informe abaixo.';
+}
+
+/* ---------- campos ---------- */
+function erroCampo(inputId, errId, mostrar) {
+  var el = $(inputId); if (el) el.classList.toggle('error', mostrar);
+  $(errId).classList.toggle('visible', mostrar);
+}
+function statusCNPJ(texto, tipo) { var s = $('ob-cnpj-status'); s.textContent = texto || ''; s.className = 'ob-status' + (tipo ? ' ' + tipo : ''); }
+function mostrarEmpresa(sim) { $('ob-empresa').classList.toggle('visible', sim); }
+function preencherEmpresa(d) {
+  var e = d.endereco || {};
+  $('ob-razao').value = d.razaoSocial || ''; $('ob-fantasia').value = d.nomeFantasia || '';
+  $('ob-cep').value = mascaraCEP(e.cep); $('ob-numero').value = e.numero || '';
+  $('ob-logradouro').value = titulo(e.logradouro); $('ob-complemento').value = titulo(e.complemento);
+  $('ob-bairro').value = titulo(e.bairro); $('ob-cidade').value = titulo(e.cidade); $('ob-uf').value = String(e.uf || '').toUpperCase();
+}
+
+['ob-nome', 'ob-email'].forEach(function (id) {
+  $(id).addEventListener('input', function () { erroCampo(id, id + '-err', false); });
+});
+
+var consultaAtual = 0;
+$('ob-cnpj').addEventListener('input', function () {
+  this.value = mascaraCNPJ(this.value);
+  erroCampo('ob-cnpj', 'ob-cnpj-err', false);
+  var d = somenteDigitos(this.value);
+  if (d.length < 14) { statusCNPJ(''); mostrarEmpresa(false); return; }
+  if (!validarCNPJ(d)) { erroCampo('ob-cnpj', 'ob-cnpj-err', true); statusCNPJ(''); mostrarEmpresa(false); return; }
+
+  var minha = ++consultaAtual;
+  statusCNPJ('Buscando os dados da empresa...', 'info');
+  Promise.resolve().then(function () { return consultarCNPJ(d); }).then(function (dados) {
+    if (minha !== consultaAtual) return;
+    mostrarEmpresa(true);
+    if (dados) { preencherEmpresa(dados); statusCNPJ('Dados encontrados. Confira e ajuste se precisar.', 'ok'); }
+    else { statusCNPJ('Não encontramos esse CNPJ agora. Você pode preencher à mão ou continuar sem.', 'alerta'); }
+  }).catch(function () {
+    if (minha !== consultaAtual) return;
+    mostrarEmpresa(true);
+    statusCNPJ('Sem conexão no momento. Você pode preencher à mão ou continuar sem.', 'alerta');
+  });
+});
+
+$('ob-cep').addEventListener('input', function () {
+  this.value = mascaraCEP(this.value);
+  var d = somenteDigitos(this.value); var s = $('ob-cep-status'); s.textContent = '';
+  if (d.length !== 8) return;
+  s.className = 'ob-status info'; s.textContent = 'Buscando o endereço...';
+  Promise.resolve().then(function () { return consultarCEP(d); }).then(function (e) {
+    if (!e) { s.className = 'ob-status alerta'; s.textContent = 'CEP não encontrado. Confira os números.'; return; }
+    $('ob-logradouro').value = titulo(e.logradouro); $('ob-bairro').value = titulo(e.bairro);
+    $('ob-cidade').value = titulo(e.cidade); $('ob-uf').value = String(e.uf || '').toUpperCase();
+    s.className = 'ob-status ok'; s.textContent = 'Endereço atualizado pelo CEP.';
+  }).catch(function () { s.className = 'ob-status alerta'; s.textContent = 'Sem conexão para buscar o CEP. Preencha à mão.'; });
+});
+
+/* ---------- salvar (substituir pela gravação real no Fênix Core) ---------- */
+function salvarPerfil(perfil) {
+  /* No app real: gravar o perfil do usuário (primeiroNome, email, cnpj, empresa, onboardingConcluido)
+     pelo Fênix Core e marcar perfil.onboardingConcluido = true, para esta tela não aparecer de novo. */
+  return new Promise(function (res) { setTimeout(function () { res(perfil); }, 700); });
+}
+
+function montarPerfil() {
+  var nome = primeiroNome($('ob-nome').value);
+  var cnpj = somenteDigitos($('ob-cnpj').value);
+  var perfil = { primeiroNome: nome, email: $('ob-email').value.trim().toLowerCase(), cnpj: cnpj.length === 14 ? cnpj : null,
+                 empresa: null, onboardingConcluido: true, concluidoEm: new Date().toISOString() };
+  if (perfil.cnpj && $('ob-empresa').classList.contains('visible')) {
+    perfil.empresa = {
+      razaoSocial: maiusculo($('ob-razao').value), nomeFantasia: maiusculo($('ob-fantasia').value),
+      endereco: { cep: somenteDigitos($('ob-cep').value), logradouro: titulo($('ob-logradouro').value), numero: $('ob-numero').value.trim(),
+        complemento: titulo($('ob-complemento').value), bairro: titulo($('ob-bairro').value), cidade: titulo($('ob-cidade').value),
+        uf: $('ob-uf').value.trim().toUpperCase() }
+    };
+  }
+  return perfil;
+}
+
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+$('ob-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var ok = true;
+  var nomeOk = temContaCompleta || primeiroNome($('ob-nome').value).length >= 2;
+  var emailOk = temContaCompleta || emailValido($('ob-email').value);
+  var cnpjTxt = somenteDigitos($('ob-cnpj').value);
+  var cnpjOk = cnpjTxt.length === 0 || (cnpjTxt.length === 14 && validarCNPJ(cnpjTxt));
+  erroCampo('ob-nome', 'ob-nome-err', !nomeOk); erroCampo('ob-email', 'ob-email-err', !emailOk); erroCampo('ob-cnpj', 'ob-cnpj-err', !cnpjOk);
+  if (!nomeOk || !emailOk || !cnpjOk) return;
+
+  var btn = $('ob-btn'); btn.classList.add('loading'); btn.disabled = true;
+  var perfil = montarPerfil();
+  salvarPerfil(perfil).then(function (p) {
+    btn.classList.remove('loading'); btn.disabled = false;
+    $('ob-formulario').style.display = 'none';
+    $('ob-pronto-titulo').textContent = 'Tudo pronto, ' + p.primeiroNome + '!';
+    var linhas = ['<strong>Nome:</strong> ' + esc(p.primeiroNome), '<strong>E-mail:</strong> ' + esc(p.email)];
+    if (p.empresa) linhas.push('<strong>Empresa:</strong> ' + esc(p.empresa.razaoSocial || p.empresa.nomeFantasia || 'CNPJ informado'));
+    else if (p.cnpj) linhas.push('<strong>CNPJ:</strong> informado');
+    $('ob-resumo').innerHTML = linhas.join('<br>');
+    $('ob-pronto').classList.add('visible');
+    window.FENIX_PERFIL_FINAL = p;
+  }).catch(function () {
+    btn.classList.remove('loading'); btn.disabled = false;
+    $('ob-cnpj-status').className = 'ob-status alerta';
+    $('ob-cnpj-status').textContent = 'Não foi possível salvar agora. Tente de novo em instantes.';
+  });
+});
+
+$('ob-entrar').addEventListener('click', function () {
+  window.dispatchEvent(new CustomEvent('fenix:onboarding-concluido', { detail: window.FENIX_PERFIL_FINAL }));
+});
+</script>
+</body>
+</html>
