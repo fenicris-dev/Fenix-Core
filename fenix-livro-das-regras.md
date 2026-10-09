@@ -1,9 +1,9 @@
-# LIVRO DAS REGRAS FÊNIX: PADRÕES DE DESENVOLVIMENTO (v2.3)
+# LIVRO DAS REGRAS FÊNIX: PADRÕES DE DESENVOLVIMENTO (v2.7)
 
 Você é o desenvolvedor dos aplicativos da Fênix Soluções Tecnológicas (Aracaju/SE). Siga TODAS as regras deste Livro das Regras em qualquer app novo ou já existente, sem que eu precise repetir. Se alguma regra conflitar com um pedido meu, avise antes de seguir.
 
 ## 1. ARQUITETURA
-1. Fênix Core centralizado: todo app que use o banco de dados Firebase carrega o core de https://fenicris-dev.github.io/Fenix-Core/fenix-core.js. O core é um módulo ES (usa import/export) e exporta `FenixCore`. Nunca copie o core para dentro do app. Assim, qualquer correção no core vale para todos os apps sem trocar a versão deles. A versão do core fica só no comentário de topo do arquivo. Em cada app, chame `FenixCore.init("fenix-nome-do-app")` uma vez, no carregamento, com o mesmo identificador do nome do arquivo (regra 10).
+1. Fênix Core centralizado: todo app carrega o core de https://fenicris-dev.github.io/Fenix-Core/fenix-core.js. O core é um módulo ES (usa import/export) e exporta `FenixCore`. Nunca copie o core para dentro do app. Assim, qualquer correção no core vale para todos os apps sem trocar a versão deles. A versão do core fica só no comentário de topo do arquivo. Em cada app, chame `FenixCore.init("fenix-nome-do-app")` uma vez, no carregamento, com o mesmo identificador do nome do arquivo (regra 10). O banco de dados vem pré-configurado em todo app, mas desligado: o app nasce local-first (localStorage) e só liga a sincronização com o Firestore quando eu der o sinal de ativar, mudando a chave `const FENIX_BANCO_ATIVO = false;` para `true`. Enquanto estiver desligada, não leia nem grave no Firestore.
 2. Carregamento do Fênix Core: como o core é um módulo ES, não use `<script src>` simples nem cole o arquivo como script comum, porque o navegador recusa o `import`. Use sempre este carregador oficial no `<head>`. Ele carrega o core da URL oficial (regra 1), guarda uma cópia no cache do aparelho e, sem internet ou se a URL falhar, usa a cópia guardada:
 
     ```html
@@ -54,11 +54,13 @@ Você é o desenvolvedor dos aplicativos da Fênix Soluções Tecnológicas (Ara
 9. Em toda entrega, escreva a versão explicitamente no texto da resposta.
 10. Nome do arquivo: `fenix-nome-do-app-vX.X.html` (prefixo `fenix-`, hífens, versão no nome). Nunca use nome genérico como `app.html`.
 11. Exceção de nome: `fenix-core.js`, `index.html`, `fenix-template-login.html` e `fenix-template-onboarding.html` são as cópias publicadas e NÃO levam versão no nome (os apps apontam para elas). A cada entrega, entregue também uma cópia idêntica com a versão no nome (ex.: `fenix-core-v2.3.js`, `fenix-nome-do-app-v1.3.html`, `fenix-template-login-v1.2.html`), usada só para controle histórico; nenhum app aponta para ela. A versão do core fica também no comentário de topo do arquivo. Os documentos legais (`fenix-termos-de-uso.html` e `fenix-politica-de-privacidade.html`) também ficam sem versão no nome e trazem a versão dentro do documento.
-12. Changelog e Manual obrigatórios: todo app tem um Changelog e um Manual do aplicativo, acessíveis dentro do app (ex.: item Ajuda no menu), somente para visualização (sem edição) e com botão para baixar (PDF, gerado com o jsPDF já embutido). Vale para todos os apps futuros e, nos existentes, a partir da próxima alteração de cada um. O `fenix-core.js` não entra aqui: segue a regra 11.
-    - Changelog: lista das versões, da mais nova para a mais antiga, com versão, data e o que mudou. Toda alteração entrega uma entrada nova, junto com a subida de versão.
-    - Manual: explica para que serve o app e como usar cada área e função. É revisado sempre que uma alteração mudar o uso do app.
+12. Changelog e Manual do usuário obrigatórios: todo app tem um Changelog e um Manual do usuário, acessíveis dentro do app (Ajuda), somente para visualização (sem edição). Vale para todos os apps futuros e, nos existentes, a partir da próxima alteração de cada um. O `fenix-core.js` não entra aqui: segue a regra 11.
+    - Changelog: fica na tela Sobre (regra 13), com a lista das versões da mais nova para a mais antiga. Cada versão traz o número, "Criada em" (data em que a versão foi criada), "Modificada em" (data da última modificação dessa versão; igual à criação se não houve nova modificação) e o que mudou. Datas no padrão dd/mm/aaaa (regra 40). Toda alteração entrega uma entrada nova, junto com a subida de versão. Botão para baixar o Changelog em PDF (gerado com o jsPDF já embutido).
+    - Manual do usuário, em dois formatos: (a) em MD, guardado dentro do próprio app e exibido na Ajuda para consulta; (b) em PDF, para baixar, gerado com o jsPDF já embutido a partir do mesmo conteúdo do MD. É um passo a passo de uso, na ordem em que o usuário usa o app: para cada tela, explique cada campo e cada botão, com um exemplo de uso e o print da tela, em português claro (regra 21).
+    - Prints do manual: você os gera a cada entrega, com o navegador de teste, em largura de 360 px, a partir do app com dados de exemplo (nunca dados reais). Comprima em JPEG e embuta no próprio arquivo (base64), sem depender de arquivo externo. O manual é revisado e os prints são refeitos sempre que uma alteração mudar o uso ou a aparência do app.
+    - Em toda entrega do app, entregue também o manual em MD e em PDF, com os nomes `fenix-nome-do-app-manual-vX.X.md` e `fenix-nome-do-app-manual-vX.X.pdf`.
     - Em app existente, o Changelog começa na versão atual; o histórico anterior só entra se eu o informar.
-13. Tela Sobre: na área de Ajuda, todo app tem uma tela Sobre feita com o módulo `FenixCore.sobre`. Chame `FenixCore.sobre.registrarAcesso("fenix-nome-do-app", "vX.X")` uma vez no carregamento do app (conta 1 acesso por abertura) e mostre: versão, número de acessos, data e hora do primeiro acesso e a última atualização (versão instalada e data). Os dados da Fênix (nome fantasia, razão social, CNPJ e e-mail) vêm de `FenixCore.EMPRESA`. Tudo fica no aparelho (localStorage), e nada é enviado para fora.
+13. Tela Sobre: na área de Ajuda, todo app tem uma tela Sobre feita com o módulo `FenixCore.sobre`. Chame `FenixCore.sobre.registrarAcesso("fenix-nome-do-app", "vX.X")` uma vez no carregamento do app (conta 1 acesso por abertura) e mostre: versão, número de acessos, data e hora do primeiro acesso e a última atualização (versão instalada e data). Os dados da Fênix (nome fantasia, razão social, CNPJ e e-mail) vêm de `FenixCore.EMPRESA`. Tudo fica no aparelho (localStorage), e nada é enviado para fora. Mostre também nesta tela o Changelog (regra 12), a data de criação do app (a "Criada em" da primeira versão do Changelog) e a data da última modificação (a "Modificada em" da versão mais recente).
     - O primeiro acesso também é o início da contagem de 7 dias do alerta de backup (regra 44).
 
 ## 3. IDENTIDADE VISUAL
@@ -124,14 +126,54 @@ Você é o desenvolvedor dos aplicativos da Fênix Soluções Tecnológicas (Ara
 51. Cuidados contra regressão: o escape do Python pode corromper template literals de JS, e blocos órfãos depois de refatorações quebram botões. Confira os dois pontos antes de entregar.
 
 ## 7. PROCESSO
-52. Estas regras são um documento vivo. Em cada app novo, antes de começar, confirme comigo: nome do app, funcionalidade principal, se precisa de cadastro PF, PJ ou ambos, se usa Firebase desde a v1 ou local-first primeiro, outras APIs e observações de layout.
+52. Estas regras são um documento vivo. Em todo app novo, e em todo app existente que eu trouxer para alteração, antes de começar preencha comigo a Ficha de aplicação das regras (seção abaixo) e confirme: nome do app, funcionalidade principal, outras APIs e observações de layout.
+53. Selo do Livro: todo app declara no `<head>` o selo `<meta name="fenix-livro" content="X.Y">`, com a versão do Livro das Regras aplicada, e `<meta name="fenix-ficha" content="B,C,E">`, com as letras marcadas na Ficha (vazio se nenhuma). Na tela Sobre (regra 13), mostre a linha "Padrão: Livro das Regras Fênix vX.Y". O selo só muda quando o livro for de fato aplicado ao app, por você, na entrega. Quando eu trouxer um app: (1) selo igual à versão atual do livro, ou diferente só em versões que o Histórico marca como "não afeta apps": o livro já está aplicado, faça só o que eu pedir; (2) selo de versão mais antiga: aplique só o que o Histórico indica, nas regras marcadas na Ficha, e atualize o selo; (3) sem selo: aplique o livro inteiro conforme a Ficha e coloque o selo. O selo é uma declaração: só leia o `<head>`; faça uma conferência completa do app apenas se eu pedir.
+
+## 8. DASHBOARD E INDICADORES
+54. Dashboard clicável: todo indicador do dashboard (totais, contagens por situação, valores e gráficos) é clicável sempre que houver dados por trás dele, e expande ou redireciona para o que o compõe. Exemplo: "Total de serviços (21)" abre a lista dos 21 serviços; "Em andamento", "Interrompidos" e qualquer outra situação abrem os registros daquela situação. Regras: (a) a lista aberta usa o mesmo filtro do indicador e mostra a mesma quantidade do número clicado; (b) cada item da lista abre o detalhe do registro; (c) há botão Voltar ou Fechar, e o dashboard mantém a posição ao voltar; (d) indicador zerado não abre nada e mostra "Nenhum registro"; (e) o indicador tem cara de clicável (cursor de mão, hover em amarelo `#ffcb00`, área de toque de pelo menos 44 px, regra 20) e também funciona pelo teclado; (f) em gráficos, clicar numa fatia ou barra abre os registros dela; (g) valores em R$ abrem os lançamentos que formam o valor. Vale para todos os apps novos e, nos existentes, a partir da próxima alteração de cada um; entra no grupo G da Ficha.
+
+## FICHA DE APLICAÇÃO DAS REGRAS
+- A cada app novo ou alterado, confirme comigo esta ficha. Valem SEMPRE, sem marcar: regras 1 a 3, 5 a 22, 39, 40 e 47 a 53 (o Fênix Core é carregado em todo app, com o banco de dados pré-configurado e desligado; as regras 39 e 40 valem sempre que o app tiver valores em reais ou datas). Os grupos B a G vêm marcados por padrão; eu desmarco o que não se aplica ao app. O grupo A vem desmarcado e só é marcado quando eu der o sinal de ativar o banco. Você aplica só o que ficar marcado.
+- [ ] A. Banco de dados Firebase (Firestore) ativo: regras 4 e 46. Só quando eu der o sinal de ativar (chave FENIX_BANCO_ATIVO = true, regra 1).
+- [x] B. Acesso com login: regras 23 a 32 (login, onboarding, nome, avatar, splash, Termos e Política).
+- [x] C. Cadastro de pessoas PF/PJ: regras 33 a 38, 41 e 42.
+- [x] D. Ficha de produto/equipamento: regra 43 (e a regra 42).
+- [x] E. Backup dos dados no aparelho: regra 44.
+- [x] F. Documentos em PDF: regra 45.
+- [x] G. Dashboard com indicadores: regra 54.
+- Máscaras (regra 38) valem em qualquer campo de CPF, CNPJ, CEP ou telefone, mesmo sem marcar C.
+- As partes de reconexão com o Firebase da regra 3 só valem com o grupo A marcado.
+- Registre a ficha do app na primeira entrada do Changelog dele e no selo (regra 53).
+
+## HISTÓRICO DO LIVRO (o que muda para os apps)
+- Use este histórico para saber se o selo de um app (regra 53) exige alguma ação. Versões antes da v2.5 não tinham selo: app sem selo é comparado com o livro inteiro.
+- v2.7: Manual do usuário em MD (consulta no app) e PDF (download), com passo a passo e prints; Changelog dentro da Sobre com datas de criação e modificação (regras 12 e 13); dashboard clicável (nova regra 54, grupo G da Ficha). Afeta apps: SIM. Cada app ganha isso na próxima alteração dele.
+- v2.6: banco de dados pré-configurado em todo app e ativado só no meu sinal (regra 1 e grupo A da ficha). Afeta apps: SIM. O app ganha a chave FENIX_BANCO_ATIVO e o carregamento do core na próxima alteração.
+- v2.5: Ficha de aplicação das regras e Selo do Livro (regra 53); regra 52 reescrita. Afeta apps: SIM. O app ganha o selo e a ficha na próxima alteração.
+- v2.4: seção Endereços oficiais. Afeta apps: não.
+- v2.3: templates de login e onboarding sem versão no nome (regras 11, 23, 24 e 29). Afeta apps: não.
+- v2.2: removidas a regra do aviso de nova versão e a do template de layout com menu; numeração reajustada. Afeta apps: não (quem já tem o aviso pode mantê-lo).
+- v2.1: anotação dos apps já no padrão. Afeta apps: não.
+
+## ENDEREÇOS OFICIAIS (referência)
+- Referência de endereços (URLs). Sempre que um app pedir o endereço de um arquivo da biblioteca, use só os endereços desta lista. URL base: https://fenicris-dev.github.io/Fenix-Core/. Não use outros arquivos do repositório (cópias antigas).
+- Biblioteca (Fênix Core): https://fenicris-dev.github.io/Fenix-Core/fenix-core.js
+- Template de login: https://fenicris-dev.github.io/Fenix-Core/fenix-template-login.html (cópia idêntica em https://fenicris-dev.github.io/Fenix-Core/index.html)
+- Template de onboarding: https://fenicris-dev.github.io/Fenix-Core/fenix-template-onboarding.html
+- Ícones (sob a URL base): Fenix_Icone_64.png, Fenix_Icone_128.png, Fenix_Icone_192.png, Fenix_Icone_512.png
+- Logos (sob a URL base): Fenix_Logo_Azul.png, Fenix_Logo_Azul_320.png, Fenix_Logo_Azul_640.png, Fenix_Logo_Branca.png, Fenix_Logo_Branca_320.png, Fenix_Logo_Branca_640.png
+- Termos de Uso: https://fenicris-dev.github.io/Fenix-Core/fenix-termos-de-uso.html
+- Política de Privacidade: https://fenicris-dev.github.io/Fenix-Core/fenix-politica-de-privacidade.html
+- Livro das Regras: https://fenicris-dev.github.io/Fenix-Core/fenix-livro-das-regras.md e https://fenicris-dev.github.io/Fenix-Core/fenix-livro-das-regras.docx
 
 ## COMO ENTREGAR
 - Declare a versão no texto da resposta.
 - Entregue o arquivo com o nome no padrão da regra 10.
+- Atualize o selo (regra 53) e registre a Ficha no Changelog do app.
+- Entregue também o manual do usuário em MD e em PDF (regra 12).
 - Para `index.html`, `fenix-core.js` e os templates de login e onboarding, entregue também a cópia idêntica com a versão no nome (regra 11).
 - Se algo que eu pedir contrariar alguma regra acima, avise e pergunte antes de executar.
 
 ## APPS JÁ NO PADRÃO DO LIVRO (anotação)
-- Anotação de controle, não é regra. Lista os apps que já seguem as regras deste Livro, numerados na ordem em que forem citados. Acrescente cada app novo que eu citar, mantendo a numeração.
-1. Fênix | Cápsula do Tempo
+- Anotação de controle, não é regra. Lista os apps que já seguem as regras deste Livro, numerados na ordem em que forem citados. Acrescente cada app novo que eu citar, mantendo a numeração. Registre ao lado de cada app a versão do livro (selo) e a ficha.
+1. Fênix | Cápsula do Tempo (seguirá a versão atual do livro; selo e ficha a registrar quando o app for trazido)
