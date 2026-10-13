@@ -39,14 +39,6 @@
  *     // depois use: FenixCore.pessoas.buscar(cpfOuCnpj), etc.
  *   </script>
  *
- * RECOMENDADO (Livro das Regras, regra 2): em vez do import direto, use o
- * carregador oficial do Livro das Regras, que carrega este módulo a partir de
- * uma cópia guardada no cache do aparelho e permite abrir o app sem internet:
- *
- *   window.fenixCoreReady.then(function (FenixCore) {
- *     FenixCore.init("fenix-nome-do-app");   // uma vez só, no carregamento do app
- *   });
- *
  * Não é preciso preencher credenciais: o firebaseConfig do projeto
  * "fenix-core" já está definido neste arquivo (seção 1).
  *
@@ -75,6 +67,21 @@
  * aparelho (muda sempre que a versão informada muda). Os números são por
  * aparelho/navegador: trocar de aparelho ou limpar os dados zera o contador.
  * Apps que já estavam em uso começam a contar no dia em que adotarem este módulo.
+ *
+ * SINCRONIA PESSOAL (apps de uso pessoal, multi-aparelho):
+ *   const { app, db } = FenixCore.initFirebaseComCache();
+ *   const auth = FenixCore.criarModuloAuth(app);
+ *   auth.aoMudarEstado(user => {
+ *     if (!user) return;
+ *     const sinc = FenixCore.criarModuloSincronia(db, user.uid, "meu-app");
+ *     sinc.ouvir("tarefas", (mudancas, meta) => { ... }, erro => { ... });
+ *     sinc.salvar("tarefas", { id: "abc", nome: "Ler" });
+ *   });
+ * Cada usuário só enxerga os próprios dados. Regra a acrescentar no
+ * firestore.rules (dentro de match /databases/{database}/documents):
+ *   match /dados_pessoais/{uid}/{colecao}/{docId} {
+ *     allow read, write: if request.auth != null && request.auth.uid == uid;
+ *   }
  *
  * REGRA DE ESCRITA DOS TEXTOS (todos os apps):
  *  - Nome de Pessoa Física e de Pessoa Jurídica (razão social e nome
@@ -168,17 +175,17 @@
  *        atualização), com histórico das últimas 20 versões instaladas. O
  *        primeiro acesso também passa a ser o início da contagem de 7 dias do
  *        alerta de backup. Puramente aditivo — nenhuma função existente mudou.
- * v2.3 — (1) FenixCore.EMPRESA ganha "razaoSocial" ("60292 CRISTIANO
- *        RODRIGUES", como consta na Receita Federal); "nome" continua sendo o
- *        nome fantasia "Fênix Soluções Tecnológicas".
- *        (2) Correção do e-mail em FenixCore.EMPRESA.email:
- *        trampodofenix@gmail.com (a v2.1 e a v2.2 traziam "trempodofenix",
- *        com erro de digitação).
- *        (3) Texto de uso atualizado: os apps carregam o core pelo carregador
- *        oficial do Livro das Regras (regra 2), que carrega este módulo a
- *        partir de uma cópia em cache e funciona offline; o import direto da
- *        URL continua funcionando.
- *        Nenhuma função mudou.
+ * v2.3 — Sincronização pessoal multi-aparelho (usada pelo Fênix Gestor de Tempo
+ *        v2.0): (1) initFirebaseComCache(): igual a initFirebase(), mas ativa o
+ *        cache offline do Firestore (escritas feitas sem internet ficam na
+ *        fila e sobem sozinhas). Deve ser chamada ANTES de qualquer init()/
+ *        initFirebase() na mesma página. (2) criarModuloSincronia(db, uid,
+ *        nomeApp): dados PRIVADOS do usuário em dados_pessoais/{uid}/
+ *        {nomeApp}_{colecao}/{id}, com ouvir() em tempo real, salvar(),
+ *        salvarVarios(), excluir() e medirRelogio() (diferença entre o relógio
+ *        do aparelho e o do servidor). (3) criarModuloAuth ganhou
+ *        recuperarSenha(email). Puramente aditivo — nenhuma função existente
+ *        mudou. REQUER regra no firestore.rules (ver SINCRONIA PESSOAL no topo).
  * ============================================================================
  */
 
@@ -186,11 +193,13 @@ import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebase
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
   collection, getDocs, query, where, orderBy, limit as fsLimit,
-  serverTimestamp
+  serverTimestamp,
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  onSnapshot, writeBatch, getDocFromServer
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-  createUserWithEmailAndPassword, signOut
+  createUserWithEmailAndPassword, signOut, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ============================================================================
@@ -213,8 +222,7 @@ const EMPRESA = Object.freeze({
   nome: "Fênix Soluções Tecnológicas",
   cnpj: "60292878000170",
   cnpjFormatado: "60.292.878/0001-70",
-  razaoSocial: "60292 CRISTIANO RODRIGUES",   // como consta na Receita Federal (nome = nome fantasia)
-  email: "trampodofenix@gmail.com"
+  email: "trempodofenix@gmail.com"
 });
 
 let _db = null;
@@ -250,6 +258,24 @@ function init(nomeApp) {
 function initFirebase(config) {
   const app = _obterAppFirebase(config);
   _db = getFirestore(app);
+  return { app, db: _db };
+}
+
+/**
+ * Como initFirebase(), mas com cache offline do Firestore (IndexedDB): leituras
+ * funcionam sem internet e escritas feitas offline sobem quando a conexão volta.
+ * Chame ANTES de qualquer init()/initFirebase() na página; se o Firestore já
+ * tiver sido iniciado sem cache, reaproveita-o (sem cache offline).
+ */
+function initFirebaseComCache(config) {
+  const app = _obterAppFirebase(config);
+  try {
+    _db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+  } catch (e) {
+    _db = getFirestore(app);
+  }
   return { app, db: _db };
 }
 
@@ -728,6 +754,9 @@ function criarModuloAuth(app) {
     sair() {
       return signOut(auth);
     },
+    recuperarSenha(email) {
+      return sendPasswordResetEmail(auth, email);
+    },
     usuarioAtual() {
       return auth.currentUser;
     }
@@ -1157,12 +1186,117 @@ const sobre = {
 };
 
 // ============================================================================
+// 15. SINCRONIA PESSOAL — dados privados do usuário, multi-aparelho
+// ============================================================================
+/**
+ * Estrutura: dados_pessoais/{uid}/{nomeApp}_{colecao}/{id}
+ * Cada documento é gravado por inteiro (a última gravação vale) e leva o campo
+ * interno "_u" (horário corrigido pelo servidor, em ms), que não é devolvido
+ * ao app: o app recebe "atualizadoEm" à parte.
+ * @param {object} db - de initFirebaseComCache() (ou initFirebase())
+ * @param {string} uid - uid do usuário logado
+ * @param {string} nomeApp - namespace do app, ex: "fenix-tempo"
+ */
+function criarModuloSincronia(db, uid, nomeApp) {
+  if (!uid) throw new Error("criarModuloSincronia: faltou o uid do usuário logado.");
+  if (!nomeApp) throw new Error("criarModuloSincronia: faltou o nomeApp.");
+  const CHAVE_RELOGIO = "fenix_relogio__" + nomeApp;
+  let offset = 0;
+  try { const v = Number(localStorage.getItem(CHAVE_RELOGIO)); if (isFinite(v)) offset = v; } catch (e) { /* sem storage */ }
+  const nomeCol = nome => nomeApp + "_" + nome;
+  const col = nome => collection(db, "dados_pessoais", uid, nomeCol(nome));
+  const ref = (nome, id) => doc(db, "dados_pessoais", uid, nomeCol(nome), String(id));
+  const agora = () => Date.now() + offset;
+  // Firestore não aceita "undefined": remove-os (e copia o objeto).
+  const limpar = obj => JSON.parse(JSON.stringify(obj));
+  const comMarca = obj => ({ ...limpar(obj), _u: agora() });
+
+  return {
+    /** Horário atual corrigido pela diferença com o servidor. */
+    agora,
+    /** Diferença atual (ms) entre o servidor e o relógio do aparelho. */
+    relogio() { return offset; },
+
+    /**
+     * Escuta uma coleção em tempo real.
+     * aoMudar(mudancas, meta): mudancas = [{tipo:"added"|"modified"|"removed", id, dados,
+     *   atualizadoEm, pendente}]; pendente=true é uma gravação deste aparelho ainda não
+     *   confirmada. meta = {doCache, pendente}; doCache=true quando veio só do cache.
+     * @returns {function} cancela a escuta
+     */
+    ouvir(nome, aoMudar, aoErro) {
+      return onSnapshot(col(nome), snap => {
+        const mudancas = snap.docChanges().map(c => {
+          const dados = c.doc.data();
+          const atualizadoEm = dados._u || 0;
+          delete dados._u;
+          return { tipo: c.type, id: c.doc.id, dados, atualizadoEm, pendente: c.doc.metadata.hasPendingWrites };
+        });
+        aoMudar(mudancas, { doCache: snap.metadata.fromCache, pendente: snap.metadata.hasPendingWrites });
+      }, err => {
+        if (typeof aoErro === "function") aoErro(err);
+        else console.error("FenixCore.sincronia:", err);
+      });
+    },
+
+    /** Grava (substitui) um documento; obj.id é obrigatório. */
+    salvar(nome, obj) {
+      if (!obj || obj.id == null) return Promise.reject(new Error(nome + ": registro sem id."));
+      return setDoc(ref(nome, obj.id), comMarca(obj));
+    },
+
+    /** Grava vários documentos (em lotes de 400). */
+    async salvarVarios(nome, lista) {
+      for (let i = 0; i < lista.length; i += 400) {
+        const lote = writeBatch(db);
+        lista.slice(i, i + 400).forEach(o => {
+          if (o == null || o.id == null) throw new Error(nome + ": registro sem id.");
+          lote.set(ref(nome, o.id), comMarca(o));
+        });
+        await lote.commit();
+      }
+      return true;
+    },
+
+    excluir(nome, id) {
+      if (id == null) return Promise.reject(new Error(nome + ": faltou o id para excluir."));
+      return deleteDoc(ref(nome, id));
+    },
+
+    /**
+     * Mede a diferença entre o relógio do aparelho e o do servidor (ms) e guarda
+     * no aparelho. Precisa de internet; sem resposta em 8 s mantém o valor anterior.
+     */
+    async medirRelogio() {
+      const r = doc(db, "dados_pessoais", uid, nomeCol("sistema"), "relogio");
+      const medir = (async () => {
+        const t0 = Date.now();
+        await setDoc(r, { t: serverTimestamp() });
+        const t1 = Date.now();
+        const snap = await getDocFromServer(r);
+        const t = snap.data() && snap.data().t;
+        if (!t || !t.toMillis) return offset;
+        return Math.round(t.toMillis() - (t0 + t1) / 2);
+      })();
+      const limite = new Promise(res => setTimeout(() => res(null), 8000));
+      const novo = await Promise.race([medir, limite]).catch(() => null);
+      if (novo != null && isFinite(novo)) {
+        offset = novo;
+        try { localStorage.setItem(CHAVE_RELOGIO, String(offset)); } catch (e) { /* sem storage */ }
+      }
+      return offset;
+    }
+  };
+}
+
+// ============================================================================
 // EXPORTAÇÃO
 // ============================================================================
 
 export const FenixCore = {
   init,
   initFirebase,
+  initFirebaseComCache,
   criarModuloAuth,
   criarModuloEmpresas,
   criarModuloConvites,
@@ -1173,6 +1307,7 @@ export const FenixCore = {
   criarModuloFamiliasMateriais,
   criarModuloCatalogoEmpresa,
   criarModuloPessoas,
+  criarModuloSincronia,
   pessoas,
   produtos,
   localidades,
@@ -1211,7 +1346,7 @@ export const FenixCore = {
  *     aoFazerBackup: () => FenixCore.backup.baixarJSON("fenix-financiamentos", meusDados)
  *   });
  *
- *   // Dados da Fênix (rodapé, documentos): FenixCore.EMPRESA.razaoSocial, FenixCore.EMPRESA.cnpjFormatado, FenixCore.EMPRESA.email
+ *   // Dados da Fênix (rodapé, documentos): FenixCore.EMPRESA.cnpjFormatado, FenixCore.EMPRESA.email
  *
  *   // Ao digitar o CPF do cliente no formulário:
  *   const cpfDigitado = "12345678900";
