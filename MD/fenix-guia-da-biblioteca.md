@@ -1,4 +1,4 @@
-# GUIA DA BIBLIOTECA FÊNIX (v4.6)
+# GUIA DA BIBLIOTECA FÊNIX (v4.8)
 
 Este guia explica, em português claro, tudo o que existe na biblioteca Fênix: o que cada função do Fênix Core faz e para que serve cada regra do Livro das Regras. Ele também funciona como o **Changelog da biblioteca** (Parte 4). Acompanha todo pacote novo e é atualizado a cada versão, junto com o livro, o core, os templates e os documentos legais, que andam sempre com o mesmo número (regra 7).
 
@@ -20,9 +20,18 @@ Endereço base de tudo: https://fenicris-dev.github.io/Fenix-Core/
 | `Logo/Fenix_Logo_Black.png`, `Fenix_Logo_Silver.png`, `Fenix_Logo_Gray.png` | pasta `Logo/` | Logos auxiliares, para escolher o melhor contraste. |
 | `Termos/fenix-termos-de-uso.html`, `Termos/fenix-politica-de-privacidade.html` | pasta `Termos/` | Textos legais oficiais, linkados no login e no onboarding. |
 | `MD/fenix-livro-das-regras.md`, `DOC/fenix-livro-das-regras.docx` | pastas `MD/` e `DOC/` | O Livro das Regras. |
+| `MD/fenix-resumo-do-livro.md`, `DOC/fenix-resumo-do-livro.docx` | pastas `MD/` e `DOC/` | Resumo de uma folha: quais regras do livro valem em cada tipo de trabalho. |
 | `MD/fenix-guia-da-biblioteca.md`, `DOC/fenix-guia-da-biblioteca.docx` | pastas `MD/` e `DOC/` | Este guia. |
+| `testes-regras/` | pasta ao lado do `firestore.rules` | Testes automáticos das regras do Firestore (emulador local). Rodam no seu computador; não vão para o GitHub Pages. |
 
-Todo material com versão tem duas cópias (regra 11): a **neutra**, sem versão no nome (é a que os apps usam), e a **com versão no nome** (`-v4.6`), só para controle interno.
+Todo material com versão tem duas cópias (regra 11): a **neutra**, sem versão no nome (é a que os apps usam), e a **com versão no nome** (`-v4.8`), só para controle interno.
+
+### Ferramentas de apoio (v4.7)
+
+- **Resumo do livro:** uma folha com sete blocos (vale sempre, app novo, app antigo, alteração pequena, por recurso do app, biblioteca e conflitos). Serve de porta de entrada para quem trabalha nos apps; o livro continua sendo a fonte.
+- **Testes das regras do Firestore (`testes-regras/`):** conferem, com o emulador local, o que cada coleção da biblioteca permite e nega (empresas e licença, convites, membros, usuários, coleções da empresa, administradores, perfis, dados pessoais e cidades). Como rodar: dentro da pasta, `npm install` (uma vez) e `npm test`; precisa de Node.js e Java. Se algum teste falhar, não publique as regras. Os testes não substituem o Playground do console.
+- **Teste de aparelho (no Painel):** abra o Painel no celular, expanda "Teste de aparelho" e confira o toque Asas, o farol do login e os holofotes do splash (os próprios templates, ao vivo), o selo de versões e os dados do aparelho (tela, conexão, app instalado, tema, movimento reduzido, armazenamento e áudio).
+- **Varredura de versões:** antes de cada entrega, procura-se em todos os arquivos qualquer número de versão antigo; é um passo de "Como entregar".
 
 ## PARTE 2. O FÊNIX CORE, FUNÇÃO POR FUNÇÃO
 
@@ -306,7 +315,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 45. **PDF** com cabeçalho padrão: logo Azul e dados da empresa do perfil.
 
 ### Seção 6. Segurança e qualidade
-46. **Regras do Firestore:** nenhuma coleção aberta; cada usuário só lê e grava os próprios dados; as regras seguem junto com a entrega, partindo do arquivo-base `firestore.rules` da biblioteca (veja o quadro "firestore.rules, bloco por bloco" depois da Seção 9), com um checklist de publicação: core e templates no GitHub, backup das regras atuais, Playground, publicar, testar num app real e, se falhar, recolocar o backup.
+46. **Regras do Firestore:** nenhuma coleção aberta; cada usuário só lê e grava os próprios dados; as regras seguem junto com a entrega, partindo do arquivo-base `firestore.rules` da biblioteca (veja o quadro "firestore.rules, bloco por bloco" depois da Seção 9), com um checklist de publicação: core e templates no GitHub, testes da pasta `testes-regras/`, backup das regras atuais, Playground, publicar, testar num app real e, se falhar, recolocar o backup.
 47. **Ações destrutivas** exigem digitar uma palavra (ex.: APAGAR). Nunca o `confirm()` do navegador.
 48. **Validar o JS** com `node --check` (retorno 0) e chaves balanceadas.
 49. **Testar** em tela de 360 px e sem internet.
@@ -338,7 +347,7 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 
 **Ordem para publicar:** 1) o `fenix-core.js` mais novo no GitHub (ele grava o `conviteToken` e, desde a v4.4, o nome da empresa no convite); 2) só depois estas regras no console. Teste antes no "Playground de regras" (roteiro abaixo).
 
-**Checklist de publicação (regra 46):** 1) core e templates no GitHub; 2) no console, copie as regras atuais para um arquivo de backup; 3) cole as novas no Playground e rode o roteiro abaixo; 4) publique; 5) abra um app real, entre e grave um registro; 6) se algo falhar, recoloque o backup e avise.
+**Checklist de publicação (regra 46):** 1) core e templates no GitHub; 2) no seu computador, rode os testes da pasta `testes-regras/` (`npm install` uma vez e `npm test`) e, se algum falhar, não publique; 3) no console, copie as regras atuais para um arquivo de backup; 4) cole as novas no Playground e rode o roteiro abaixo; 5) publique; 6) abra um app real, entre e grave um registro; 7) se algo falhar, recoloque o backup e avise.
 
 - **Funções de apoio:** `autenticado`, `pertenceAEmpresa` (vínculo aprovado em `usuarios_empresa`), `souDonoDaEmpresa`, e, novas, `temVinculoAprovado`, `membroComPapel` e `conviteValido` (convite da empresa, não usado e não cancelado).
 - **Base compartilhada:** `produtos_servicos` e `cidades` como antes. **[v4.0]** `pessoas_fisicas` e `pessoas_juridicas` (CPF e CNPJ, dados pessoais) só para quem tem vínculo aprovado com uma empresa; antes, qualquer conta Google logada em qualquer app lia a base inteira.
@@ -347,7 +356,7 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 - **`usuarios_empresa/{uid}`:** leitura e remoção como antes. **[v4.0]** criar o vínculo exige já ter o registro de membro da empresa com o mesmo papel; antes, qualquer logado criava o próprio vínculo como dono de qualquer empresa e passava a ver os dados dela. Atualizar sem trocar empresa nem papel continua livre.
 - **`convites/{token}`:** ler um convite pelo token, listar e criar como antes. **[v4.0]** a alteração fica restrita: o titular só cancela; o convidado só marca como usado, uma vez, com o próprio uid. Antes, qualquer logado alterava qualquer campo de um convite não usado.
 - **[v4.0] `empresas/{id}/membros/{uid}`:** o dono cria o próprio registro (a empresa tem de ter `donoUid` igual ao uid); o técnico cria o seu com o `conviteToken` de um convite válido da empresa. Só o titular altera; o titular ou o próprio apaga.
-- **Dados da empresa** (pessoas, `appData`, materiais, famílias, produtos e serviços e as coleções de cada app): só membros aprovados leem e gravam. **[v4.0]** a gravação não vale para a coleção `membros`.
+- **Dados da empresa** (pessoas, `appData`, materiais, famílias, produtos e serviços e as coleções de cada app): só membros aprovados leem e gravam. **[v4.0]** a gravação não vale para a coleção `membros`. **[v4.8]** nem para a coleção `cidades` da empresa.
 - **`dados_pessoais/{uid}`:** como estava (Gestor de Tempo e apps pessoais: cada um só vê o que está sob o próprio uid).
 
 **Roteiro de teste no Playground de regras** (todos com usuário logado de teste):
@@ -367,7 +376,7 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 - Um app com o core antigo guardado no cache do aparelho não grava o `conviteToken`, então não consegue aceitar convite até abrir com internet e baixar o core novo.
 - Pelas regras que estavam publicadas, o `criarEmpresa` do core gravava o registro de membro antes de existir o vínculo e era negado; agora passa. Se o Fênix Ativos tem fluxo próprio para criar empresa, ele segue funcionando.
 - **[v4.4]** Convites criados antes da v4.4 não têm `empresaNome`: a tela do convite mostra só o código até o convite ser aceito. O app que mostrava o nome da empresa antes de aceitar deve ler `convite.empresaNome`, não `empresas/{id}`.
-- Mantidos como estavam no console: a regra `empresas/{id}/cidades` com `write: false` (o curinga da empresa já libera a gravação, então ela não bloqueia nada).
+- **[v4.8] `empresas/{id}/cidades`:** a regra `write: false` agora vale de verdade: o curinga das coleções da empresa passou a deixar essa coleção de fora da gravação (antes ele a liberava para qualquer membro aprovado). O core grava cidades na raiz (`cidades/…`), então nenhum app é afetado; a leitura por membros e a gravação de `bairros` abaixo dela continuam como estavam.
 
 ### Seções finais do livro
 - **Ficha de aplicação:** sempre valem as regras 1 a 3, 5 a 22, 39, 40, 47 a 53, 55, 59, 60 e 61. Grupos marcáveis: A banco ativo (4, 46), B login (23 a 32), C PF/PJ (33 a 38, 41, 42), D produto (43), E backup (44), F PDF (45), G dashboard (54), H login com Google (56 e 58), I sincronização entre aparelhos (57), J tema escuro opcional (60). Os grupos H, I e J vêm desmarcados e são perguntados sempre.
@@ -381,6 +390,8 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 Cada linha diz o que mudou e o que isso exige dos apps. As versões v1.x e v2.x do core vieram antes do livro atual; as versões v3.x são niveladas entre livro, core, templates e documentos legais.
 
 ### Versões v3.x (niveladas)
+- **v4.8**: regras do Firestore fecham a gravação em `empresas/{id}/cidades` (o curinga da empresa a liberava); novo teste em `testes-regras/`; checklist de publicação do guia alinhado ao da regra 46. O core só muda de versão. Afeta apps: não.
+- **v4.7**: Resumo do livro (uma folha); pasta `testes-regras/` com testes automáticos das regras do Firestore; Painel com Teste de aparelho; varredura de versões em Como entregar; checklist da regra 46 com o passo dos testes. O core só muda de versão. Afeta apps: não.
 - **v4.6**: selo de versões `v | c` em todo app e aviso de core novo (regra 61); novo arquivo `versao.json`; a Sobre ganha Core e Livro; Painel testa o `versao.json` e teve a conferência de versão corrigida; a regra 61 vale sempre, sem grupo na Ficha. Afeta apps: sim, leve.
 - **v4.5**: o core oficial ganha as funções da linhagem v2.x (`initFirebaseComCache`, `criarModuloSincronia`, `criarModuloAcesso`, `recuperarSenha`, `reautenticar`, `excluirConta`), para o Gestor do Tempo e o Controle de Compras tirarem as cópias embutidas; regras 55 e 57 esclarecidas; regras do Firestore com os blocos `perfis` e `admins`. Apps: SIM, os três apps em andamento seguem o roteiro da regra 55.
 - **v4.4**: leitura de `empresas/{id}` só para o dono e membros (convite leva `empresaNome`); licença com validade (`licencaAte`, `situacao`) e `MENSAGEM_GOOGLE`; `sync.importarLista`; `FenixCore.preferencias` (som, animações, tema claro/escuro/automático); regra 60 e grupo J; checklist de publicação das regras, teste com dois aparelhos e aviso da pasta `versoes/` em Como entregar; Termos (cláusula 3, licença de uso) e Política (dados de licença e preferências) atualizados em 23/10/2026. Apps: SIM, na próxima alteração.
@@ -411,6 +422,8 @@ Cada linha diz o que mudou e o que isso exige dos apps. As versões v1.x e v2.x 
 - **v2.1**: anotação dos apps já no padrão. Apps: não.
 
 ### Fênix Core, funções acrescentadas (nada foi removido)
+- **v4.8**: nenhuma função nova; só a versão (`versoes.core` passa a `"4.8"`).
+- **v4.7**: nenhuma função nova; só a versão (`versoes.core` passa a `"4.7"`).
 - **v4.6**: `FenixCore.versoes` (`core`, `selo`, `montarSelo`, `verificar`, `comparar`); `sobre.montarTela` aceita `livro` e `coreMinimo` e mostra Core e Livro.
 - **v4.5**: `initFirebaseComCache`, `criarModuloSincronia`, `criarModuloAcesso`; `criarModuloAuth`: `recuperarSenha`, `reautenticar`, `excluirConta` (seção 2.17).
 - **v4.4**: `licenca.situacao`, `licenca.dataLimite`, `licenca.MENSAGEM_GOOGLE` (e `ehDefinitiva` passa a respeitar `licencaAte`); `FenixCore.preferencias` (`montarTela`, `aplicar`, `animacoesReduzidas`, `animacoesReduzidasEscolhidas`, `definirAnimacoesReduzidas`, `tema`, `definirTema`); `criarSincronia().importarLista`; `criarConvite` com o 5º parâmetro `nomeEmpresa` (seções 2.7, 2.14, 2.15 e 2.16).
