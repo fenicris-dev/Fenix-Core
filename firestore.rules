@@ -1,5 +1,5 @@
 // ============================================================================
-// FÊNIX | firestore.rules (Biblioteca Fênix v4.6)
+// FÊNIX | firestore.rules (Biblioteca Fênix v4.8)
 //
 // BASE: as regras publicadas no console do Firebase (projeto fenix-core), nas
 // versões registradas abaixo, enviadas pelo Cristiano em 21/10/2026. O que já
@@ -16,6 +16,7 @@
 // firestore-rules-v7-biblioteca-v4.3 (licença definitiva: campo [v4.3] em empresas e espelho licencas)
 // firestore-rules-v8-biblioteca-v4.4 (empresas/{id} só para membros e para o dono [v4.4])
 // firestore-rules-v9-biblioteca-v4.5 (perfis e admins, cadastro com aprovação [v4.5])
+// firestore-rules-v10-biblioteca-v4.8 (empresas/{id}/cidades sem gravação: o curinga da empresa deixa de liberar [v4.8])
 //
 // ORDEM PARA PUBLICAR (importante):
 //   1) publique o fenix-core.js v4.0 no GitHub (ele passa a gravar o
@@ -181,10 +182,11 @@ service cloud.firestore {
 
     // ---------- Dados de cada empresa (isolados) ----------
     // [v4.0] Membros leem tudo; a gravação fica de fora da coleção "membros",
-    // que tem a regra própria acima.
+    // que tem a regra própria acima. [v4.8] Também fica de fora a coleção "cidades":
+    // antes, este curinga liberava a gravação e a regra "write: if false" abaixo não valia.
     match /empresas/{empresaId}/{tipoColecao}/{docId} {
       allow read: if pertenceAEmpresa(empresaId);
-      allow write: if tipoColecao != 'membros' && pertenceAEmpresa(empresaId);
+      allow write: if tipoColecao != 'membros' && tipoColecao != 'cidades' && pertenceAEmpresa(empresaId);
     }
     match /empresas/{empresaId}/cidades/{codigoIBGE} {
       allow read: if pertenceAEmpresa(empresaId);

@@ -1,17 +1,17 @@
-Biblioteca Fênix v4.6
+Biblioteca Fênix v4.8
 
-Raiz do repositório: index.html (Painel), fenix-core.js, versao.json (NOVO), fenix-template-login.html, fenix-template-onboarding.html, fenix-template-splash.html, firestore.rules
+Raiz do repositório: index.html (Painel), fenix-core.js, versao.json, fenix-template-login.html, fenix-template-onboarding.html, fenix-template-splash.html, firestore.rules
 Icon/   : Fenix_Icone_128.png (os demais ícones já estão no repositório)
 Termos/ : fenix-termos-de-uso.html, fenix-politica-de-privacidade.html (só a versão mudou; o texto é o da 4.4)
-MD/     : fenix-livro-das-regras.md, fenix-guia-da-biblioteca.md (guia e changelog da biblioteca)
-DOC/    : fenix-livro-das-regras.docx, fenix-guia-da-biblioteca.docx
+MD/     : fenix-livro-das-regras.md, fenix-resumo-do-livro.md (NOVO), fenix-guia-da-biblioteca.md (guia e changelog da biblioteca)
+DOC/    : fenix-livro-das-regras.docx, fenix-resumo-do-livro.docx (NOVO), fenix-guia-da-biblioteca.docx
+testes-regras/: (NOVO) testes das regras do Firestore, para rodar no SEU computador (veja o LEIAME.txt dentro da pasta). Não precisa subir para o GitHub Pages.
 versoes/: cópias com a versão no nome, só para controle interno (nenhum app aponta para elas). NUNCA suba esta pasta para a raiz do repositório.
 
-Novo na v4.6:
-- Selo de versões em todo app (regra 61): "v3.2 | c 4.6", onde v = versão do app e c = versão do core. Core: FenixCore.versoes (core, selo, montarSelo, verificar, comparar); a tela Sobre (sobre.montarTela) ganha as linhas Core em uso e Livro das Regras (seção 2.18 do guia).
-- versao.json (raiz, ao lado do fenix-core.js): versão publicada do core e do livro. Com internet, o selo dos apps o lê e mostra um ponto amarelo quando existe core mais novo (vermelho se o core for menor que o mínimo do app). Sem internet nada aparece. Atualize-o a cada pacote.
-- Painel: testa o versao.json e o selo; corrigida a conferência de versões (na 4.5 ele ainda comparava com a 4.4 e marcaria tudo como desatualizado).
-- Ficha: sem grupo novo; a regra 61 vale sempre.
-- firestore.rules: só mudou a versão no cabeçalho.
+Novo na v4.8:
+- Regras do Firestore: a gravação em empresas/{id}/cidades agora fica fechada de verdade (o curinga das coleções da empresa a liberava). O core grava cidades na raiz (cidades/...), então nenhum app é afetado. PUBLIQUE as regras novas (checklist da regra 46: testes, backup, Playground, publicar, abrir um app real).
+- testes-regras/: ganhou o teste dessa mudança. Continuam sem ter sido executados por mim (o emulador não baixa no meu ambiente): rode "npm install" e "npm test" no seu computador antes de publicar e me mande a saída se algo falhar.
+- Core: só a versão sobe (c 4.8). Guia: checklist de publicação alinhado ao da regra 46.
+- Da v4.7 continuam: Resumo do livro, Teste de aparelho no Painel e a varredura de versões em Como entregar.
 
-Ordem para publicar: 1) core, versao.json e templates no GitHub; 2) Painel: "Testar tudo" e "Rodar testes ao vivo" (nenhum item em amarelo); 3) as regras do Firestore só precisam ser republicadas se você ainda não publicou as da 4.5.
+Ordem para publicar: 1) core, versao.json, Painel e templates no GitHub (e MD/ e DOC/ com o Resumo); 2) Painel: "Testar tudo" e "Rodar testes ao vivo" (nenhum item em amarelo); 3) as regras do Firestore, pelo checklist da regra 46; 4) no celular, abra o Painel e use o "Teste de aparelho".

@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v4.6
+ * FÊNIX CORE v4.8
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -284,6 +284,12 @@
         a mesma consulta, sem desenhar nada. Sem internet não mostra aviso
         nem erro. FenixCore.sobre.montarTela ganha as linhas Core e Livro e o
         selo (opções livro e coreMinimo). Só acréscimos.
+ * v4.7 — Só a versão sobe (a biblioteca anda nivelada, regra 7). Nenhuma função
+        foi criada, alterada ou removida; o Painel ganhou o Teste de aparelho,
+        o livro ganhou o Resumo e as regras do Firestore ganharam testes.
+ * v4.8 — Só a versão sobe (a biblioteca anda nivelada, regra 7). Nenhuma função
+        foi criada, alterada ou removida; as regras do Firestore fecharam a
+        gravação em empresas/{id}/cidades (o core grava cidades em cidades/…).
  * ============================================================================
  */
 
@@ -2955,7 +2961,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "4.6";
+const _CORE_VERSAO = "4.8";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas

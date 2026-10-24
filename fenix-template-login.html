@@ -16,7 +16,7 @@
   <style>
     /* =============================================================
        FÊNIX — MÓDULO DE ACESSO (login / cadastro / recuperar senha)
-       Template v4.6 — usa SOMENTE a paleta oficial Fênix.
+       Template v4.8 — usa SOMENTE a paleta oficial Fênix.
        Fonte: do sistema (sem Google Fonts, funciona offline).
     ============================================================= */
     :root {
@@ -422,7 +422,7 @@
   <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a>
   |
   <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a>
-  · v4.6
+  · v4.8
 </footer>
 
 <script>
@@ -572,7 +572,7 @@ function mostrarGoogle(sim) { $('google-area').hidden = !sim; }
    $('som-chk').addEventListener('change', function () { FenixCore.som.definir(this.checked); });
    // depois do login com sucesso (dentro do clique): FenixCore.som.tocarAbertura(); */
 $('som-chk').addEventListener('change', function () { try { localStorage.setItem('fenix_som', this.checked ? 'on' : 'off'); } catch (e) {} });
-/* Selo de versões (regra 61): FenixCore.versoes.montarSelo('#fx-selo', VERSAO_APP, { coreMinimo: '4.6', livro: '4.6' }) mostra "v3.2 | c 4.6" ao lado da versão do app. */
+/* Selo de versões (regra 61): FenixCore.versoes.montarSelo('#fx-selo', VERSAO_APP, { coreMinimo: '4.8', livro: '4.8' }) mostra "v3.2 | c 4.6" ao lado da versão do app. */
 /* Tema, animações e som também ficam na tela Sobre / menu do avatar do app: FenixCore.preferencias.montarTela(container) (regra 60). */
 try { $('som-chk').checked = localStorage.getItem('fenix_som') !== 'off'; } catch (e) {}
 
