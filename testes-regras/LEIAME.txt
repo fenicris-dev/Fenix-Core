@@ -1,0 +1,16 @@
+Testes das regras do Firestore (biblioteca Fênix v4.8)
+
+Para que serve: conferir, no seu computador, se o firestore.rules faz o que o livro promete (regras 46 e 58), ANTES de publicar no console. Não toca no banco real: usa o emulador local (projeto "demo-fenix").
+
+Precisa de: Node.js 18 ou mais novo e Java 11 ou mais novo (o emulador do Firestore usa Java).
+
+Como rodar (dentro desta pasta, no terminal):
+  npm install       (só na primeira vez)
+  npm test
+
+O resultado mostra uma linha por teste: ✔ passou, ✖ falhou. Se algum falhar, NÃO publique as regras: me mande a saída do terminal.
+
+Observações:
+- Este conjunto cobre as coleções da biblioteca (empresas, licencas, pessoas, usuarios_empresa, convites, membros, coleções da empresa, admins, perfis, dados_pessoais e cidades). Coleções próprias de um app que não estejam no firestore.rules não são testadas aqui.
+- Passar nos testes não substitui o Playground do console: o roteiro da regra 46 continua valendo (backup das regras atuais, Playground, publicar, abrir um app real).
+- A pasta fica ao lado do firestore.rules (lê ../firestore.rules). Não precisa subir para o GitHub Pages.
