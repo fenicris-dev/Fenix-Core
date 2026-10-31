@@ -1,0 +1,11 @@
+Teste de fumaça dos apps Fênix (regra 68, biblioteca v5.1)
+
+Para que serve: conferir, antes de entregar um app, o básico que não pode quebrar: abre sem erro de JavaScript, sem rolagem horizontal em 360 px e em tela maior, toques de 44 px, campos com rótulo, imagens com alt, roteiro de criar/editar/apagar um registro, texto digitado que não vira código (regra 64) e abertura sem internet.
+
+Como usar:
+1) Copie fumaca-modelo.mjs para a pasta do app.
+2) No bloco CONFIG, preencha o roteiro (clicar, digitar, existe, naoExiste, texto) com os botões e campos do app.
+3) npm install playwright (uma vez) e depois: node fumaca-modelo.mjs fenix-nome-do-app-vX.X.html
+4) FALHA impede a entrega; AVISO é combinado comigo. Informe o resultado na entrega.
+
+Roda no seu computador (Node 18 ou mais novo). Não toca no banco real. Não vai para o GitHub Pages.
