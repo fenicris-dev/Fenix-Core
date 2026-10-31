@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v4.8
+ * FÊNIX CORE v5.1
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -290,6 +290,30 @@
  * v4.8 — Só a versão sobe (a biblioteca anda nivelada, regra 7). Nenhuma função
         foi criada, alterada ou removida; as regras do Firestore fecharam a
         gravação em empresas/{id}/cidades (o core grava cidades em cidades/…).
+ * v4.9 — NOVO (regras 62 e 63): teste de 15 dias, licença e somente leitura, e
+        administração. (1) FenixCore.licenca ganha acesso(dados) (teste, ativa
+        ou somente-leitura), carregar(db, uid), definirAcesso, acessoAtual,
+        podeGravar, exigirGravacao, mensagem, montarAviso, acessoLocal e
+        ativarLocal; o novo campo testeInicio da empresa marca o começo dos 15
+        dias e criarEmpresa o grava. Os módulos de gravação do core (sincronia,
+        dados pessoais, appData, catálogos, pessoas) recusam gravar quando o
+        acesso é somente-leitura (só depois de licenca.carregar/definirAcesso;
+        sem isso nada muda). (2) FenixCore.admin: níveis (admin, comercial,
+        suporte), meuNivel, equipe (equipe_fenix/{e-mail}) e clientes (listar,
+        definirLicenca, prorrogarTeste, reiniciarTeste, carimbarSemInicio),
+        usados pela página fenix-admin.html. Só acréscimos.
+ * v5.0 — NOVO (regras 64 e 65): (1) FenixCore.seguranca (escaparHTML, html``,
+        bruto, urlSegura) para texto de usuário na tela sem injetar código;
+        (2) FenixCore.esquema (versao, migrar) para a versão do formato dos dados
+        no aparelho, com cópia de segurança antes de migrar. Só acréscimos.
+ * v5.1 — NOVO (regra 62, aviso automático): apps com login pelo
+        criarModuloAuth, mesmo antigos e sem nenhuma alteração, passam a ter
+        sozinhos (1) a leitura do acesso (licenca.carregar) depois do login,
+        com a trava de gravação do core, e (2) uma faixa fixa no rodapé: amarela
+        durante o teste de 15 dias (pode ser fechada na sessão) e vermelha, sem
+        fechar, em somente leitura, com o botão de WhatsApp. O app que chama
+        licenca.montarAviso() assume o aviso e a faixa automática some.
+        licenca.automatico(false) desliga tudo isso. Só acréscimos.
  * ============================================================================
  */
 
@@ -334,6 +358,15 @@ const EMPRESA = Object.freeze({
 
 let _db = null;
 let _nomeAppChamador = "app-desconhecido"; // cada app deve se identificar no init()
+let _acessoAtual = null; // v4.9: resultado de licenca.acesso() do usuário logado (null = sem trava no cliente)
+function _barrarGravacao() {
+  if (_acessoAtual && _acessoAtual.podeGravar === false) {
+    const e = new Error(licenca.mensagem(_acessoAtual));
+    e.codigo = "FENIX_SOMENTE_LEITURA";
+    return Promise.reject(e);
+  }
+  return null;
+}
 const _NOME_APP_FIREBASE = "fenix-core-connection";
 
 function _obterAppFirebase(config) {
@@ -549,6 +582,7 @@ const pessoas = {
    * @param {object} dados - { cpf, nome, telefone, email, endereco: {cep, logradouro, numero, complemento, bairro, cidade, uf} }
    */
   async salvarFisica(dados) {
+    { const b = _barrarGravacao(); if (b) return b; }
     _garantirInit();
     const cpf = limparDocumento(dados.cpf);
     if (!validarCPF(cpf)) throw new Error("CPF inválido: " + dados.cpf);
@@ -615,6 +649,7 @@ const pessoas = {
    * @param {object} dados - { cnpj, razaoSocial, nomeFantasia, telefone, email, endereco: {...} }
    */
   async salvarJuridica(dados) {
+    { const b = _barrarGravacao(); if (b) return b; }
     _garantirInit();
     const cnpj = limparDocumento(dados.cnpj);
     if (!validarCNPJ(cnpj)) throw new Error("CNPJ inválido: " + dados.cnpj);
@@ -844,7 +879,10 @@ function criarModuloAuth(app) {
   const auth = getAuth(app);
   return {
     aoMudarEstado(callback) {
-      return onAuthStateChanged(auth, callback);
+      return onAuthStateChanged(auth, (u, ...resto) => {
+        try { licenca._autoUsuario(u); } catch (e) { /* o aviso automático nunca derruba o app */ }
+        return callback(u, ...resto);
+      });
     },
     entrar(email, senha) {
       return signInWithEmailAndPassword(auth, email, senha).then(cred => cred.user);
@@ -920,7 +958,7 @@ function criarModuloEmpresas(db) {
   return {
     criarEmpresa(uid, email, nome) {
       const ref = doc(collection(db, "empresas"));
-      const empresa = { nome, donoUid: uid, donoEmail: email, criadoEm: serverTimestamp() };
+      const empresa = { nome, donoUid: uid, donoEmail: email, criadoEm: serverTimestamp(), testeInicio: serverTimestamp() };
       return setDoc(ref, empresa).then(() =>
         setDoc(doc(db, "empresas", ref.id, "membros", uid), { email, papel: "dono", status: "aprovado", criadoEm: serverTimestamp() })
       ).then(() =>
@@ -1016,6 +1054,7 @@ function criarModuloEquipe(db) {
 function criarModuloAppData(db, empresaId, nomeApp) {
   return {
     salvar(chave, arr) {
+      if (_acessoAtual && _acessoAtual.podeGravar === false) return Promise.resolve(false);
       return setDoc(doc(db, "empresas", empresaId, "appData", nomeApp + "_" + chave), {
         dados: arr, atualizadoEm: serverTimestamp()
       }).then(() => true).catch(() => false);
@@ -1043,6 +1082,7 @@ function _criarModuloCatalogoEmpresa(db, empresaId, nomeColecao, campoChave) {
         .then(snap => snap.docs.map(d => ({ id: d.id, ...d.data() })));
     },
     salvar(obj) {
+      { const b = _barrarGravacao(); if (b) return b; }
       const chave = obj[campoChave] || obj.id;
       if (!chave) return Promise.reject(new Error(nomeColecao + ": faltou o campo '" + campoChave + "' pra identificar o registro."));
       return setDoc(doc(db, "empresas", empresaId, nomeColecao, String(chave)), {
@@ -1050,6 +1090,7 @@ function _criarModuloCatalogoEmpresa(db, empresaId, nomeColecao, campoChave) {
       }, { merge: true }).then(() => true);
     },
     excluir(chave) {
+      { const b = _barrarGravacao(); if (b) return b; }
       if (!chave) return Promise.reject(new Error(nomeColecao + ": faltou a chave pra excluir o registro."));
       return deleteDoc(doc(db, "empresas", empresaId, nomeColecao, String(chave)));
     }
@@ -1089,16 +1130,19 @@ function criarModuloPessoas(db, empresaId) {
         .then(snap => snap.docs.map(d => ({ id: d.id, ...d.data() })));
     },
     salvar(obj) {
+      { const b = _barrarGravacao(); if (b) return b; }
       if (!obj.id) return Promise.reject(new Error("pessoas: registro sem id."));
       return setDoc(doc(db, "empresas", empresaId, "pessoas", obj.id), {
         ...obj, atualizadoEm: serverTimestamp()
       }, { merge: true }).then(() => true);
     },
     arquivar(obj, arquivado) {
+      { const b = _barrarGravacao(); if (b) return b; }
       if (!obj.id) return Promise.reject(new Error("pessoas: registro sem id."));
       return updateDoc(doc(db, "empresas", empresaId, "pessoas", obj.id), { arquivado: !!arquivado });
     },
     excluir(obj) {
+      { const b = _barrarGravacao(); if (b) return b; }
       if (!obj.id) return Promise.reject(new Error("pessoas: registro sem id."));
       return deleteDoc(doc(db, "empresas", empresaId, "pessoas", obj.id));
     }
@@ -1418,6 +1462,15 @@ function _injetarEstilos() {
     ".fx-selo-msg{font-size:13px;margin:6px 0 0;padding:8px 10px;border-radius:8px;background:#eef1fa;color:#020733;border-left:4px solid #0076CE}",
     ".fx-selo-msg.fx-amarelo{background:#fffbe6;border-left-color:#ffcb00}",
     ".fx-selo-msg.fx-vermelho{background:#fdecec;border-left-color:#c62828}",
+    ".fx-aviso-lic{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:14px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:#fffbe6;color:#020733;border-left:5px solid #ffcb00}",
+    ".fx-aviso-auto{position:fixed;left:0;right:0;bottom:0;z-index:2147483000;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fffbe6;color:#020733;border-top:4px solid #ffcb00;box-shadow:0 -2px 10px rgba(2,7,51,.18)}",
+    ".fx-aviso-auto.fx-vermelho{background:#fdecec;border-top-color:#c62828}",
+    ".fx-aviso-auto span{flex:1 1 220px}",
+    ".fx-aviso-auto a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border-radius:8px;background:#0076CE;color:#fff;font-weight:600;text-decoration:none}",
+    ".fx-aviso-auto button{min-width:44px;min-height:44px;border:0;border-radius:8px;background:transparent;color:#020733;font-size:24px;cursor:pointer}",
+    ".fx-aviso-lic.fx-vermelho{background:#fdecec;border-left-color:#c62828}",
+    ".fx-aviso-lic a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:8px;background:#0076CE;color:#fff;font-weight:600;text-decoration:none}",
+    ".fx-aviso-lic a:hover,.fx-aviso-lic a:focus-visible{background:#ffcb00;color:#020733;outline:none}",
     ".fx-manual{color:#020733;line-height:1.5}",
     ".fx-manual h1,.fx-manual h2,.fx-manual h3{color:#041273;margin:1.2em 0 .4em}",
     ".fx-manual img{max-width:100%;height:auto;border:1px solid #d9deef;border-radius:8px;margin:8px 0}",
@@ -2359,12 +2412,14 @@ function criarModuloDadosPessoais(db, uid, nomeApp) {
   const ref = chave => doc(db, "dados_pessoais", uid, nomeApp, String(chave));
   return {
     salvar(chave, dados) {
+      { const b = _barrarGravacao(); if (b) return b; }
       return setDoc(ref(chave), { dados: _limparParaFirestore(dados), ts: Date.now(), atualizadoEm: serverTimestamp() }).then(() => true);
     },
     carregar(chave) {
       return getDoc(ref(chave)).then(snap => snap.exists() ? snap.data().dados : null);
     },
     excluir(chave) {
+      { const b = _barrarGravacao(); if (b) return b; }
       return deleteDoc(ref(chave)).then(() => true);
     },
     listar() {
@@ -2514,6 +2569,7 @@ function criarSincronia(db, opcoes) {
       if (typeof window !== "undefined" && window.removeEventListener) window.removeEventListener("online", aoVoltar);
     },
     salvar(reg) {
+      { const b = _barrarGravacao(); if (b) return b; }
       const id = reg && reg[campoId];
       if (id == null || id === "") return Promise.reject(new Error("criarSincronia.salvar: o registro precisa do campo '" + campoId + "'."));
       const arr = itens().filter(x => String(x[campoId]) !== String(id)); arr.push(reg);
@@ -2528,6 +2584,7 @@ function criarSincronia(db, opcoes) {
      * quantidade importada. Registros sem id são ignorados.
      */
     importarLista(lista) {
+      { const b = _barrarGravacao(); if (b) return b; }
       const mapa = new Map();
       (lista || []).forEach(r => { if (r && r[campoId] != null && r[campoId] !== "") mapa.set(String(r[campoId]), r); });
       if (!mapa.size) return Promise.resolve(0);
@@ -2539,6 +2596,7 @@ function criarSincronia(db, opcoes) {
       return enviar().then(() => mapa.size);
     },
     excluir(id) {
+      { const b = _barrarGravacao(); if (b) return b; }
       const arr = itens().filter(x => String(x[campoId]) !== String(id));
       o.gravarLocal(arr);
       meta[String(id)] = { ts: proximoTs(String(id)), apagado: true }; pend[String(id)] = true; salvarEstado();
@@ -2844,12 +2902,14 @@ function criarModuloSincronia(db, uid, nomeApp) {
 
     /** Grava (substitui) um documento; obj.id é obrigatório. */
     salvar(nome, obj) {
+      { const b = _barrarGravacao(); if (b) return b; }
       if (!obj || obj.id == null) return Promise.reject(new Error(nome + ": registro sem id."));
       return setDoc(ref(nome, obj.id), comMarca(obj));
     },
 
     /** Grava vários documentos (em lotes de 400). */
     async salvarVarios(nome, lista) {
+      { const b = _barrarGravacao(); if (b) return b; }
       for (let i = 0; i < lista.length; i += 400) {
         const lote = writeBatch(db);
         lista.slice(i, i + 400).forEach(o => {
@@ -2862,12 +2922,14 @@ function criarModuloSincronia(db, uid, nomeApp) {
     },
 
     excluir(nome, id) {
+      { const b = _barrarGravacao(); if (b) return b; }
       if (id == null) return Promise.reject(new Error(nome + ": faltou o id para excluir."));
       return deleteDoc(ref(nome, id));
     },
 
     /** Apaga TODOS os documentos do usuário nas coleções informadas (ex.: ["dias","regs"]). */
     async apagarTudo(colecoes) {
+      { const b = _barrarGravacao(); if (b) return b; }
       for (const nome of colecoes) {
         const snap = await getDocs(col(nome));
         const docs = snap.docs;
@@ -2961,7 +3023,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "4.8";
+const _CORE_VERSAO = "5.1";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas
@@ -3084,6 +3146,423 @@ const versoes = {
 };
 
 // ============================================================================
+// 23. TESTE DE 15 DIAS, LICENÇA E SOMENTE LEITURA (v4.9, regra 62)
+// ============================================================================
+/**
+ * Como funciona (resumo; o detalhe está no Guia, seção 2.19):
+ *  - O cliente usa tudo por 15 dias a partir do início do teste: o campo
+ *    empresas/{id}.testeInicio (gravado pelo servidor quando a empresa é criada,
+ *    ou carimbado pelo administrador nas empresas que já existiam).
+ *  - Depois disso, só com licença: licenca = "tempo" (com licencaAte) ou
+ *    "definitiva". Sem licença, o acesso vira SOMENTE LEITURA: não cria, não
+ *    edita e não apaga; continua vendo os registros e exportando o backup.
+ *  - O app chama FenixCore.licenca.carregar(db, uid) depois do login e mostra
+ *    o aviso com montarAviso(). As regras do Firestore são a trava de verdade;
+ *    a do cliente evita o erro feio e só vale depois de carregar/definirAcesso.
+ */
+const _DIAS_TESTE = 15;
+const _WHATS_VENDAS = "5579999680880";
+let _avisoAutoLigado = true; // v5.1: aviso e leitura automáticos depois do login
+let _avisoManual = false;    // v5.1: o app chamou montarAviso e cuida do aviso
+const _chaveAcessoLocal = (app) => "fenix_teste_inicio_" + String(app || "app");
+const _chaveLicencaLocal = (app) => "fenix_licenca_local_" + String(app || "app");
+const _chaveAcessoCache = (uid) => "fenix_acesso_" + String(uid || "");
+
+function _paraData(v) {
+  if (!v) return null;
+  if (typeof v.toDate === "function") return v.toDate();
+  if (typeof v.seconds === "number") return new Date(v.seconds * 1000);
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+  if (typeof v === "number") return new Date(v);
+  const d = new Date(String(v));
+  return isNaN(d.getTime()) ? null : d;
+}
+function _ddmmaaaa(d) {
+  const p = n => String(n).padStart(2, "0");
+  return p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear();
+}
+
+Object.assign(licenca, {
+  /** Dias do teste gratuito. */
+  DIAS_TESTE: _DIAS_TESTE,
+  /** WhatsApp de vendas (só números, com 55). */
+  WHATSAPP: _WHATS_VENDAS,
+
+  /**
+   * Situação de acesso de uma empresa (ou do espelho licencas/{hash}).
+   * @returns {{tipo:string, modo:"teste"|"ativa"|"somente-leitura", podeGravar:boolean, dias:(number|null), fim:(Date|null), motivo:string}}
+   *   modo "teste": dentro dos 15 dias (dias = quantos faltam, contando o dia de hoje);
+   *   modo "ativa": licença por tempo ou definitiva em dia;
+   *   modo "somente-leitura": teste encerrado ou licença vencida (motivo: teste-encerrado | licenca-vencida | licenca-sem-prazo).
+   *   Empresa sem testeInicio (criada antes da v4.9, ainda não carimbada) fica liberada (motivo "teste-sem-inicio").
+   */
+  acesso(dados, agora) {
+    const hoje = agora || new Date();
+    const d = dados && typeof dados === "object" ? dados : {};
+    const t = String(d.licenca || "").trim().toLowerCase();
+    const ate = licenca.dataLimite(d);
+    if (t === "definitiva" || t === "tempo") {
+      if (ate && ate.getTime() < hoje.getTime())
+        return { tipo: t, modo: "somente-leitura", podeGravar: false, dias: 0, fim: ate, motivo: "licenca-vencida" };
+      if (t === "tempo" && !ate)
+        return { tipo: t, modo: "somente-leitura", podeGravar: false, dias: 0, fim: null, motivo: "licenca-sem-prazo" };
+      return { tipo: t, modo: "ativa", podeGravar: true, dias: ate ? Math.ceil((ate.getTime() - hoje.getTime()) / _MS_DIA) : null, fim: ate, motivo: "" };
+    }
+    const ini = _paraData(d.testeInicio);
+    if (!ini) return { tipo: "teste", modo: "teste", podeGravar: true, dias: null, fim: null, motivo: "teste-sem-inicio" };
+    const fim = new Date(ini.getTime() + _DIAS_TESTE * _MS_DIA);
+    if (hoje.getTime() >= fim.getTime())
+      return { tipo: "teste", modo: "somente-leitura", podeGravar: false, dias: 0, fim, motivo: "teste-encerrado" };
+    return { tipo: "teste", modo: "teste", podeGravar: true, dias: Math.ceil((fim.getTime() - hoje.getTime()) / _MS_DIA), fim, motivo: "" };
+  },
+
+  /** Texto único para o usuário (português claro). Vazio quando a licença está em dia. */
+  mensagem(a) {
+    if (!a) return "";
+    if (a.modo === "teste" && a.dias != null)
+      return "Teste gratuito: " + (a.dias === 1 ? "resta 1 dia" : "restam " + a.dias + " dias") + " (até " + _ddmmaaaa(a.fim) + ").";
+    if (a.modo === "somente-leitura")
+      return (a.motivo === "licenca-vencida" || a.motivo === "licenca-sem-prazo" ? "Sua licença venceu." : "Seu período de teste terminou.")
+        + " Você pode consultar os registros e exportar o backup. Para voltar a criar, editar e apagar, adquira uma licença.";
+    return "";
+  },
+
+  /**
+   * Lê o vínculo do usuário e a empresa, calcula o acesso e o guarda para os
+   * módulos de gravação do core. Chame depois do login. Sem vínculo, ou sem
+   * conseguir ler (offline sem cache), usa a última situação guardada no
+   * aparelho; sem nada guardado, não trava.
+   */
+  async carregar(db, uid) {
+    let a = null;
+    try {
+      const v = await getDoc(doc(db, "usuarios_empresa", uid));
+      if (v.exists() && v.data().empresaId) {
+        const e = await getDoc(doc(db, "empresas", v.data().empresaId));
+        a = { ...licenca.acesso(e.exists() ? e.data() : {}), empresaId: v.data().empresaId };
+        try { localStorage.setItem(_chaveAcessoCache(uid), JSON.stringify({ modo: a.modo, tipo: a.tipo, podeGravar: a.podeGravar, dias: a.dias, fimMs: a.fim ? a.fim.getTime() : null, motivo: a.motivo, empresaId: a.empresaId })); } catch (x) { /* ok */ }
+      } else if (v.exists() === false) {
+        a = { tipo: "teste", modo: "ativa", podeGravar: true, dias: null, fim: null, motivo: "sem-empresa", empresaId: null };
+      }
+    } catch (err) {
+      try {
+        const c = JSON.parse(localStorage.getItem(_chaveAcessoCache(uid)) || "null");
+        if (c) a = { tipo: c.tipo, modo: c.modo, podeGravar: !!c.podeGravar, dias: c.dias, fim: c.fimMs ? new Date(c.fimMs) : null, motivo: c.motivo, empresaId: c.empresaId };
+      } catch (x) { /* ok */ }
+    }
+    if (!a) a = { tipo: "teste", modo: "ativa", podeGravar: true, dias: null, fim: null, motivo: "sem-leitura", empresaId: null };
+    _acessoAtual = a;
+    return a;
+  },
+
+  /**
+   * v5.1: liga (padrão) ou desliga o aviso e a leitura automáticos do acesso depois do login.
+   * Só desligue em app que cuida disso sozinho e não usa criarModuloAuth.
+   */
+  automatico(ligado) { _avisoAutoLigado = ligado !== false; if (!_avisoAutoLigado) licenca._removerAvisoAuto(); return _avisoAutoLigado; },
+  /** Interno: chamado pelo criarModuloAuth a cada mudança de login. */
+  _autoUsuario(u) {
+    if (!_avisoAutoLigado || typeof document === "undefined") return;
+    if (!u) { licenca._removerAvisoAuto(); return; }
+    if (!_db) return;
+    licenca.carregar(_db, u.uid).then((a) => { if (!_avisoManual) licenca._avisoAuto(a); }).catch(() => {});
+  },
+  _removerAvisoAuto() {
+    if (typeof document === "undefined") return;
+    document.querySelectorAll("[data-fx-aviso-auto],[data-fx-aviso-auto-espaco]").forEach((n) => n.remove());
+  },
+  _avisoAuto(a) {
+    licenca._removerAvisoAuto();
+    if (!a || a.podeGravar === undefined || !document.body) return;
+    const msg = licenca.mensagem(a);
+    if (!msg) return;
+    const leitura = a.modo === "somente-leitura";
+    try { if (!leitura && sessionStorage.getItem("fx_aviso_auto_fechado") === "1") return; } catch (e) { /* ok */ }
+    _injetarEstilos();
+    const link = "https://wa.me/" + _WHATS_VENDAS + "?text=" + encodeURIComponent("Olá! Gostaria de adquirir uma licença.");
+    const box = document.createElement("div");
+    box.className = "fx-aviso-auto" + (leitura ? " fx-vermelho" : "");
+    box.setAttribute("role", "status");
+    box.setAttribute("data-fx-aviso-auto", a.modo);
+    box.innerHTML = "<span>" + _esc(msg) + '</span><a href="' + _esc(link) + '" target="_blank" rel="noopener">Falar no WhatsApp</a>' + (leitura ? "" : '<button type="button" aria-label="Fechar aviso">×</button>');
+    const espaco = document.createElement("div");
+    espaco.setAttribute("data-fx-aviso-auto-espaco", "1");
+    document.body.appendChild(espaco);
+    document.body.appendChild(box);
+    espaco.style.height = box.offsetHeight + "px";
+    const fechar = box.querySelector("button");
+    if (fechar) fechar.addEventListener("click", () => { try { sessionStorage.setItem("fx_aviso_auto_fechado", "1"); } catch (e) { /* ok */ } licenca._removerAvisoAuto(); });
+  },
+
+  /** Define o acesso à mão (apps sem login: use com acessoLocal). */
+  definirAcesso(a) { _acessoAtual = a || null; return _acessoAtual; },
+  /** Último acesso definido ou carregado (null = sem trava no cliente). */
+  acessoAtual() { return _acessoAtual; },
+  /** true se o acesso atual permite criar, editar e apagar. */
+  podeGravar() { return !_acessoAtual || _acessoAtual.podeGravar !== false; },
+  /** Lança erro (codigo FENIX_SOMENTE_LEITURA) se o acesso for somente leitura. Use antes de gravar. */
+  exigirGravacao() {
+    if (!licenca.podeGravar()) {
+      const e = new Error(licenca.mensagem(_acessoAtual));
+      e.codigo = "FENIX_SOMENTE_LEITURA";
+      throw e;
+    }
+    return true;
+  },
+
+  /**
+   * Desenha o aviso no container: amarelo durante o teste, vermelho em somente
+   * leitura, com o botão "Falar no WhatsApp". Não desenha nada com licença em dia.
+   * @param {Element|string} container
+   * @param {object} a - resultado de acesso()/carregar()
+   * @param {object} [opcoes] - { whatsapp, textoBotao }
+   */
+  montarAviso(container, a, opcoes = {}) {
+    const alvo = _resolverContainer(container);
+    if (!alvo) throw new Error("licenca.montarAviso: container não encontrado.");
+    _avisoManual = true; licenca._removerAvisoAuto();
+    _injetarEstilos();
+    alvo.innerHTML = "";
+    const msg = licenca.mensagem(a);
+    if (!msg) return a;
+    const nome = opcoes.nomeApp ? " Gostaria de adquirir a licença do " + opcoes.nomeApp + "." : " Gostaria de adquirir uma licença.";
+    const link = "https://wa.me/" + (opcoes.whatsapp || _WHATS_VENDAS) + "?text=" + encodeURIComponent("Olá!" + nome);
+    const box = document.createElement("div");
+    box.className = "fx-aviso-lic" + (a.modo === "somente-leitura" ? " fx-vermelho" : "");
+    box.setAttribute("role", "status");
+    box.setAttribute("data-fx-aviso-licenca", a.modo);
+    box.innerHTML = "<span>" + _esc(msg) + '</span><a href="' + _esc(link) + '" target="_blank" rel="noopener">' + _esc(opcoes.textoBotao || "Falar no WhatsApp") + "</a>";
+    alvo.appendChild(box);
+    return a;
+  },
+
+  /**
+   * Para app SEM login e sem banco: conta os 15 dias a partir da primeira
+   * abertura NESTE aparelho (limpar os dados do navegador reinicia a contagem;
+   * só app com banco trava de verdade). Se o aparelho tem licença ativada
+   * (ativarLocal), vale a licença.
+   */
+  acessoLocal(nomeApp, agora) {
+    const hoje = agora || new Date();
+    let lic = null;
+    try { lic = JSON.parse(localStorage.getItem(_chaveLicencaLocal(nomeApp)) || "null"); } catch (e) { lic = null; }
+    if (lic) {
+      const a = licenca.acesso({ licenca: lic.licenca, licencaAte: lic.licencaAte }, hoje);
+      if (a.modo === "ativa") return a;
+    }
+    let ini = null;
+    try { ini = localStorage.getItem(_chaveAcessoLocal(nomeApp)); } catch (e) { ini = null; }
+    if (!ini) { ini = hoje.toISOString(); try { localStorage.setItem(_chaveAcessoLocal(nomeApp), ini); } catch (e) { /* ok */ } }
+    return licenca.acesso({ licenca: "teste", testeInicio: ini }, hoje);
+  },
+
+  /**
+   * App sem login: o cliente digita o e-mail da compra; se o espelho
+   * licencas/{hash} tem licença em dia, ela fica guardada neste aparelho.
+   * Devolve o acesso resultante. (O espelho é consultável por quem souber o
+   * e-mail: é uma trava leve, própria de app sem login.)
+   */
+  async ativarLocal(db, nomeApp, email) {
+    const snap = await getDoc(doc(db, "licencas", await licenca.hashEmail(email)));
+    const dados = snap.exists() ? snap.data() : null;
+    const a = licenca.acesso(dados || { licenca: "teste" });
+    if (dados && a.modo === "ativa") {
+      const ate = licenca.dataLimite(dados);
+      try { localStorage.setItem(_chaveLicencaLocal(nomeApp), JSON.stringify({ licenca: dados.licenca, licencaAte: ate ? ate.toISOString() : null })); } catch (e) { /* ok */ }
+    }
+    return a;
+  }
+});
+
+// ============================================================================
+// 24. ADMINISTRAÇÃO: EQUIPE FÊNIX E CLIENTES (v4.9, regra 63)
+// ============================================================================
+/**
+ * Usado pela página fenix-admin.html. A segurança é das regras do Firestore:
+ * aqui só ficam as chamadas. Níveis:
+ *   admin     tudo, inclusive gerir a equipe;
+ *   comercial concede, prorroga e revoga licenças;
+ *   suporte   só consulta clientes.
+ * Administradores raiz (não dependem do banco, nunca ficam trancados para fora):
+ * os e-mails de EMAILS_RAIZ, desde que verificados pelo Google.
+ * Equipe no banco: equipe_fenix/{e-mail em minúsculas} = { email, nome, nivel, ativo }.
+ */
+const _ADMIN_RAIZ = ["fenicris@gmail.com", "fenicris.dev@gmail.com"];
+const _NIVEIS = { admin: "Administrador", comercial: "Comercial", suporte: "Suporte" };
+const _emailMin = (e) => String(e || "").trim().toLowerCase();
+
+const admin = {
+  EMAILS_RAIZ: Object.freeze(_ADMIN_RAIZ.slice()),
+  NIVEIS: Object.freeze({ ..._NIVEIS }),
+
+  /** true se o usuário (objeto do Firebase Auth) é administrador raiz. */
+  ehRaiz(usuario) {
+    return !!usuario && usuario.emailVerified === true && _ADMIN_RAIZ.includes(_emailMin(usuario.email));
+  },
+  /** Nível do usuário: "admin" | "comercial" | "suporte" | null (sem acesso). */
+  async meuNivel(db, usuario) {
+    if (!usuario || !usuario.email || usuario.emailVerified !== true) return null;
+    if (admin.ehRaiz(usuario)) return "admin";
+    const snap = await getDoc(doc(db, "equipe_fenix", _emailMin(usuario.email)));
+    const d = snap.exists() ? snap.data() : null;
+    return d && d.ativo === true && _NIVEIS[d.nivel] ? d.nivel : null;
+  },
+  /** O nível pode a ação? ações: "ver" (suporte+), "licenca" (comercial+), "equipe" (admin). */
+  pode(nivel, acao) {
+    const ordem = { suporte: 1, comercial: 2, admin: 3 };
+    const exige = { ver: 1, licenca: 2, equipe: 3 }[acao];
+    return !!exige && (ordem[nivel] || 0) >= exige;
+  },
+
+  equipe: {
+    async listar(db) {
+      const snaps = await getDocs(collection(db, "equipe_fenix"));
+      return snaps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.nome || a.email).localeCompare(String(b.nome || b.email)));
+    },
+    /** Cria ou atualiza um colaborador: { email, nome, nivel, ativo }. */
+    salvar(db, m) {
+      const email = _emailMin(m && m.email);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return Promise.reject(new Error("Informe um e-mail válido."));
+      if (!_NIVEIS[m.nivel]) return Promise.reject(new Error("Escolha o nível: administrador, comercial ou suporte."));
+      return setDoc(doc(db, "equipe_fenix", email), {
+        email, nome: String(m.nome || "").trim(), nivel: m.nivel, ativo: m.ativo !== false, atualizadoEm: serverTimestamp()
+      }, { merge: true }).then(() => true);
+    },
+    excluir(db, email) { return deleteDoc(doc(db, "equipe_fenix", _emailMin(email))).then(() => true); }
+  },
+
+  clientes: {
+    /** Todas as empresas, com o acesso já calculado (campo `acesso`). */
+    async listar(db) {
+      const snaps = await getDocs(collection(db, "empresas"));
+      return snaps.docs.map(d => ({ id: d.id, ...d.data() }))
+        .map(e => ({ ...e, acesso: licenca.acesso(e) }))
+        .sort((a, b) => String(a.nome || "").localeCompare(String(b.nome || "")));
+    },
+    /**
+     * Define a licença: tipo "teste" | "tempo" | "definitiva"; `ate` (Date) é obrigatório em "tempo".
+     * Atualiza também o espelho licencas/{hash do e-mail do dono} (login Google, regra 58).
+     */
+    async definirLicenca(db, empresaId, { tipo, ate, obs, por }) {
+      if (!["teste", "tempo", "definitiva"].includes(tipo)) throw new Error("Tipo de licença inválido.");
+      if (tipo === "tempo" && !(ate instanceof Date && !isNaN(ate.getTime()))) throw new Error("Licença por tempo precisa de uma data de término.");
+      const ref = doc(db, "empresas", empresaId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) throw new Error("Empresa não encontrada.");
+      await updateDoc(ref, {
+        licenca: tipo, licencaAte: tipo === "tempo" ? ate : (ate || null),
+        licencaObs: String(obs || ""), licencaPor: _emailMin(por), licencaEm: serverTimestamp()
+      });
+      const dono = snap.data().donoEmail;
+      if (dono) {
+        const h = await licenca.hashEmail(dono);
+        if (tipo === "teste") await deleteDoc(doc(db, "licencas", h));
+        else await setDoc(doc(db, "licencas", h), { licenca: tipo, licencaAte: tipo === "tempo" ? ate : (ate || null), atualizadoEm: serverTimestamp() });
+      }
+      return true;
+    },
+    /** Soma `dias` ao teste (a partir do fim atual ou de hoje, o que for maior). */
+    async prorrogarTeste(db, empresaId, dias) {
+      const ref = doc(db, "empresas", empresaId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) throw new Error("Empresa não encontrada.");
+      const a = licenca.acesso(snap.data());
+      if (a.tipo !== "teste") throw new Error("Esta empresa não está em teste.");
+      const base = a.fim && a.fim.getTime() > Date.now() ? a.fim.getTime() : Date.now();
+      const novoFim = base + Number(dias) * _MS_DIA;
+      return updateDoc(ref, { testeInicio: new Date(novoFim - _DIAS_TESTE * _MS_DIA) }).then(() => true);
+    },
+    /** Recomeça os 15 dias a partir de agora. */
+    reiniciarTeste(db, empresaId) { return updateDoc(doc(db, "empresas", empresaId), { testeInicio: serverTimestamp() }).then(() => true); },
+    /**
+     * Carimba testeInicio (agora) nas empresas que ainda não têm e não são licenciadas.
+     * Rode UMA VEZ logo depois de publicar as regras da v4.9: é o "15 dias a partir da publicação".
+     * @returns {Promise<number>} quantas empresas foram carimbadas
+     */
+    async carimbarSemInicio(db) {
+      const snaps = await getDocs(collection(db, "empresas"));
+      const alvo = snaps.docs.filter(d => { const x = d.data(); const t = String(x.licenca || "").toLowerCase(); return !x.testeInicio && t !== "definitiva" && t !== "tempo"; });
+      for (let i = 0; i < alvo.length; i += 400) {
+        const lote = writeBatch(db);
+        alvo.slice(i, i + 400).forEach(d => lote.update(d.ref, { testeInicio: serverTimestamp() }));
+        await lote.commit();
+      }
+      return alvo.length;
+    }
+  }
+};
+
+// ============================================================================
+// 25. SEGURANÇA DE TEXTO E VERSÃO DO ESQUEMA DOS DADOS (v5.0, regras 64 e 65)
+// ============================================================================
+/**
+ * seguranca (regra 64): todo texto que veio do usuário, de importação ou do banco
+ * e vai para a tela por innerHTML passa por aqui. Prefira textContent; use estas
+ * funções só quando precisar montar HTML.
+ *   seguranca.escaparHTML(v)          troca & < > " ' ` por entidades (null vira "")
+ *   seguranca.html`<b>${nome}</b>`    modelo que escapa cada ${valor}; arrays são juntados; o resultado
+ *                                     pode ir direto em innerHTML e dentro de outro html`` sem escapar de novo
+ *   seguranca.bruto(trecho)           marca um trecho que JÁ é HTML seu (nunca texto de usuário)
+ *   seguranca.urlSegura(u)            só http, https, mailto e tel; o resto vira "#"
+ */
+const _ENT = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" };
+const seguranca = {
+  escaparHTML(v) {
+    return String(v === null || v === undefined ? "" : v).replace(/[&<>"'`]/g, c => _ENT[c]);
+  },
+  bruto(trecho) { const t = String(trecho); return { __fenixHtml: t, toString() { return t; } }; },
+  html(partes, ...valores) {
+    const um = (v) => Array.isArray(v) ? v.map(um).join("")
+      : (v && typeof v === "object" && "__fenixHtml" in v) ? v.__fenixHtml
+      : seguranca.escaparHTML(v);
+    return seguranca.bruto(partes.reduce((acc, p, i) => acc + p + (i < valores.length ? um(valores[i]) : ""), ""));
+  },
+  urlSegura(u) {
+    try {
+      const x = new URL(String(u || ""), "https://fenix.invalid/");
+      return ["http:", "https:", "mailto:", "tel:"].includes(x.protocol) ? String(u) : "#";
+    } catch (e) { return "#"; }
+  }
+};
+
+/**
+ * esquema (regra 65): versão do formato dos dados guardados no aparelho.
+ *   esquema.versao(chave)                              versão gravada (1 se ainda não houver)
+ *   esquema.migrar(chave, versaoAtual, { 2: f, 3: g }) se a versão gravada for menor, guarda uma
+ *       cópia em `${chave}__backup_v<antiga>`, aplica as funções na ordem (cada uma recebe o objeto
+ *       lido do JSON e devolve o novo; se devolver undefined, vale o mesmo objeto alterado) e grava.
+ *       Em erro, devolve os dados originais e { migrado: false, erro }.
+ * Retorna { migrado, de, para, backup?, erro? }. Nunca apaga dados.
+ */
+const esquema = {
+  versao(chave) {
+    try { return Number(localStorage.getItem("fenix_esquema_" + chave)) || 1; } catch (e) { return 1; }
+  },
+  migrar(chave, versaoAtual, migracoes) {
+    let bruto = null;
+    try { bruto = localStorage.getItem(chave); } catch (e) { return { migrado: false, de: 1, para: versaoAtual, erro: "armazenamento indisponível" }; }
+    const de = esquema.versao(chave);
+    try {
+      if (bruto === null) { localStorage.setItem("fenix_esquema_" + chave, String(versaoAtual)); return { migrado: false, de, para: versaoAtual }; }
+      if (de >= versaoAtual) return { migrado: false, de, para: de };
+      const backup = chave + "__backup_v" + de;
+      localStorage.setItem(backup, bruto);
+      let dados = JSON.parse(bruto);
+      for (let v = de + 1; v <= versaoAtual; v++) {
+        const f = migracoes && migracoes[v];
+        if (typeof f === "function") { const r = f(dados); if (r !== undefined) dados = r; }
+      }
+      localStorage.setItem(chave, JSON.stringify(dados));
+      localStorage.setItem("fenix_esquema_" + chave, String(versaoAtual));
+      return { migrado: true, de, para: versaoAtual, backup };
+    } catch (e) {
+      try { localStorage.setItem(chave, bruto); } catch (e2) {}
+      return { migrado: false, de, para: versaoAtual, erro: (e && e.message) || "falha na migração" };
+    }
+  }
+};
+
+// ============================================================================
 // EXPORTAÇÃO
 // ============================================================================
 
@@ -3106,6 +3585,9 @@ export const FenixCore = {
   criarModuloSincronia,
   criarModuloAcesso,
   licenca,
+  admin,
+  seguranca,
+  esquema,
   som,
   preferencias,
   versoes,

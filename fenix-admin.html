@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#041273">
+<meta name="robots" content="noindex">
+<meta name="fenix-livro" content="5.1">
+<title>Painel Administrativo Fênix</title>
+<!--
+  PAINEL ADMINISTRATIVO FÊNIX v5.1 (fenix-admin.html)
+  Clientes (teste de 15 dias, licença por tempo ou definitiva) e Equipe (administradores,
+  comercial e suporte). Entra com Google (e-mail verificado). Quem manda de verdade são as
+  regras do Firestore: esta página só chama o core (FenixCore.admin). Usa SOMENTE a paleta oficial.
+  Primeiro uso depois de publicar as regras v4.9: Clientes → "Carimbar início do teste" (uma vez).
+-->
+<style>
+  :root { --azul:#041273; --dell:#0076CE; --amarelo:#ffcb00; --fundo:#F3F4F9; --texto:#020733; --g1:#040798; --g2:#0076CE; --ok:#0a7a3d; --erro:#b00020; --borda:rgba(4,18,115,.18); }
+  * { box-sizing:border-box; }
+  html,body { margin:0; }
+  [hidden] { display:none !important; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--fundo); color:var(--texto); min-height:100vh; display:flex; flex-direction:column; }
+  header { background:linear-gradient(135deg,var(--g1),var(--g2)); color:#fff; padding:1.1rem 16px; padding-top:calc(1.1rem + env(safe-area-inset-top,0px)); }
+  .topo { max-width:960px; margin:0 auto; display:flex; align-items:center; gap:.9rem; flex-wrap:wrap; }
+  .topo h1 { font-size:1.2rem; margin:0; flex:1; min-width:200px; }
+  .topo p { margin:.15rem 0 0; font-size:.85rem; opacity:.9; font-weight:400; }
+  main { flex:1; width:100%; max-width:960px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border-radius:14px; box-shadow:0 2px 10px rgba(4,18,115,.08); margin-bottom:12px; padding:14px 16px; }
+  button, .btn { min-height:44px; padding:0 16px; border:0; border-radius:10px; background:var(--dell); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button.sec { background:#fff; color:var(--azul); border:1px solid var(--borda); }
+  button.perigo { background:var(--erro); }
+  button.amar { background:var(--amarelo); color:var(--azul); }
+  button:disabled { opacity:.55; cursor:default; }
+  input, select { min-height:44px; padding:0 12px; border:1px solid var(--borda); border-radius:10px; font:inherit; color:#000; background:#fff; width:100%; }
+  label { display:block; font-size:.85rem; margin-top:10px; }
+  .abas { display:flex; gap:8px; margin-bottom:12px; }
+  .abas button { flex:1; background:#fff; color:var(--azul); border:1px solid var(--borda); }
+  .abas button.on { background:var(--azul); color:#fff; }
+  .linha { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .item { border-top:1px solid var(--borda); padding:12px 0; }
+  .item:first-child { border-top:0; }
+  .item b { font-size:1rem; }
+  .sub { font-size:.82rem; color:rgba(2,7,51,.65); margin-top:2px; word-break:break-all; }
+  .acoes { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .acoes button { min-height:44px; font-size:.85rem; padding:0 12px; }
+  .selo { display:inline-block; font-size:.75rem; font-weight:700; padding:3px 9px; border-radius:99px; margin-left:6px; vertical-align:middle; }
+  .s-teste { background:var(--amarelo); color:var(--azul); }
+  .s-ativa { background:#d7f3e3; color:var(--ok); }
+  .s-leitura { background:#fde0e4; color:var(--erro); }
+  .s-livre { background:#e3e6f6; color:var(--azul); }
+  .msg { font-size:.9rem; margin:8px 0; }
+  .msg.erro { color:var(--erro); } .msg.ok { color:var(--ok); }
+  .resumo { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 10px; }
+  .resumo span { background:#fff; border:1px solid var(--borda); border-radius:99px; padding:6px 12px; font-size:.85rem; }
+  dialog { border:0; border-radius:14px; padding:18px; width:min(92vw,420px); }
+  dialog::backdrop { background:rgba(2,7,51,.5); }
+  footer { background:var(--azul); color:#fff; text-align:center; padding:14px 16px; font-size:.8rem; padding-bottom:calc(14px + env(safe-area-inset-bottom,0px)); }
+  footer a { color:#fff; }
+</style>
+</head>
+<body>
+<header><div class="topo">
+  <h1>Painel Administrativo Fênix<p id="quem">Entre com sua conta Google para continuar.</p></h1>
+  <button type="button" class="amar" id="btSair" hidden>Sair</button>
+</div></header>
+<main>
+  <section id="telaEntrar" class="card">
+    <p class="msg">Acesso restrito à equipe Fênix. Use a conta Google do seu e-mail cadastrado.</p>
+    <button type="button" id="btEntrar">Entrar com Google</button>
+    <div id="msgEntrar" class="msg" role="status"></div>
+  </section>
+
+  <section id="telaPainel" hidden>
+    <div class="abas" role="tablist">
+      <button type="button" id="abaClientes" class="on">Clientes</button>
+      <button type="button" id="abaEquipe">Equipe</button>
+    </div>
+
+    <div id="painelClientes">
+      <div class="card">
+        <div class="linha">
+          <input id="busca" type="search" placeholder="Buscar por nome ou e-mail" style="flex:1;min-width:180px">
+          <button type="button" class="sec" id="btRecarregar">Atualizar</button>
+        </div>
+        <div class="resumo" id="resumo"></div>
+        <div class="linha" id="blocoCarimbo" hidden>
+          <button type="button" class="amar" id="btCarimbar">Carimbar início do teste nas empresas sem data</button>
+        </div>
+        <div class="msg" id="msgCarimbo">Faça isto UMA vez, logo depois de publicar as regras v4.9: as empresas antigas passam a ter 15 dias a partir de agora.</div>
+        <div id="msgClientes" class="msg" role="status"></div>
+      </div>
+      <div class="card" id="listaClientes"></div>
+    </div>
+
+    <div id="painelEquipe" hidden>
+      <div class="card">
+        <b>Adicionar colaborador</b>
+        <label>E-mail (conta Google)<input id="eqEmail" type="email" autocomplete="off" placeholder="nome@gmail.com"></label>
+        <label>Nome<input id="eqNome" type="text" autocomplete="off"></label>
+        <label>Nível
+          <select id="eqNivel">
+            <option value="suporte">Suporte — só consulta clientes</option>
+            <option value="comercial">Comercial — também concede, prorroga e revoga licenças</option>
+            <option value="admin">Administrador — tudo, inclusive a equipe</option>
+          </select>
+        </label>
+        <div class="acoes"><button type="button" id="btEqSalvar">Salvar colaborador</button></div>
+        <div id="msgEquipe" class="msg" role="status"></div>
+      </div>
+      <div class="card" id="listaEquipe"></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlgLic">
+  <b id="dlgTitulo">Licença</b>
+  <div class="sub" id="dlgEmpresa"></div>
+  <label>Tipo
+    <select id="dlgTipo"><option value="tempo">Por tempo</option><option value="definitiva">Definitiva</option></select>
+  </label>
+  <label id="dlgAteBox">Vale até<input id="dlgAte" type="date"></label>
+  <label>Observação (opcional)<input id="dlgObs" type="text" maxlength="200"></label>
+  <div id="dlgMsg" class="msg erro"></div>
+  <div class="acoes"><button type="button" id="dlgOk">Confirmar</button><button type="button" class="sec" id="dlgCancel">Cancelar</button></div>
+</dialog>
+
+<footer>
+  <span id="ano"></span>
+  <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a> |
+  <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a> · v5.1
+</footer>
+
+<script type="module">
+import { FenixCore as F } from "./fenix-core.js";
+
+const $ = (id) => document.getElementById(id);
+$("ano").textContent = new Date().getFullYear();
+
+const { app, db } = F.initFirebase();
+const auth = F.criarModuloAuth(app);
+let usuario = null, nivel = null, clientes = [], equipe = [], empresaDlg = null;
+
+const fmt = (d) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
+const dt = (v) => v && typeof v.toDate === "function" ? v.toDate() : (v instanceof Date ? v : null);
+const msg = (id, texto, tipo) => { const e = $(id); e.textContent = texto || ""; e.className = "msg" + (tipo ? " " + tipo : ""); };
+const erroTxt = (e) => (e && e.code === "permission-denied") ? "Sem permissão para esta ação com o seu nível." : ((e && e.message) || "Não foi possível concluir.");
+function el(tag, props, ...filhos) {
+  const n = document.createElement(tag);
+  Object.entries(props || {}).forEach(([k, v]) => { if (k === "class") n.className = v; else if (k === "onclick") n.onclick = v; else n.setAttribute(k, v); });
+  filhos.flat().forEach((f) => n.append(f));
+  return n;
+}
+const botao = (txt, fn, cls) => el("button", { type: "button", class: cls || "sec", onclick: fn }, txt);
+
+// ---------- entrada ----------
+$("btEntrar").onclick = async () => {
+  msg("msgEntrar", "Abrindo o Google…");
+  try { await auth.entrarComGoogle(); } catch (e) { msg("msgEntrar", erroTxt(e), "erro"); }
+};
+$("btSair").onclick = () => auth.sair();
+
+auth.aoMudarEstado(async (u) => {
+  usuario = u; nivel = null;
+  $("btSair").hidden = !u;
+  if (!u) { $("telaEntrar").hidden = false; $("telaPainel").hidden = true; $("quem").textContent = "Entre com sua conta Google para continuar."; msg("msgEntrar", ""); return; }
+  try { nivel = await F.admin.meuNivel(db, u); } catch (e) { nivel = null; }
+  if (!nivel) {
+    $("telaEntrar").hidden = false; $("telaPainel").hidden = true;
+    msg("msgEntrar", (u.emailVerified ? u.email : u.email + " (e-mail não verificado)") + " não tem acesso a este painel. Saia e entre com outra conta.", "erro");
+    return;
+  }
+  $("telaEntrar").hidden = true; $("telaPainel").hidden = false;
+  $("quem").textContent = u.email + " · " + F.admin.NIVEIS[nivel];
+  $("abaEquipe").hidden = !F.admin.pode(nivel, "equipe");
+  $("blocoCarimbo").hidden = !F.admin.pode(nivel, "licenca");
+  $("msgCarimbo").hidden = !F.admin.pode(nivel, "licenca");
+  carregarClientes();
+  if (F.admin.pode(nivel, "equipe")) carregarEquipe();
+});
+
+function aba(qual) {
+  $("painelClientes").hidden = qual !== "clientes"; $("painelEquipe").hidden = qual !== "equipe";
+  $("abaClientes").classList.toggle("on", qual === "clientes"); $("abaEquipe").classList.toggle("on", qual === "equipe");
+}
+$("abaClientes").onclick = () => aba("clientes");
+$("abaEquipe").onclick = () => aba("equipe");
+
+// ---------- clientes ----------
+async function carregarClientes() {
+  msg("msgClientes", "Carregando…");
+  try { clientes = await F.admin.clientes.listar(db); msg("msgClientes", ""); } catch (e) { msg("msgClientes", erroTxt(e), "erro"); return; }
+  desenharClientes();
+}
+$("btRecarregar").onclick = carregarClientes;
+$("busca").oninput = desenharClientes;
+
+function seloDe(a) {
+  if (a.modo === "somente-leitura") return ["Somente leitura", "s-leitura"];
+  if (a.modo === "ativa") return [a.tipo === "definitiva" ? "Definitiva" : "Licença por tempo", "s-ativa"];
+  if (a.motivo === "teste-sem-inicio") return ["Sem data de teste", "s-livre"];
+  return ["Teste · " + a.dias + " d", "s-teste"];
+}
+function desenharClientes() {
+  const q = $("busca").value.trim().toLowerCase();
+  const lista = clientes.filter((c) => !q || (String(c.nome || "") + " " + String(c.donoEmail || "")).toLowerCase().includes(q));
+  const cont = { teste: 0, ativa: 0, leitura: 0, livre: 0 };
+  clientes.forEach((c) => { const a = c.acesso; if (a.modo === "somente-leitura") cont.leitura++; else if (a.modo === "ativa") cont.ativa++; else if (a.motivo === "teste-sem-inicio") cont.livre++; else cont.teste++; });
+  const r = $("resumo"); r.textContent = "";
+  [["Em teste", cont.teste], ["Licenciados", cont.ativa], ["Somente leitura", cont.leitura], ["Sem data", cont.livre]].forEach(([t, n]) => r.append(el("span", {}, t + ": " + n)));
+  const box = $("listaClientes"); box.textContent = "";
+  if (!lista.length) { box.append(el("div", { class: "msg" }, clientes.length ? "Nenhum cliente encontrado." : "Nenhum cliente cadastrado.")); return; }
+  const podeLic = F.admin.pode(nivel, "licenca");
+  lista.forEach((c) => {
+    const [txt, cls] = seloDe(c.acesso);
+    const fim = c.acesso.fim ? " · até " + fmt(c.acesso.fim) : "";
+    const it = el("div", { class: "item" },
+      el("div", {}, el("b", {}, c.nome || "(sem nome)"), el("span", { class: "selo " + cls }, txt)),
+      el("div", { class: "sub" }, (c.donoEmail || "sem e-mail") + fim + (c.licencaObs ? " · " + c.licencaObs : "")));
+    if (podeLic) {
+      const ac = el("div", { class: "acoes" });
+      if (c.acesso.tipo === "teste" || c.acesso.modo === "somente-leitura") {
+        ac.append(botao("+15 dias", () => agir(c, () => F.admin.clientes.prorrogarTeste(db, c.id, 15), "Teste prorrogado em 15 dias.")));
+        ac.append(botao("+30 dias", () => agir(c, () => F.admin.clientes.prorrogarTeste(db, c.id, 30), "Teste prorrogado em 30 dias.")));
+        ac.append(botao("Reiniciar 15 dias", () => agir(c, () => F.admin.clientes.reiniciarTeste(db, c.id), "Teste reiniciado: 15 dias a partir de agora.")));
+      }
+      ac.append(botao("Conceder licença", () => abrirDialogo(c), "amar"));
+      if (c.acesso.modo === "ativa") ac.append(botao("Revogar (voltar ao teste)", () => { if (confirm("Revogar a licença de " + (c.nome || "este cliente") + "? O acesso segue as regras do teste de 15 dias.")) agir(c, () => F.admin.clientes.definirLicenca(db, c.id, { tipo: "teste", por: usuario.email }), "Licença revogada."); }, "perigo"));
+      it.append(ac);
+    }
+    box.append(it);
+  });
+}
+async function agir(c, fn, okTxt) {
+  msg("msgClientes", "Gravando…");
+  try { await fn(); msg("msgClientes", okTxt + " (" + (c.nome || "cliente") + ")", "ok"); await carregarClientes(); msg("msgClientes", okTxt, "ok"); }
+  catch (e) { msg("msgClientes", erroTxt(e), "erro"); }
+}
+$("btCarimbar").onclick = async () => {
+  if (!confirm("Carimbar agora o início do teste (15 dias a partir de hoje) em TODAS as empresas sem data e sem licença?")) return;
+  msg("msgClientes", "Carimbando…");
+  try { const n = await F.admin.clientes.carimbarSemInicio(db); await carregarClientes(); msg("msgClientes", n + " empresa(s) carimbada(s).", "ok"); }
+  catch (e) { msg("msgClientes", erroTxt(e), "erro"); }
+};
+
+// diálogo de licença
+function abrirDialogo(c) {
+  empresaDlg = c; $("dlgEmpresa").textContent = (c.nome || "") + " · " + (c.donoEmail || "");
+  $("dlgTipo").value = "tempo"; $("dlgObs").value = ""; msg("dlgMsg", "");
+  const d = new Date(); d.setFullYear(d.getFullYear() + 1); $("dlgAte").value = d.toISOString().slice(0, 10);
+  ajustarDlg(); $("dlgLic").showModal();
+}
+function ajustarDlg() { $("dlgAteBox").hidden = $("dlgTipo").value !== "tempo"; }
+$("dlgTipo").onchange = ajustarDlg;
+$("dlgCancel").onclick = () => $("dlgLic").close();
+$("dlgOk").onclick = async () => {
+  const tipo = $("dlgTipo").value; let ate = null;
+  if (tipo === "tempo") { const v = $("dlgAte").value; if (!v) { msg("dlgMsg", "Informe até quando vale.", "erro"); return; } ate = new Date(v + "T23:59:59"); if (ate.getTime() <= Date.now()) { msg("dlgMsg", "A data precisa ser futura.", "erro"); return; } }
+  $("dlgOk").disabled = true;
+  try { await F.admin.clientes.definirLicenca(db, empresaDlg.id, { tipo, ate, obs: $("dlgObs").value, por: usuario.email }); $("dlgLic").close(); await carregarClientes(); msg("msgClientes", "Licença concedida.", "ok"); }
+  catch (e) { msg("dlgMsg", erroTxt(e), "erro"); }
+  $("dlgOk").disabled = false;
+};
+
+// ---------- equipe ----------
+async function carregarEquipe() {
+  try { equipe = await F.admin.equipe.listar(db); msg("msgEquipe", ""); } catch (e) { msg("msgEquipe", erroTxt(e), "erro"); return; }
+  desenharEquipe();
+}
+function desenharEquipe() {
+  const box = $("listaEquipe"); box.textContent = "";
+  box.append(el("b", {}, "Equipe"));
+  F.admin.EMAILS_RAIZ.forEach((e) => box.append(el("div", { class: "item" }, el("div", {}, el("b", {}, e), el("span", { class: "selo s-ativa" }, "Administrador raiz")), el("div", { class: "sub" }, "Fixo: não depende do banco e não pode ser removido."))));
+  equipe.filter((m) => !F.admin.EMAILS_RAIZ.includes(m.id)).forEach((m) => {
+    const ativo = m.ativo !== false;
+    box.append(el("div", { class: "item" },
+      el("div", {}, el("b", {}, m.nome || m.email), el("span", { class: "selo " + (ativo ? "s-ativa" : "s-leitura") }, (F.admin.NIVEIS[m.nivel] || m.nivel) + (ativo ? "" : " · inativo"))),
+      el("div", { class: "sub" }, m.email),
+      el("div", { class: "acoes" },
+        botao(ativo ? "Desativar" : "Ativar", () => salvarEq({ ...m, ativo: !ativo })),
+        botao("Editar", () => { $("eqEmail").value = m.email; $("eqNome").value = m.nome || ""; $("eqNivel").value = m.nivel; window.scrollTo({ top: 0, behavior: "smooth" }); }),
+        botao("Remover", () => { if (confirm("Remover " + m.email + " da equipe?")) F.admin.equipe.excluir(db, m.email).then(carregarEquipe).catch((e) => msg("msgEquipe", erroTxt(e), "erro")); }, "perigo"))));
+  });
+  if (!equipe.length) box.append(el("div", { class: "msg" }, "Nenhum colaborador no banco ainda."));
+}
+async function salvarEq(m) {
+  try { await F.admin.equipe.salvar(db, m); msg("msgEquipe", "Colaborador salvo.", "ok"); await carregarEquipe(); } catch (e) { msg("msgEquipe", erroTxt(e), "erro"); }
+}
+$("btEqSalvar").onclick = async () => {
+  await salvarEq({ email: $("eqEmail").value, nome: $("eqNome").value, nivel: $("eqNivel").value, ativo: true });
+  if ($("msgEquipe").classList.contains("ok")) { $("eqEmail").value = ""; $("eqNome").value = ""; }
+};
+</script>
+</body>
+</html>

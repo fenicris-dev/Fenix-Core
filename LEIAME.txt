@@ -1,17 +1,24 @@
-Biblioteca Fênix v4.8
+Biblioteca Fênix v5.1
 
-Raiz do repositório: index.html (Painel), fenix-core.js, versao.json, fenix-template-login.html, fenix-template-onboarding.html, fenix-template-splash.html, firestore.rules
+Raiz do repositório: index.html (Painel), fenix-admin.html (Painel administrativo), fenix-core.js, versao.json, fenix-template-login.html, fenix-template-onboarding.html, fenix-template-splash.html, firestore.rules
 Icon/   : Fenix_Icone_128.png (os demais ícones já estão no repositório)
-Termos/ : fenix-termos-de-uso.html, fenix-politica-de-privacidade.html (só a versão mudou; o texto é o da 4.4)
-MD/     : fenix-livro-das-regras.md, fenix-resumo-do-livro.md (NOVO), fenix-guia-da-biblioteca.md (guia e changelog da biblioteca)
-DOC/    : fenix-livro-das-regras.docx, fenix-resumo-do-livro.docx (NOVO), fenix-guia-da-biblioteca.docx
-testes-regras/: (NOVO) testes das regras do Firestore, para rodar no SEU computador (veja o LEIAME.txt dentro da pasta). Não precisa subir para o GitHub Pages.
-versoes/: cópias com a versão no nome, só para controle interno (nenhum app aponta para elas). NUNCA suba esta pasta para a raiz do repositório.
+Termos/ : fenix-termos-de-uso.html, fenix-politica-de-privacidade.html (só a versão sobe; o texto é o de 30/10/2026)
+MD/     : fenix-livro-das-regras.md, fenix-resumo-do-livro.md, fenix-guia-da-biblioteca.md (guia e changelog da biblioteca)
+DOC/    : fenix-livro-das-regras.docx, fenix-resumo-do-livro.docx, fenix-guia-da-biblioteca.docx
+testes-regras/: testes das regras do Firestore, para rodar no SEU computador. Não precisa subir para o GitHub Pages.
+testes-app/ : (NOVO) modelo do teste de fumaça dos apps (regra 68), para rodar no SEU computador. Não sobe para o GitHub Pages.
+versoes/: cópias com a versão no nome, só para controle interno. NUNCA suba esta pasta para a raiz do repositório.
 
-Novo na v4.8:
-- Regras do Firestore: a gravação em empresas/{id}/cidades agora fica fechada de verdade (o curinga das coleções da empresa a liberava). O core grava cidades na raiz (cidades/...), então nenhum app é afetado. PUBLIQUE as regras novas (checklist da regra 46: testes, backup, Playground, publicar, abrir um app real).
-- testes-regras/: ganhou o teste dessa mudança. Continuam sem ter sido executados por mim (o emulador não baixa no meu ambiente): rode "npm install" e "npm test" no seu computador antes de publicar e me mande a saída se algo falhar.
-- Core: só a versão sobe (c 4.8). Guia: checklist de publicação alinhado ao da regra 46.
-- Da v4.7 continuam: Resumo do livro, Teste de aparelho no Painel e a varredura de versões em Como entregar.
+Novo na v5.1:
+- Aviso automático do teste de 15 dias e do somente leitura, inclusive nos apps ANTIGOS: com o core 5.1 publicado, todo app com login pelo criarModuloAuth passa a ler o acesso depois do login, a travar as gravações do core e a mostrar uma faixa fixa no rodapé (amarela e fechável no teste; vermelha em somente leitura), com o botão de WhatsApp. Sem alterar nenhum app. FenixCore.licenca.automatico(false) desliga. Apps só no aparelho (sem login) não recebem a faixa.
+- AVISE OS CLIENTES ANTES de publicar o core 5.1 e de carimbar as empresas (fenix-admin.html): quem tem teste vencido vê a faixa vermelha e perde a gravação.
+- As regras do Firestore não mudam de conteúdo (só o cabeçalho sobe para 5.1).
 
-Ordem para publicar: 1) core, versao.json, Painel e templates no GitHub (e MD/ e DOC/ com o Resumo); 2) Painel: "Testar tudo" e "Rodar testes ao vivo" (nenhum item em amarelo); 3) as regras do Firestore, pelo checklist da regra 46; 4) no celular, abra o Painel e use o "Teste de aparelho".
+Da v5.0 continuam:
+- Seção 12 do livro, regras 64 a 70: texto de usuário na tela sem injetar código (64), versão do esquema dos dados (65), cota do Firestore (66), excluir minha conta e meus dados (67), teste de fumaça (68), acessibilidade básica (69) e plano de volta (70).
+- Core: FenixCore.seguranca (escaparHTML, html, bruto, urlSegura) e FenixCore.esquema (versao, migrar). Só acréscimos.
+- Esclarecimentos no livro sobre as regras 53 e 61, 58 e 62, e 7 a 11 (sem renumerar, para não quebrar referências).
+- As regras do Firestore NÃO mudam de conteúdo (só o cabeçalho sobe para a 5.0): não precisam ser republicadas no console. Se quiser, a v4.9 já publicada continua valendo.
+- Os testes de regras e o teste de fumaça não foram executados por mim contra o banco/emulador real; rode no seu computador.
+
+Ordem para publicar: 1) core, versao.json, Painel, fenix-admin.html, templates, Termos, MD/ e DOC/ no GitHub; 2) Painel: "Testar tudo" e "Rodar testes ao vivo" (nenhum item em amarelo); 3) se a v4.9 ainda não foi publicada, siga a ordem do LEIAME dela (regras do Firestore e carimbar as empresas) antes ou junto.

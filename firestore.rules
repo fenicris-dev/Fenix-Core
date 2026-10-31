@@ -1,5 +1,5 @@
 // ============================================================================
-// FÊNIX | firestore.rules (Biblioteca Fênix v4.8)
+// FÊNIX | firestore.rules (Biblioteca Fênix v5.1)
 //
 // BASE: as regras publicadas no console do Firebase (projeto fenix-core), nas
 // versões registradas abaixo, enviadas pelo Cristiano em 21/10/2026. O que já
@@ -17,6 +17,9 @@
 // firestore-rules-v8-biblioteca-v4.4 (empresas/{id} só para membros e para o dono [v4.4])
 // firestore-rules-v9-biblioteca-v4.5 (perfis e admins, cadastro com aprovação [v4.5])
 // firestore-rules-v10-biblioteca-v4.8 (empresas/{id}/cidades sem gravação: o curinga da empresa deixa de liberar [v4.8])
+// firestore-rules-v11-biblioteca-v4.9 (teste de 15 dias, licença e somente leitura; equipe Fênix e níveis [v4.9])
+// firestore-rules-v12-biblioteca-v5.0 (só a versão sobe: o conteúdo é o mesmo da v11)
+// firestore-rules-v13-biblioteca-v5.1 (só a versão sobe: o conteúdo é o mesmo da v11)
 //
 // ORDEM PARA PUBLICAR (importante):
 //   1) publique o fenix-core.js v4.0 no GitHub (ele passa a gravar o
@@ -74,11 +77,68 @@ service cloud.firestore {
     // Google) lia a base inteira. Se algum app sem empresa usar estas
     // coleções, ele para de funcionar: nesse caso troque temVinculoAprovado()
     // por autenticado() só nessa linha e me avise.
+    // ---------- [v4.9] Equipe Fênix (administração) ----------
+    // Administradores raiz: os e-mails abaixo, SÓ com e-mail verificado pelo Google
+    // (sem a verificação, qualquer um poderia criar uma conta com o e-mail alheio).
+    // Os demais da equipe ficam em equipe_fenix/{e-mail em minúsculas}:
+    // { email, nome, nivel: admin | comercial | suporte, ativo: true }.
+    function emailVerificado() {
+      return autenticado() && request.auth.token.email_verified == true;
+    }
+    function adminRaiz() {
+      return emailVerificado()
+        && request.auth.token.email.lower() in ['fenicris@gmail.com', 'fenicris.dev@gmail.com'];
+    }
+    function temEquipeAtiva() {
+      return emailVerificado()
+        && exists(/databases/$(database)/documents/equipe_fenix/$(request.auth.token.email.lower()))
+        && get(/databases/$(database)/documents/equipe_fenix/$(request.auth.token.email.lower())).data.get('ativo', false) == true;
+    }
+    function nivelDaEquipe() {
+      return get(/databases/$(database)/documents/equipe_fenix/$(request.auth.token.email.lower())).data.get('nivel', '');
+    }
+    function equipeAdmin() {
+      return adminRaiz() || (temEquipeAtiva() && nivelDaEquipe() == 'admin');
+    }
+    function equipeComercial() {
+      return equipeAdmin() || (temEquipeAtiva() && nivelDaEquipe() == 'comercial');
+    }
+    function equipeSuporte() {
+      return equipeComercial() || (temEquipeAtiva() && nivelDaEquipe() == 'suporte');
+    }
+
+    // ---------- [v4.9] Teste de 15 dias, licença e somente leitura ----------
+    // A empresa grava (cria, edita, apaga) se: (a) tem licença definitiva ou por tempo em dia
+    // (licencaAte é Timestamp; definitiva sem licencaAte não vence); ou (b) está nos 15 dias
+    // a partir de testeInicio (360 horas); ou (c) ainda não tem testeInicio (empresa criada
+    // antes da v4.9, até o administrador carimbar). Vencidas, só leitura.
+    function licencaEmDia(emp) {
+      return (emp.get('licenca', 'teste') == 'definitiva'
+               && (!(emp.get('licencaAte', null) is timestamp) || emp.licencaAte > request.time))
+          || (emp.get('licenca', 'teste') == 'tempo'
+               && emp.get('licencaAte', null) is timestamp && emp.licencaAte > request.time);
+    }
+    function testeEmDia(emp) {
+      return !(emp.get('testeInicio', null) is timestamp)
+        || request.time < emp.testeInicio + duration.time(360, 0, 0, 0);
+    }
+    function empresaPodeGravar(empresaId) {
+      return !exists(/databases/$(database)/documents/empresas/$(empresaId))
+        || licencaEmDia(get(/databases/$(database)/documents/empresas/$(empresaId)).data)
+        || testeEmDia(get(/databases/$(database)/documents/empresas/$(empresaId)).data);
+    }
+    function pessoalPodeGravar() {
+      return !exists(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid))
+        || empresaPodeGravar(get(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid)).data.get('empresaId', 'sem-empresa'));
+    }
+
     match /pessoas_fisicas/{cpf} {
-      allow read, write: if temVinculoAprovado();
+      allow read: if temVinculoAprovado();
+      allow write: if temVinculoAprovado() && empresaPodeGravar(vinculoDoUsuario().empresaId);
     }
     match /pessoas_juridicas/{cnpj} {
-      allow read, write: if temVinculoAprovado();
+      allow read: if temVinculoAprovado();
+      allow write: if temVinculoAprovado() && empresaPodeGravar(vinculoDoUsuario().empresaId);
     }
     match /produtos_servicos/{id} {
       allow read, write: if autenticado();
@@ -99,14 +159,21 @@ service cloud.firestore {
       // nome da empresa dentro dele (core v4.4), então quem ainda vai entrar não
       // precisa ler a empresa.
       allow read: if autenticado()
-        && (resource.data.get('donoUid', '') == request.auth.uid || pertenceAEmpresa(empresaId));
+        && (resource.data.get('donoUid', '') == request.auth.uid || pertenceAEmpresa(empresaId) || equipeSuporte());
       // [v4.3] Licença definitiva (regra 58 do livro): o app NUNCA grava o campo
       // "licenca" como definitiva. Só o Cristiano grava, pelo console do Firebase
       // (o console não passa por estas regras). Quem cria a empresa só pode deixar
       // o campo de fora ou usar "teste". Ninguém altera nem apaga depois.
+      // [v4.9] Toda empresa nasce com testeInicio = hora do servidor (o app não escolhe a data).
       allow create: if autenticado()
-        && (!('licenca' in request.resource.data) || request.resource.data.licenca == 'teste');
-      allow update, delete: if false;
+        && (!('licenca' in request.resource.data) || request.resource.data.licenca == 'teste')
+        && request.resource.data.get('testeInicio', null) == request.time;
+      // [v4.9] Licença e início do teste: administrador (qualquer campo) ou comercial (só estes campos).
+      allow update: if equipeAdmin()
+        || (equipeComercial()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['licenca', 'licencaAte', 'licencaObs', 'licencaPor', 'licencaEm', 'testeInicio']));
+      allow delete: if false;
     }
 
     // ---------- [v4.3] Espelho de licença, para o login (antes de saber quem é o usuário) ----------
@@ -114,7 +181,19 @@ service cloud.firestore {
     // Só leitura pontual (get): não dá para listar e a gravação é só pelo console.
     match /licencas/{hashEmail} {
       allow get: if true;
-      allow list, write: if false;
+      // [v4.9] O espelho passa a ser mantido pela equipe comercial (antes, só o console).
+      allow list: if equipeSuporte();
+      allow create, update, delete: if equipeComercial();
+    }
+
+    // ---------- [v4.9] Equipe Fênix ----------
+    match /equipe_fenix/{email} {
+      allow get: if emailVerificado() && (request.auth.token.email.lower() == email || equipeSuporte());
+      allow list: if equipeAdmin();
+      allow create, update: if equipeAdmin()
+        && request.resource.data.get('nivel', '') in ['admin', 'comercial', 'suporte']
+        && request.resource.data.get('email', '') == email;
+      allow delete: if equipeAdmin();
     }
 
     // ---------- Vínculo usuário -> empresa ----------
@@ -186,7 +265,8 @@ service cloud.firestore {
     // antes, este curinga liberava a gravação e a regra "write: if false" abaixo não valia.
     match /empresas/{empresaId}/{tipoColecao}/{docId} {
       allow read: if pertenceAEmpresa(empresaId);
-      allow write: if tipoColecao != 'membros' && tipoColecao != 'cidades' && pertenceAEmpresa(empresaId);
+      allow write: if tipoColecao != 'membros' && tipoColecao != 'cidades' && pertenceAEmpresa(empresaId)
+        && empresaPodeGravar(empresaId);   // [v4.9] teste vencido ou licença vencida: só leitura
     }
     match /empresas/{empresaId}/cidades/{codigoIBGE} {
       allow read: if pertenceAEmpresa(empresaId);
@@ -201,8 +281,9 @@ service cloud.firestore {
     // Só vale para app que usa criarModuloAcesso. Cada pessoa pede acesso criando o próprio perfil
     // como "pendente"; só quem tem o documento admins/{uid} (criado à mão no console) aprova.
     function souAdmin() {
-      return autenticado()
-        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return (autenticado()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid)))
+        || equipeAdmin();   // [v4.9] a equipe Fênix também aprova perfis
     }
     match /admins/{uid} {
       allow get: if autenticado() && request.auth.uid == uid;
@@ -219,7 +300,9 @@ service cloud.firestore {
     // ---------- Dados pessoais por usuário (v5: Gestor de Tempo e outros apps pessoais) ----------
     // Cada usuário lê e grava só o que está sob o próprio uid. Nada de empresa envolvido.
     match /dados_pessoais/{uid}/{colecao}/{docId} {
-      allow read, write: if autenticado() && request.auth.uid == uid;
+      allow read: if autenticado() && request.auth.uid == uid;
+      // [v4.9] Somente leitura trava a gravação; o documento "relogio" (medição do relógio) fica livre.
+      allow write: if autenticado() && request.auth.uid == uid && (docId == 'relogio' || pessoalPodeGravar());
     }
   }
 }
