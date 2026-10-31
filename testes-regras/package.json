@@ -1,6 +1,6 @@
 {
   "name": "fenix-testes-regras",
-  "version": "4.8.0",
+  "version": "5.1.0",
   "private": true,
   "description": "Testes das regras de segurança do Firestore da biblioteca Fênix (emulador local, sem tocar no banco real)",
   "type": "module",
