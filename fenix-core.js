@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v5.1
+ * FÊNIX CORE v5.2
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -314,6 +314,12 @@
         fechar, em somente leitura, com o botão de WhatsApp. O app que chama
         licenca.montarAviso() assume o aviso e a faixa automática some.
         licenca.automatico(false) desliga tudo isso. Só acréscimos.
+ * v5.2 — NOVO (regra 71): FenixCore.saida, para não perder o que está sendo
+        editado: confirmar(mensagem) (janela "Continuar editando" ou "Sair sem
+        salvar"), guardar(fecharFn, temAlteracoes) (botão Fechar/Voltar/Cancelar
+        que pergunta antes), proteger({ temAlteracoes }) (aviso ao fechar a aba,
+        botão Voltar do celular e puxar para atualizar desligado) e
+        formulario(form) (detecta campos alterados). Só acréscimos.
  * ============================================================================
  */
 
@@ -3023,7 +3029,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "5.1";
+const _CORE_VERSAO = "5.2";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas
@@ -3563,6 +3569,121 @@ const esquema = {
 };
 
 // ============================================================================
+// 26. SAÍDA PROTEGIDA: NÃO PERDER O QUE ESTÁ SENDO EDITADO (v5.2, regra 71)
+// ============================================================================
+/**
+ * saida (regra 71): nenhuma tela com edição em andamento fecha sem perguntar.
+ *   saida.confirmar(mensagem, { textoSair, textoFicar })   Promise<boolean>: true = sair, false = ficar.
+ *       Janela com botões de 44 px; o foco começa em "Continuar editando"; ESC e toque fora = ficar.
+ *   saida.guardar(fecharFn, temAlteracoes, { mensagem, sempre })   devolve uma função para o botão
+ *       Fechar/Voltar/Cancelar: se houver alterações (ou sempre: true) pergunta antes de chamar fecharFn.
+ *   saida.proteger({ temAlteracoes, mensagem, sempre, aoSair, puxarParaAtualizar })   protege a tela inteira:
+ *       (a) fechar a aba ou recarregar: aviso do navegador; (b) botão Voltar do celular: pergunta e fica;
+ *       (c) puxar a tela para baixo para atualizar fica desligado (overscroll-behavior). Devolve
+ *       { liberar() }: chame depois de salvar ou quando a tela deixar de precisar de proteção.
+ *   saida.formulario(form)   devolve { tem(), marcarSalvo() }: compara os campos de agora com os de quando
+ *       a função foi chamada (ou do último marcarSalvo); serve de temAlteracoes.
+ */
+const _SAIDA_ESTILO_ID = "fx-saida-estilos";
+const saida = {
+  confirmar(mensagem, opcoes) {
+    const o = opcoes || {};
+    return new Promise((resolve) => {
+      if (typeof document === "undefined") { resolve(true); return; }
+      if (!document.getElementById(_SAIDA_ESTILO_ID)) {
+        const st = document.createElement("style"); st.id = _SAIDA_ESTILO_ID;
+        st.textContent = ".fx-saida-fundo{position:fixed;inset:0;z-index:2147483600;background:rgba(2,7,51,.55);display:flex;align-items:center;justify-content:center;padding:16px}" +
+          ".fx-saida-caixa{background:#fff;color:#020733;border-radius:14px;max-width:380px;width:100%;padding:18px;box-shadow:0 8px 28px rgba(2,7,51,.35);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}" +
+          ".fx-saida-caixa p{margin:0 0 14px}.fx-saida-bt{display:flex;flex-direction:column;gap:8px}" +
+          ".fx-saida-bt button{min-height:44px;border-radius:10px;border:2px solid #0076CE;font:inherit;font-weight:600;cursor:pointer}" +
+          ".fx-saida-ficar{background:#0076CE;color:#fff}.fx-saida-sair{background:#fff;color:#0076CE}" +
+          ".fx-saida-bt button:focus-visible{outline:3px solid #ffcb00;outline-offset:2px}";
+        document.head.appendChild(st);
+      }
+      const ativo = document.activeElement;
+      const fundo = document.createElement("div"); fundo.className = "fx-saida-fundo"; fundo.setAttribute("data-fx-saida", "1");
+      const caixa = document.createElement("div"); caixa.className = "fx-saida-caixa"; caixa.setAttribute("role", "alertdialog"); caixa.setAttribute("aria-modal", "true");
+      const p = document.createElement("p"); p.textContent = mensagem || "Você tem alterações que ainda não foram salvas. Deseja sair mesmo assim?";
+      const bt = document.createElement("div"); bt.className = "fx-saida-bt";
+      const ficar = document.createElement("button"); ficar.type = "button"; ficar.className = "fx-saida-ficar"; ficar.textContent = o.textoFicar || "Continuar editando";
+      const sair = document.createElement("button"); sair.type = "button"; sair.className = "fx-saida-sair"; sair.textContent = o.textoSair || "Sair sem salvar";
+      bt.appendChild(ficar); bt.appendChild(sair); caixa.appendChild(p); caixa.appendChild(bt); fundo.appendChild(caixa); document.body.appendChild(fundo);
+      const fim = (r) => { document.removeEventListener("keydown", tecla, true); fundo.remove(); try { if (ativo && ativo.focus) ativo.focus(); } catch (e) { /* ok */ } resolve(r); };
+      const tecla = (ev) => { if (ev.key === "Escape") { ev.stopPropagation(); fim(false); } };
+      document.addEventListener("keydown", tecla, true);
+      ficar.addEventListener("click", () => fim(false));
+      sair.addEventListener("click", () => fim(true));
+      fundo.addEventListener("click", (ev) => { if (ev.target === fundo) fim(false); });
+      ficar.focus();
+    });
+  },
+
+  guardar(fecharFn, temAlteracoes, opcoes) {
+    const o = opcoes || {};
+    return async function (...args) {
+      let pergunta = !!o.sempre;
+      try { if (!pergunta && typeof temAlteracoes === "function") pergunta = !!temAlteracoes(); } catch (e) { pergunta = true; }
+      if (pergunta && !(await saida.confirmar(o.mensagem, o))) return false;
+      await fecharFn.apply(this, args);
+      return true;
+    };
+  },
+
+  proteger(opcoes) {
+    const o = opcoes || {};
+    if (typeof window === "undefined") return { liberar() {} };
+    const tem = () => { try { return o.sempre === true || (typeof o.temAlteracoes === "function" && !!o.temAlteracoes()); } catch (e) { return true; } };
+    let ativo = true, perguntando = false;
+    const antes = (ev) => { if (ativo && tem()) { ev.preventDefault(); ev.returnValue = ""; return ""; } };
+    window.addEventListener("beforeunload", antes);
+    let estilo = null;
+    if (o.puxarParaAtualizar !== true && typeof document !== "undefined") {
+      estilo = document.createElement("style");
+      estilo.textContent = "html,body{overscroll-behavior-y:contain}";
+      document.head.appendChild(estilo);
+    }
+    const marca = { fxSaida: 1 };
+    try { history.pushState(marca, "", location.href); } catch (e) { /* ok */ }
+    const voltar = () => {
+      if (!ativo) return;
+      if (!tem()) { liberar(); try { history.back(); } catch (e) { /* ok */ } return; }
+      try { history.pushState(marca, "", location.href); } catch (e) { /* ok */ }
+      if (perguntando) return;
+      perguntando = true;
+      saida.confirmar(o.mensagem, o).then((sair) => {
+        perguntando = false;
+        if (!sair) return;
+        liberar();
+        if (typeof o.aoSair === "function") { try { o.aoSair(); } catch (e) { /* ok */ } }
+        try { history.go(-2); } catch (e) { /* ok */ }
+      });
+    };
+    window.addEventListener("popstate", voltar);
+    function liberar() {
+      if (!ativo) return;
+      ativo = false;
+      window.removeEventListener("beforeunload", antes);
+      window.removeEventListener("popstate", voltar);
+      if (estilo) estilo.remove();
+    }
+    return { liberar };
+  },
+
+  formulario(form) {
+    const ler = () => {
+      const r = [];
+      form.querySelectorAll("input, select, textarea").forEach((e, i) => {
+        if (e.type === "button" || e.type === "submit" || e.type === "reset" || e.type === "file") return;
+        r.push((e.name || e.id || i) + "=" + ((e.type === "checkbox" || e.type === "radio") ? (e.checked ? "1" : "0") : e.value));
+      });
+      return r.join("\u0001");
+    };
+    let base = ler();
+    return { tem: () => ler() !== base, marcarSalvo: () => { base = ler(); } };
+  }
+};
+
+// ============================================================================
 // EXPORTAÇÃO
 // ============================================================================
 
@@ -3588,6 +3709,7 @@ export const FenixCore = {
   admin,
   seguranca,
   esquema,
+  saida,
   som,
   preferencias,
   versoes,
