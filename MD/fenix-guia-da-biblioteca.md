@@ -1,4 +1,4 @@
-# GUIA DA BIBLIOTECA FÊNIX (v5.2)
+# GUIA DA BIBLIOTECA FÊNIX (v5.3)
 
 Este guia explica, em português claro, tudo o que existe na biblioteca Fênix: o que cada função do Fênix Core faz e para que serve cada regra do Livro das Regras. Ele também funciona como o **Changelog da biblioteca** (Parte 4). Acompanha todo pacote novo e é atualizado a cada versão, junto com o livro, o core, os templates e os documentos legais, que andam sempre com o mesmo número (regra 7).
 
@@ -9,7 +9,7 @@ Endereço base de tudo: https://fenicris-dev.github.io/Fenix-Core/
 | Arquivo | Onde fica | Para que serve |
 |----------------------------------------|------------------|------------------------------------------|
 | `fenix-core.js` | raiz | Biblioteca de funções que todo app carrega (módulo ES, exporta `FenixCore`). |
-| `versao.json` | raiz | Arquivo pequeno com a versão publicada do core e do livro (`{"core":"5.2","livro":"5.2"}`). O selo dos apps (regra 61) o consulta para avisar que existe core novo. Entra em todo pacote. |
+| `versao.json` | raiz | Arquivo pequeno com a versão publicada do core e do livro (`{"core":"5.3","livro":"5.3"}`). O selo dos apps (regra 61) o consulta para avisar que existe core novo. Entra em todo pacote. |
 | `index.html` | raiz | Painel da biblioteca: testa cada endereço oficial, confere se tudo está na mesma versão e roda testes ao vivo de CNPJ e CEP. |
 | `fenix-admin.html` | raiz | Painel administrativo (v4.9): clientes, licenças e equipe Fênix, com login Google. Só a equipe entra; as regras do Firestore conferem o nível. Não vai dentro de app. |
 | `firestore.rules` | raiz | Regras de segurança do Firestore: parte das publicadas no console e traz os reforços v4.0 (regra 46). Publique primeiro o core, depois as regras no console. |
@@ -26,7 +26,7 @@ Endereço base de tudo: https://fenicris-dev.github.io/Fenix-Core/
 | `testes-app/fumaca-modelo.mjs` | pasta `testes-app/` | Modelo do teste de fumaça de cada app (regra 68): abre, mede 360 px e toques de 44 px, confere rótulos e alt, roda o roteiro de criar, editar e apagar, testa texto injetado e abre sem internet. Roda no seu computador; não vai para o GitHub Pages. |
 | `testes-regras/` | pasta ao lado do `firestore.rules` | Testes automáticos das regras do Firestore (emulador local). Rodam no seu computador; não vão para o GitHub Pages. |
 
-Todo material com versão tem duas cópias (regra 11): a **neutra**, sem versão no nome (é a que os apps usam), e a **com versão no nome** (`-v5.2`), só para controle interno.
+Todo material com versão tem duas cópias (regra 11): a **neutra**, sem versão no nome (é a que os apps usam), e a **com versão no nome** (`-v5.3`), só para controle interno.
 
 ### Ferramentas de apoio (v4.7)
 
@@ -270,7 +270,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 - **`licenca.mensagem(acesso)`:** o texto pronto para mostrar ao cliente.
 - **`licenca.montarAviso(container)`:** desenha a faixa do topo: amarela durante o teste (com os dias que faltam), vermelha em somente leitura, com o botão de WhatsApp para contratar (44 px de toque).
 - **Apps sem login e sem banco:** `licenca.acessoLocal(app)` conta os 15 dias no aparelho (chave `fenix_teste_inicio_<app>`); `licenca.ativarLocal(db, app, email)` confere o espelho `licencas/{ID}` e guarda a licença no aparelho (`fenix_licenca_local_<app>`). **Limite:** é uma trava leve; limpar os dados do navegador reinicia a contagem.
-- **[v5.2] Aviso automático:** em todo app com login por `criarModuloAuth(app).aoMudarEstado`, o core chama `licenca.carregar` sozinho depois do login (a trava de gravação do core passa a valer) e mostra uma faixa fixa no rodapé com o botão de WhatsApp: amarela e fechável durante o teste, vermelha e fixa em somente leitura. Chamar `montarAviso` faz o app assumir o aviso e a faixa some. `licenca.automatico(false)` desliga tudo. Funciona em apps antigos sem alteração; apps só no aparelho (sem login) não recebem a faixa e usam `acessoLocal`.
+- **[v5.3] Aviso automático:** em todo app com login por `criarModuloAuth(app).aoMudarEstado`, o core chama `licenca.carregar` sozinho depois do login (a trava de gravação do core passa a valer) e mostra uma faixa fixa no rodapé com o botão de WhatsApp: amarela e fechável durante o teste, vermelha e fixa em somente leitura. Chamar `montarAviso` faz o app assumir o aviso e a faixa some. `licenca.automatico(false)` desliga tudo. Funciona em apps antigos sem alteração; apps só no aparelho (sem login) não recebem a faixa e usam `acessoLocal`.
 - **`criarEmpresa`:** passa a gravar `testeInicio` com a hora do servidor. As regras do Firestore exigem isso e impõem o mesmo que o core: o servidor recusa a gravação de uma empresa com teste e licença vencidos.
 - **Exportar o backup continua liberado** em somente leitura (regra 44), porque não grava no banco.
 
@@ -402,7 +402,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 62. **Teste de 15 dias e somente leitura (todos os apps):** 15 dias grátis a partir do primeiro acesso (`testeInicio`, gravado pelo servidor); depois, só licença por tempo ou definitiva dá direito a criar, editar e apagar; sem ela o app só lê e exporta o backup. O app chama `licenca.carregar`, mostra `licenca.montarAviso` e trata o erro `FENIX_SOMENTE_LEITURA`; as regras do Firestore recusam a gravação de qualquer jeito. Empresas antigas ficam liberadas até o carimbo (regra 63). Cada app só passa a mostrar o aviso na próxima alteração dele (seção 2.19).
 63. **Administração Fênix:** página `fenix-admin.html` com login Google; níveis administrador, comercial e suporte; administradores raiz fenicris@gmail.com e fenicris.dev@gmail.com (e-mail verificado); demais colaboradores em `equipe_fenix` no banco do core; depois de publicar as regras da v4.9, carimbar as empresas antigas uma vez (seção 2.20).
 
-### Seção 12. Segurança, dados, qualidade e continuidade (v5.0; regra 71 na v5.2)
+### Seção 12. Segurança, dados, qualidade e continuidade (v5.0; regra 71 na v5.2; regras 72 e 73 na v5.3)
 64. **Texto de usuário na tela:** texto de usuário, de importação ou do banco é texto, nunca código; use `textContent` ou `FenixCore.seguranca` (seção 2.21); nada de concatenar em `innerHTML`, `onclick` ou `href`.
 65. **Versão do esquema dos dados:** todo app registra a versão do formato dos seus dados e migra com `FenixCore.esquema.migrar`, com cópia de segurança antes e registro no Changelog; sem renomear nem trocar formato sem migração.
 66. **Cota do Firestore (grupo A):** listas com `limit` e paginação; um `onSnapshot` por coleção, só onde o tempo real é necessário, cancelado ao sair da tela; cache do aparelho; gravação em lote. As regras do Firestore também leem documentos para conferir licença e vínculo, então não grave em rajada.
@@ -411,6 +411,8 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 69. **Acessibilidade básica:** rótulo em todo campo, `alt` em toda imagem, `aria-label` em botão só com ícone, contraste de 4,5 para 1, fonte em `rem`, foco visível e erros em texto, não só em cor.
 70. **Plano de volta:** a versão anterior fica guardada com a versão no nome; se a nova falhar depois de publicada, recoloque a anterior primeiro e investigue depois; na entrega, diga a versão de volta; mudança de esquema ou de regra do Firestore exige o backup antes.
 71. **Saída protegida:** nenhuma tela com edição em andamento fecha sem perguntar Continuar editando ou Sair sem salvar (Voltar, Cancelar, janela, Voltar do celular, fechar ou recarregar a aba; puxar para atualizar desligado); consulta sem alteração fecha direto; assistentes e configurações perguntam sempre; use `FenixCore.saida` (seção 2.22), nunca `confirm()`.
+72. **Conferência de entrega de app:** toda entrega de app termina com a linha "Conferência de entrega" (versão no nome, cópia `index.html`, zip com `LEIAME.txt` quando há mais de um arquivo, selo, Changelog e Manual, teste de fumaça e versão de volta, cada item com sim ou não); sem a linha a entrega é incompleta.
+73. **Quando não dá para abrir os links:** se o ambiente de quem constrói o app (colaborador ou IA) bloqueia o GitHub Pages, ele diz que não abriu, pede os arquivos anexados (zip da biblioteca, livro, guia, core, ícones) e usa só o que foi anexado; o app publicado funciona mesmo assim, porque quem carrega o core é o navegador do cliente.
 
 ### firestore.rules, bloco por bloco
 O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu console** (as versões registradas no cabeçalho). O que já funcionava foi mantido; o que mudou na v4.0 está marcado com `[v4.0]`. Tudo que não está liberado é negado.
@@ -468,6 +470,7 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 Cada linha diz o que mudou e o que isso exige dos apps. As versões v1.x e v2.x do core vieram antes do livro atual; as versões v3.x são niveladas entre livro, core, templates e documentos legais.
 
 ### Versões v3.x (niveladas)
+- **v5.3**: regra 72 (conferência de entrega de app), regra 73 (quando os links não abrem para quem constrói) e o arquivo `fenix-bloco-entrega-de-apps.md` para colar no começo do chat de cada app. As regras do Firestore e o core não mudam de conteúdo. Apps: SIM, na próxima entrega de cada um.
 - **v5.2**: regra 71, saída protegida (seção 2.22); core com `FenixCore.saida`. As regras do Firestore não mudam. Apps: SIM, na próxima alteração de cada um.
 - **v5.1**: aviso automático do teste de 15 dias e do somente leitura nos apps com login pelo `criarModuloAuth`, inclusive nos antigos e sem alteração (regra 62, seção 2.19); só o core muda de conteúdo. As regras do Firestore não mudam. Apps: SIM, sem alteração deles; avise os clientes antes de publicar.
 - **v5.0**: seção 12 do livro com as regras 64 a 70 (texto seguro, esquema dos dados, cota do Firestore, excluir conta, teste de fumaça, acessibilidade e plano de volta); core com `seguranca` e `esquema` (seção 2.21); pasta `testes-app/` com o modelo do teste de fumaça; esclarecimentos sobre as regras 53 e 61, 58 e 62 e 7 a 11, sem renumerar. As regras do Firestore não mudam de conteúdo (só o cabeçalho): não precisam ser republicadas. Apps: SIM, na próxima alteração de cada um.
@@ -504,6 +507,7 @@ Cada linha diz o que mudou e o que isso exige dos apps. As versões v1.x e v2.x 
 - **v2.1**: anotação dos apps já no padrão. Apps: não.
 
 ### Fênix Core, funções acrescentadas (nada foi removido)
+- **v5.3**: nenhuma função nova; só a versão sobe.
 - **v5.2**: `FenixCore.saida` (`confirmar`, `guardar`, `proteger`, `formulario`) (seção 2.22).
 - **v5.1**: `licenca.automatico(ligado)`; o `criarModuloAuth(...).aoMudarEstado` passa a ler o acesso e mostrar a faixa de aviso sozinho (seção 2.19).
 - **v5.0**: `FenixCore.seguranca` (`escaparHTML`, `html`, `bruto`, `urlSegura`) e `FenixCore.esquema` (`versao`, `migrar`) (seção 2.21).
@@ -532,6 +536,9 @@ Cada linha diz o que mudou e o que isso exige dos apps. As versões v1.x e v2.x 
 - **v1.2**: `pessoas.buscarNaReceita` (consulta de CNPJ).
 - **v1.1**: `localidades.buscarPorCEP` (ViaCEP).
 - **v1.0**: módulo base: pessoas, produtos e serviços, localidades.
+
+### Se um endereço oficial não abrir (v5.3)
+Quase sempre o endereço está certo e o problema está em quem tenta abrir: o ambiente do assistente ou do colaborador bloqueia o GitHub Pages; o arquivo foi publicado há pouco (de 1 a 10 minutos) ou o navegador guardou a versão antiga; o caminho tem maiúscula ou hífen diferente (o repositório é `Fenix-Core`); o `.md` é baixado em vez de aberto; ou o repositório ficou privado. O Painel da biblioteca testa pelo navegador comum: se ele mostra OK, o endereço está no ar.
 
 ## PARTE 5. RECEITA RÁPIDA: APP NOVO EM 10 PASSOS
 
