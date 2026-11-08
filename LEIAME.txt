@@ -1,4 +1,4 @@
-Biblioteca Fênix v5.2
+Biblioteca Fênix v5.3
 
 Raiz do repositório: index.html (Painel), fenix-admin.html (Painel administrativo), fenix-core.js, versao.json, fenix-template-login.html, fenix-template-onboarding.html, fenix-template-splash.html, firestore.rules
 Icon/   : Fenix_Icone_128.png (os demais ícones já estão no repositório)
@@ -9,7 +9,14 @@ testes-regras/: testes das regras do Firestore, para rodar no SEU computador. N�
 testes-app/ : (NOVO) modelo do teste de fumaça dos apps (regra 68), para rodar no SEU computador. Não sobe para o GitHub Pages.
 versoes/: cópias com a versão no nome, só para controle interno. NUNCA suba esta pasta para a raiz do repositório.
 
-Novo na v5.2:
+Novo na v5.3:
+- Regra 72: toda entrega de app termina com a linha "Conferência de entrega" (versão no nome, cópia index.html, zip com LEIAME, selo, Changelog e Manual, teste de fumaça, versão de volta).
+- Regra 73: quando quem constrói o app não consegue abrir os links do GitHub Pages, diz isso e pede os arquivos anexados.
+- MD/fenix-bloco-entrega-de-apps.md: bloco curto para colar no começo do chat de cada app (junto com o zip da biblioteca anexado). Suba também para o repositório, na pasta MD/.
+- Não esqueça de subir o index.html (Painel) e todas as pastas: Termos/, MD/, DOC/.
+- Core e regras do Firestore não mudam de conteúdo (só a versão sobe para 5.3).
+
+Da v5.2 continuam:
 - Regra 71, saída protegida: nenhuma tela com edição em andamento fecha sem perguntar "Continuar editando" ou "Sair sem salvar" (Voltar, Cancelar, fechar janela, Voltar do celular, fechar ou recarregar a aba; puxar a tela para atualizar fica desligado). Core: FenixCore.saida (confirmar, guardar, proteger, formulario). Cada app passa a usar na próxima alteração dele.
 - IMPORTANTE ao publicar: suba TAMBÉM o index.html (o Painel). Ele é um arquivo separado do core; se ficar na versão antiga, o Painel mostra "está na versão X e o painel está na Y" mesmo com o core novo.
 - As regras do Firestore não mudam de conteúdo (só o cabeçalho sobe para 5.2).

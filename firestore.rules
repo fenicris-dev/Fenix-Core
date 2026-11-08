@@ -1,5 +1,5 @@
 // ============================================================================
-// FÊNIX | firestore.rules (Biblioteca Fênix v5.2)
+// FÊNIX | firestore.rules (Biblioteca Fênix v5.3)
 //
 // BASE: as regras publicadas no console do Firebase (projeto fenix-core), nas
 // versões registradas abaixo, enviadas pelo Cristiano em 21/10/2026. O que já
@@ -21,6 +21,7 @@
 // firestore-rules-v12-biblioteca-v5.0 (só a versão sobe: o conteúdo é o mesmo da v11)
 // firestore-rules-v13-biblioteca-v5.1 (só a versão sobe: o conteúdo é o mesmo da v11)
 // firestore-rules-v14-biblioteca-v5.2 (só a versão sobe: o conteúdo é o mesmo da v11)
+// firestore-rules-v15-biblioteca-v5.3 (só a versão sobe: o conteúdo é o mesmo da v11)
 //
 // ORDEM PARA PUBLICAR (importante):
 //   1) publique o fenix-core.js v4.0 no GitHub (ele passa a gravar o
