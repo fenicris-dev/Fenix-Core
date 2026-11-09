@@ -7,7 +7,7 @@ import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebas
 import { doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, serverTimestamp, Timestamp } from "firebase/firestore";
 
 let env;
-const regras = fs.readFileSync(new URL("../firestore.rules", import.meta.url), "utf8");
+const regras = fs.readFileSync(new URL("./firestore.rules", import.meta.url), "utf8");
 
 before(async () => {
   env = await initializeTestEnvironment({ projectId: "demo-fenix", firestore: { rules: regras, host: "127.0.0.1", port: 8080 } });
@@ -197,3 +197,32 @@ test("v4.9 inativo: membro desativado perde o acesso", async () => { await equip
 test("v4.9 equipe sem e-mail verificado é NEGADO", async () => { await equipe("com@x.com", "comercial"); await assertFails(updateDoc(doc(comEmail("c1", "com@x.com", false), "empresas/e1"), { licenca: "tempo" })); });
 test("v4.9 licencas: cliente comum continua sem gravar", () => assertFails(setDoc(doc(como("dono1"), "licencas/h2"), { licenca: "definitiva" })));
 test("v4.9 perfis: administrador da equipe também aprova perfis", async () => { await equipe("adm@x.com", "admin"); await assertSucceeds(updateDoc(doc(comEmail("a1", "adm@x.com"), "perfis/user1"), { status: "aprovado" })); });
+
+// =====================================================================
+// v5.4 — Compartilhe e ganhe: config/indicacoes, indicadoPor e prêmio por app
+// =====================================================================
+const hex10 = "abcdef0123";
+// config/indicacoes
+test("v5.4 config: qualquer um lê o documento da campanha (get)", () => assertSucceeds(getDoc(doc(anonimo(), "config/indicacoes"))));
+test("v5.4 config: listar é NEGADO", () => assertFails(getDocs(collection(anonimo(), "config"))));
+test("v5.4 config: administrador raiz liga a campanha", () => assertSucceeds(setDoc(doc(comEmail("r1", RAIZ1), "config/indicacoes"), { ativa: true, por: RAIZ1 })));
+test("v5.4 config: 'ativa' precisa ser verdadeiro ou falso", () => assertFails(setDoc(doc(comEmail("r1", RAIZ1), "config/indicacoes"), { ativa: "sim" })));
+test("v5.4 config: outro documento além de 'indicacoes' é NEGADO", () => assertFails(setDoc(doc(comEmail("r1", RAIZ1), "config/outro"), { ativa: true })));
+test("v5.4 config: comercial NÃO liga a campanha", async () => { await equipe("com@x.com", "comercial"); await assertFails(setDoc(doc(comEmail("c1", "com@x.com"), "config/indicacoes"), { ativa: true })); });
+test("v5.4 config: cliente comum NÃO liga a campanha", () => assertFails(setDoc(doc(como("dono1"), "config/indicacoes"), { ativa: true })));
+// criar empresa por indicação
+test("v5.4 empresa: criar com indicadoPor válido é permitido", () => assertSucceeds(setDoc(doc(como("novo1"), "empresas/e9"), { nome: "N", donoUid: "novo1", testeInicio: serverTimestamp(), indicadoPor: hex10 })));
+test("v5.4 empresa: indicadoPor fora do formato é NEGADO", () => assertFails(setDoc(doc(como("novo1"), "empresas/e9"), { nome: "N", donoUid: "novo1", testeInicio: serverTimestamp(), indicadoPor: "<script>" })));
+test("v5.4 empresa: criar já com premios é NEGADO", () => assertFails(setDoc(doc(como("novo1"), "empresas/e9"), { nome: "N", donoUid: "novo1", testeInicio: serverTimestamp(), premios: { "fenix-gestor-do-tempo": dias(365) } })));
+test("v5.4 empresa: criar já marcada como premiada é NEGADO", () => assertFails(setDoc(doc(como("novo1"), "empresas/e9"), { nome: "N", donoUid: "novo1", testeInicio: serverTimestamp(), indicacaoPremiada: true })));
+// quem libera o prêmio
+test("v5.4 prêmio: administrador grava premios na empresa", () => assertSucceeds(setDoc(doc(comEmail("r1", RAIZ1), "empresas/e1"), { premios: { "fenix-gestor-do-tempo": dias(365) } }, { merge: true })));
+test("v5.4 prêmio: comercial NÃO grava premios", async () => { await equipe("com@x.com", "comercial"); await assertFails(updateDoc(doc(comEmail("c1", "com@x.com"), "empresas/e1"), { premios: { "fenix-gestor-do-tempo": dias(365) } })); });
+test("v5.4 prêmio: dono NÃO se dá prêmio", () => assertFails(updateDoc(doc(como("dono1"), "empresas/e1"), { premios: { "fenix-gestor-do-tempo": dias(365) } })));
+// efeito do prêmio na gravação (dados pessoais do app premiado)
+test("v5.4 prêmio: vencido o teste, prêmio do app libera gravar nesse app", async () => { await estado({ testeInicio: dias(-20), premios: { "fenix-gestor-do-tempo": dias(100) } }); await assertSucceeds(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-gestor-do-tempo/t9"), { titulo: "x" })); });
+test("v5.4 prêmio: também vale em coleção {app}_{coleção}", async () => { await estado({ testeInicio: dias(-20), premios: { "fenix-gestor-do-tempo": dias(100) } }); await assertSucceeds(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-gestor-do-tempo_tarefas/t9"), { titulo: "x" })); });
+test("v5.4 prêmio: NÃO libera gravar em outro app", async () => { await estado({ testeInicio: dias(-20), premios: { "fenix-gestor-do-tempo": dias(100) } }); await assertFails(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-capsula-do-tempo/t9"), { titulo: "x" })); });
+test("v5.4 prêmio: prêmio vencido NÃO libera", async () => { await estado({ testeInicio: dias(-20), premios: { "fenix-gestor-do-tempo": dias(-1) } }); await assertFails(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-gestor-do-tempo/t9"), { titulo: "x" })); });
+test("v5.4 prêmio: sem prêmio e teste vencido continua NEGADO", async () => { await estado({ testeInicio: dias(-20) }); await assertFails(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-gestor-do-tempo/t9"), { titulo: "x" })); });
+test("v5.4 prêmio: teste em dia grava normalmente (sem prêmio)", async () => { await estado({ testeInicio: dias(-3) }); await assertSucceeds(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-gestor-do-tempo/t9"), { titulo: "x" })); });
