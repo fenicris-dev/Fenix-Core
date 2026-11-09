@@ -1,4 +1,4 @@
-Teste de fumaça dos apps Fênix (regra 68, biblioteca v5.3)
+Teste de fumaça dos apps Fênix (regra 68, biblioteca v5.6)
 
 Para que serve: conferir, antes de entregar um app, o básico que não pode quebrar: abre sem erro de JavaScript, sem rolagem horizontal em 360 px e em tela maior, toques de 44 px, campos com rótulo, imagens com alt, roteiro de criar/editar/apagar um registro, texto digitado que não vira código (regra 64) e abertura sem internet.
 
