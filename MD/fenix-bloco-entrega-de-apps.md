@@ -1,4 +1,4 @@
-# Bloco de entrega de apps Fênix (v5.3)
+# Bloco de entrega de apps Fênix (v5.6)
 
 Cole este bloco no começo do chat de cada app, junto com o pacote da biblioteca (.zip) anexado.
 
@@ -12,9 +12,11 @@ Cole este bloco no começo do chat de cada app, junto com o pacote da biblioteca
 - Quando houver mais de um arquivo (app e cópias, manual MD e PDF, service worker, ícones, pastas): também um `.zip` com tudo e um `LEIAME.txt` dizendo o que vai em cada pasta, além dos arquivos soltos.
 - Versão visível no rodapé e selo `v | c` (versão do app e do core).
 - Changelog e Manual (MD e PDF) atualizados.
+- Botão Compartilhar (regra 74): `FenixCore.compartilhar.iniciar({ nomeApp, url, email, container })` uma vez, depois do `init`. O aviso "Compartilhe e ganhe" (regra 75) vem do core, quando o Cristiano liga a campanha; o app não escreve nada dele.
+- Onde guardar os dados (regra 77): `FenixCore.armazenamento.iniciar({ app, nomeApp, temNuvem, modoAtual, container, aoMudar })` uma vez, depois do `init`: pergunta no primeiro acesso (padrão: só neste aparelho, com o aviso de perda de dados) e deixa mudar em Ajuda ou Configurações; o app só sincroniza se `armazenamento.nuvem(app)` for verdadeiro.
 - Teste de fumaça e a versão de volta informada.
 
 ## Última linha de TODA entrega (obrigatória)
-> Conferência de entrega: versão no nome: sim/não | index.html: sim/não | zip com LEIAME: sim/não/não se aplica | selo: sim/não | Changelog e Manual: sim/não | teste de fumaça: sim/não | versão de volta: vX.X
+> Conferência de entrega: versão no nome: sim/não | index.html: sim/não | zip com LEIAME: sim/não/não se aplica | selo: sim/não | Changelog e Manual: sim/não | teste de fumaça: sim/não | versão de volta: vX.X | botão Compartilhar: sim/não | onde guardar os dados: sim/não
 
 Todo "não" vem com o motivo. Sem essa linha, a entrega está incompleta.

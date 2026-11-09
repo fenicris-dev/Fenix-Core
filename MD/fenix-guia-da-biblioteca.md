@@ -1,4 +1,4 @@
-# GUIA DA BIBLIOTECA FÊNIX (v5.3)
+# GUIA DA BIBLIOTECA FÊNIX (v5.6)
 
 Este guia explica, em português claro, tudo o que existe na biblioteca Fênix: o que cada função do Fênix Core faz e para que serve cada regra do Livro das Regras. Ele também funciona como o **Changelog da biblioteca** (Parte 4). Acompanha todo pacote novo e é atualizado a cada versão, junto com o livro, o core, os templates e os documentos legais, que andam sempre com o mesmo número (regra 7).
 
@@ -9,7 +9,7 @@ Endereço base de tudo: https://fenicris-dev.github.io/Fenix-Core/
 | Arquivo | Onde fica | Para que serve |
 |----------------------------------------|------------------|------------------------------------------|
 | `fenix-core.js` | raiz | Biblioteca de funções que todo app carrega (módulo ES, exporta `FenixCore`). |
-| `versao.json` | raiz | Arquivo pequeno com a versão publicada do core e do livro (`{"core":"5.3","livro":"5.3"}`). O selo dos apps (regra 61) o consulta para avisar que existe core novo. Entra em todo pacote. |
+| `versao.json` | raiz | Arquivo pequeno com a versão publicada do core e do livro (`{"core":"5.6","livro":"5.6"}`). O selo dos apps (regra 61) o consulta para avisar que existe core novo. Entra em todo pacote. |
 | `index.html` | raiz | Painel da biblioteca: testa cada endereço oficial, confere se tudo está na mesma versão e roda testes ao vivo de CNPJ e CEP. |
 | `fenix-admin.html` | raiz | Painel administrativo (v4.9): clientes, licenças e equipe Fênix, com login Google. Só a equipe entra; as regras do Firestore conferem o nível. Não vai dentro de app. |
 | `firestore.rules` | raiz | Regras de segurança do Firestore: parte das publicadas no console e traz os reforços v4.0 (regra 46). Publique primeiro o core, depois as regras no console. |
@@ -26,7 +26,7 @@ Endereço base de tudo: https://fenicris-dev.github.io/Fenix-Core/
 | `testes-app/fumaca-modelo.mjs` | pasta `testes-app/` | Modelo do teste de fumaça de cada app (regra 68): abre, mede 360 px e toques de 44 px, confere rótulos e alt, roda o roteiro de criar, editar e apagar, testa texto injetado e abre sem internet. Roda no seu computador; não vai para o GitHub Pages. |
 | `testes-regras/` | pasta ao lado do `firestore.rules` | Testes automáticos das regras do Firestore (emulador local). Rodam no seu computador; não vão para o GitHub Pages. |
 
-Todo material com versão tem duas cópias (regra 11): a **neutra**, sem versão no nome (é a que os apps usam), e a **com versão no nome** (`-v5.3`), só para controle interno.
+Todo material com versão tem duas cópias (regra 11): a **neutra**, sem versão no nome (é a que os apps usam), e a **com versão no nome** (`-v5.6`), só para controle interno.
 
 ### Ferramentas de apoio (v4.7)
 
@@ -270,8 +270,9 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 - **`licenca.mensagem(acesso)`:** o texto pronto para mostrar ao cliente.
 - **`licenca.montarAviso(container)`:** desenha a faixa do topo: amarela durante o teste (com os dias que faltam), vermelha em somente leitura, com o botão de WhatsApp para contratar (44 px de toque).
 - **Apps sem login e sem banco:** `licenca.acessoLocal(app)` conta os 15 dias no aparelho (chave `fenix_teste_inicio_<app>`); `licenca.ativarLocal(db, app, email)` confere o espelho `licencas/{ID}` e guarda a licença no aparelho (`fenix_licenca_local_<app>`). **Limite:** é uma trava leve; limpar os dados do navegador reinicia a contagem.
-- **[v5.3] Aviso automático:** em todo app com login por `criarModuloAuth(app).aoMudarEstado`, o core chama `licenca.carregar` sozinho depois do login (a trava de gravação do core passa a valer) e mostra uma faixa fixa no rodapé com o botão de WhatsApp: amarela e fechável durante o teste, vermelha e fixa em somente leitura. Chamar `montarAviso` faz o app assumir o aviso e a faixa some. `licenca.automatico(false)` desliga tudo. Funciona em apps antigos sem alteração; apps só no aparelho (sem login) não recebem a faixa e usam `acessoLocal`.
+- **[v5.4] Aviso automático:** em todo app com login por `criarModuloAuth(app).aoMudarEstado`, o core chama `licenca.carregar` sozinho depois do login (a trava de gravação do core passa a valer) e mostra uma faixa fixa no rodapé com o botão de WhatsApp: amarela e fechável durante o teste, vermelha e fixa em somente leitura. Chamar `montarAviso` faz o app assumir o aviso e a faixa some. `licenca.automatico(false)` desliga tudo. Funciona em apps antigos sem alteração; apps só no aparelho (sem login) não recebem a faixa e usam `acessoLocal`.
 - **`criarEmpresa`:** passa a gravar `testeInicio` com a hora do servidor. As regras do Firestore exigem isso e impõem o mesmo que o core: o servidor recusa a gravação de uma empresa com teste e licença vencidos.
+- **[v5.4] Prêmio de indicação:** `licenca.acesso(dados, agora, app)` aceita o nome do app como 3º parâmetro; se a empresa tem um prêmio vigente para ele (`premios.{app}`), o resultado é `{ tipo: "premio", modo: "ativa", podeGravar: true }`. O `licenca.carregar` passa sozinho o nome dado no `FenixCore.init`. Sem o 3º parâmetro nada muda.
 - **Exportar o backup continua liberado** em somente leitura (regra 44), porque não grava no banco.
 
 ### 2.20 Administração: equipe, níveis e clientes (v5.2)
@@ -286,6 +287,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 - **`admin.clientes.definirLicenca(db, empresaId, { tipo, ate, obs, por })`:** `teste`, `tempo` (exige data) ou `definitiva`; atualiza também o espelho `licencas/{ID do e-mail do dono}` do login Google.
 - **`admin.clientes.prorrogarTeste(db, empresaId, dias)`** e **`reiniciarTeste(db, empresaId)`:** ampliam ou recomeçam os 15 dias.
 - **`admin.clientes.carimbarSemInicio(db)`:** grava `testeInicio` agora nas empresas antigas sem data e sem licença. **Rode uma vez**, logo depois de publicar as regras da v4.9: é o "15 dias a partir da publicação".
+- **[v5.4] `admin.indicacoes.listar(db)` e `admin.indicacoes.liberarPremio(db, indicadoEmpresaId, appId, por)`:** a primeira devolve as empresas que vieram por indicação com o estado (`aguardando`, `elegivel`, `liberado` ou `invalida`); a segunda libera o prêmio de 1 ano e só aceita indicado `elegivel` e app da lista `APPS_PREMIO`.
 - **A página `fenix-admin.html`:** abas Clientes (busca, resumo, +15 e +30 dias, reiniciar, conceder licença por tempo ou definitiva, revogar, carimbar) e Equipe (adicionar, editar, ativar e desativar, remover; os administradores raiz aparecem fixos). Quem manda de verdade são as regras: um nível que não pode a ação recebe "sem permissão".
 
 ### 2.21 Texto seguro e versão do esquema dos dados (v5.0)
@@ -314,6 +316,42 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 - **`saida.formulario(form)`:** devolve `{ tem(), marcarSalvo() }`, que compara os campos de agora com os do início (ou do último `marcarSalvo`); use `tem` como `temAlteracoes`.
 - **Exemplo:** `const f = FenixCore.saida.formulario(form); const p = FenixCore.saida.proteger({ temAlteracoes: f.tem }); botaoFechar.onclick = FenixCore.saida.guardar(fechar, f.tem); ... ao salvar: f.marcarSalvo(); p.liberar();`
 - **Limite:** nos navegadores de celular o aviso de fechar a aba é decisão do navegador e pode não aparecer; por isso o botão Voltar e o puxar para atualizar têm tratamento próprio.
+
+### 2.23 Compartilhar o app (v5.4)
+
+**`FenixCore.compartilhar`** (regra 74) dá a todo app o botão **Compartilhar**. Não usa banco.
+
+- **`compartilhar.iniciar({ nomeApp, url, email, container })`:** a chamada que o app faz, uma vez, depois do `init`. Guarda o código de indicação do link, desenha o botão no `container` (se vier) e, com a campanha ligada, mostra o aviso da regra 75. Nunca lança erro.
+- **`compartilhar.montarBotao(container, { nomeApp, url, email, texto })`:** só o botão (44 px de toque). **`compartilhar.abrir(opcoes)`:** abre a janela com Enviar por WhatsApp, Enviar por e-mail, Copiar link e, no celular, Mais opções (o compartilhamento do aparelho). ESC e o toque fora fecham.
+- **`compartilhar.links({ nomeApp, url, codigo })`:** devolve `{ link, mensagem, whatsapp, email }`, para o app que quiser montar a sua tela. Sem `url`, vale o endereço atual sem parâmetros; sem `codigo` válido, o link sai sem o `?ind=`.
+- **Com o `email` do usuário logado,** o link leva o código dele (`?ind=…`), usado pela campanha da seção 2.24.
+- **Exemplo:** `FenixCore.compartilhar.iniciar({ nomeApp: "Gestor do Tempo", url: "https://fenicris-dev.github.io/Fenix-Gestor-do-Tempo/", email: usuario.email, container: "#menu" });`
+- **Cuidados:** o endereço é o do app publicado (`index.html`), nunca o de um arquivo com versão. O app não lê contatos: quem escolhe com quem compartilhar é a pessoa. O "Copiar link" depende da permissão do navegador; se falhar, a janela mostra o link para copiar à mão.
+
+### 2.24 Compartilhe e ganhe (v5.4)
+
+**`FenixCore.indicacoes`** (regras 75 e 76) é a campanha em que quem indica ganha **1 ano de acesso a outro app** da lista, só depois que o indicado **contratar a licença** e com liberação **manual** do Cristiano. Nunca em dinheiro.
+
+- **A chave:** o documento `config/indicacoes` (`{ ativa: true | false }`), que qualquer um lê e só o administrador grava. **`indicacoes.ativa(db)`** lê (sem rede vale a última leitura guardada); **`indicacoes.definirAtiva(db, sim, por)`** liga ou desliga; a página `fenix-admin.html` faz isso pela aba Indicações.
+- **`indicacoes.avisoAbertura(db, opcoes)`:** mostra, uma vez por sessão e só com a campanha ligada, "Compartilhe e ganhe acesso de 1 ano a um dos nossos aplicativos", a lista dos apps do prêmio e as condições, com os botões Compartilhar agora e Agora não. O app não chama direto: `compartilhar.iniciar` já chama.
+- **`indicacoes.APPS_PREMIO`:** a lista manual de apps do prêmio, escrita no core (`{ id, nome, url }`; o `id` é o nome usado no `FenixCore.init`). Hoje: Gestor do Tempo, Cápsula do Tempo e Controle de Compras. Confira os nomes e endereços antes de ligar a campanha.
+- **O rastro da indicação:** `indicacoes.codigo(email)` devolve o código (10 caracteres, derivado do e-mail); `indicacoes.capturar()` guarda neste aparelho o primeiro `?ind=` que chegar (o core já chama ao carregar); `indicacoes.codigoCapturado()` lê. **`criarEmpresa`** grava esse código em `empresas/{id}.indicadoPor`.
+- **A liberação (página administrativa):** a aba Indicações lista os indicados com o estado (aguardando contratar a licença, pode liberar, liberado, inválida). Em "Liberar prêmio" o administrador escolhe o app e o sistema grava `premios.{app}` na empresa de quem indicou (1 ano) e marca o indicado como premiado, na mesma operação. Pelo core: `admin.indicacoes.listar` e `admin.indicacoes.liberarPremio`.
+- **Como o prêmio vale:** `licenca.acesso(dados, agora, app)` e as regras do Firestore liberam a gravação naquele app, mesmo com o teste vencido. No servidor isso vale para os apps que guardam os dados em `dados_pessoais/{uid}/{app}` (ou `{app}_{coleção}`). Em app com dados da empresa, conceda uma licença por tempo de 1 ano no lugar.
+- **O que impede abuso:** o prêmio só sai com indicado que contratou a licença; cada indicado vale um prêmio; auto-indicação e código sem dono são inválidos; as regras do Firestore recusam empresa criada já com prêmio ou marcada como premiada.
+- **Cuidados:** com o banco desligado o aviso não aparece (a chave está no banco). O link com `?ind=` guarda o código do primeiro indicador que a pessoa seguiu. O código é só um identificador; quem confere a indicação é o administrador.
+
+### 2.25 Onde guardar os dados (v5.5)
+
+**`FenixCore.armazenamento`** (regra 77) pergunta ao usuário se os dados ficam **só neste aparelho (padrão)** ou **na nuvem da Fênix**, e deixa mudar depois. Não usa banco: a escolha fica no aparelho (por app).
+
+- **`armazenamento.iniciar({ app, nomeApp, temNuvem, modoAtual, container, aoMudar })`:** a chamada do app, uma vez, depois do `init`. Se o usuário ainda não respondeu, abre a pergunta do primeiro acesso (só fecha com a resposta); com `container`, desenha o bloco "Onde guardar meus dados" no menu Ajuda ou em Configurações. Devolve o modo em vigor (`"local"` ou `"nuvem"`).
+- **`armazenamento.modo(app)`, `nuvem(app)`, `escolheu(app)`:** o app consulta antes de iniciar a sincronia ou gravar na nuvem. Sem resposta, vale o `modoAtual` informado (app antigo que já usava a nuvem) ou `"local"`.
+- **`armazenamento.perguntar({ nomeApp, temNuvem, atual, obrigatoria })`:** só a janela. Devolve `"local"`, `"nuvem"` ou `null` (cancelou). **`armazenamento.montarConfig(container, { app, nomeApp, temNuvem, aoMudar })`:** só o bloco de configuração.
+- **`aoMudar(novo, antigo)`:** o app inicia ou para a sincronia e envia os dados do aparelho. Se lançar erro, a escolha não é gravada e o bloco mostra "Não foi possível mudar agora".
+- **Os avisos oficiais:** `AVISO_LOCAL` (formatar, limpar o histórico ou os dados do navegador, ou desinstalar apaga tudo), `AVISO_NUVEM`, `AVISO_PARA_NUVEM` e `AVISO_PARA_LOCAL`.
+- **Receita (app com sincronia):** `const modo = await FenixCore.armazenamento.iniciar({ app: "fenix-gestor-do-tempo", nomeApp: "Gestor do Tempo", container: "#config", modoAtual: "nuvem", aoMudar: async (novo) => { if (novo === "nuvem") { sync.iniciar(); await sync.importarLista(lerLocal()); } else sync.parar(); } }); if (modo === "nuvem") sync.iniciar();`
+- **Cuidados:** o core não liga a sincronia sozinho (apps antigos não mudam de comportamento enquanto não chamarem). Login e licença seguem como são. Em outro aparelho a pergunta aparece de novo. Ao passar para a nuvem, ofereça o backup antes (regra 44).
 
 ## PARTE 3. O LIVRO DAS REGRAS, REGRA POR REGRA
 
@@ -411,8 +449,16 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 69. **Acessibilidade básica:** rótulo em todo campo, `alt` em toda imagem, `aria-label` em botão só com ícone, contraste de 4,5 para 1, fonte em `rem`, foco visível e erros em texto, não só em cor.
 70. **Plano de volta:** a versão anterior fica guardada com a versão no nome; se a nova falhar depois de publicada, recoloque a anterior primeiro e investigue depois; na entrega, diga a versão de volta; mudança de esquema ou de regra do Firestore exige o backup antes.
 71. **Saída protegida:** nenhuma tela com edição em andamento fecha sem perguntar Continuar editando ou Sair sem salvar (Voltar, Cancelar, janela, Voltar do celular, fechar ou recarregar a aba; puxar para atualizar desligado); consulta sem alteração fecha direto; assistentes e configurações perguntam sempre; use `FenixCore.saida` (seção 2.22), nunca `confirm()`.
-72. **Conferência de entrega de app:** toda entrega de app termina com a linha "Conferência de entrega" (versão no nome, cópia `index.html`, zip com `LEIAME.txt` quando há mais de um arquivo, selo, Changelog e Manual, teste de fumaça e versão de volta, cada item com sim ou não); sem a linha a entrega é incompleta.
+72. **Conferência de entrega de app:** toda entrega de app termina com a linha "Conferência de entrega" (versão no nome, cópia `index.html`, zip com `LEIAME.txt` quando há mais de um arquivo, selo, Changelog e Manual, teste de fumaça, versão de volta, botão Compartilhar e escolha de onde guardar os dados, cada item com sim ou não); sem a linha a entrega é incompleta.
 73. **Quando não dá para abrir os links:** se o ambiente de quem constrói o app (colaborador ou IA) bloqueia o GitHub Pages, ele diz que não abriu, pede os arquivos anexados (zip da biblioteca, livro, guia, core, ícones) e usa só o que foi anexado; o app publicado funciona mesmo assim, porque quem carrega o core é o navegador do cliente.
+
+### Seção 13. Compartilhar e indicar (v5.4)
+74. **Compartilhar o app:** todo app novo ou alterado traz o botão Compartilhar (WhatsApp, e-mail, copiar link e opções do aparelho), montado pelo core com `compartilhar.iniciar` (seção 2.23); o app não lê contatos nem monta mensagem própria.
+75. **Compartilhe e ganhe:** campanha que o Cristiano liga e desliga na página administrativa (chave `config/indicacoes`); ligada, o core mostra na abertura "Compartilhe e ganhe acesso de 1 ano a um dos nossos aplicativos" com a lista de apps (manual, no core). O prêmio nunca é em dinheiro (seção 2.24).
+76. **Prêmio só com a efetivação do indicado:** o prêmio só é liberado depois que o indicado contratar a licença, de forma manual, pelo administrador; um prêmio por indicado, auto-indicação inválida, 1 ano no app escolhido.
+
+### Seção 14. Onde ficam os dados (v5.5)
+77. **Onde guardar os dados:** no primeiro acesso o app pergunta se o usuário guarda os dados só neste aparelho (padrão, com o aviso de que formatar, limpar o histórico ou os dados do navegador apaga tudo) ou na nuvem da Fênix, e a escolha pode ser mudada depois em Ajuda ou Configurações; o app consulta `armazenamento.nuvem(app)` antes de sincronizar (seção 2.25). Os Termos e a Política oficiais informam essa escolha.
 
 ### firestore.rules, bloco por bloco
 O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu console** (as versões registradas no cabeçalho). O que já funcionava foi mantido; o que mudou na v4.0 está marcado com `[v4.0]`. Tudo que não está liberado é negado.
@@ -433,6 +479,7 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 - **[v4.9] Equipe e administradores:** funções `emailVerificado`, `adminRaiz` (os dois e-mails raiz, só verificados), `temEquipeAtiva`, `nivelDaEquipe`, `equipeAdmin`, `equipeComercial` e `equipeSuporte`. Nova coleção `equipe_fenix/{e-mail}`: o próprio membro lê o seu documento (e o suporte lê qualquer um); só o administrador lista, cria, altera e apaga (nível válido e e-mail igual ao ID).
 - **[v4.9] Teste e licença:** funções `licencaEmDia`, `testeEmDia` (360 horas a partir de `testeInicio`; sem esse campo, a empresa fica liberada até o carimbo), `empresaPodeGravar` e `pessoalPodeGravar`. Valem para `pessoas_fisicas`, `pessoas_juridicas`, as coleções da empresa e `dados_pessoais` (o documento `relogio` grava sempre). Vencidos o teste e a licença, só leitura.
 - **[v4.9] `empresas/{id}`:** a criação exige `testeInicio` igual à hora do servidor; o administrador altera qualquer campo e o comercial só os de licença e de início do teste (`licenca`, `licencaAte`, `licencaObs`, `licencaPor`, `licencaEm`, `testeInicio`); o suporte lê. Ninguém apaga. **`licencas/{ID}`:** `get` público; listar para o suporte; criar, alterar e apagar para o comercial.
+- **[v5.4] Compartilhe e ganhe:** nova coleção `config/{doc}`: qualquer um lê um documento (`get`; listar é negado) e só o administrador grava, e só o documento `indicacoes` com `ativa` verdadeiro ou falso. Em `empresas/{id}`, a criação aceita o campo `indicadoPor` (10 caracteres hexadecimais) e recusa `premios`, `indicacaoPremiada`, `indicacaoPremioApp`, `indicacaoPremioEm` e `indicacaoPremioPor`; só o administrador grava esses campos (o comercial continua só com os de licença). Novas funções `premioEmDia(empresa, app)` e `pessoalPodeGravarEm(app)`: em `dados_pessoais/{uid}/{colecao}`, a gravação vale também quando a empresa tem prêmio vigente para o app (o nome do app é o trecho da coleção antes do primeiro `_`).
 - **Custo:** cada gravação agora faz leituras extras nas regras (empresa e vínculo); isso conta na cota do Firestore, mas é pequeno.
 
 **Roteiro de teste no Playground de regras** (todos com usuário logado de teste):
@@ -451,6 +498,9 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 13. **[v4.9]** Empresa com `testeInicio` de 3 dias atrás: o técnico grava; de 20 dias atrás, sem licença: negado (mas lê); com licença por tempo válida ou definitiva: permitido.
 14. **[v4.9]** E-mail raiz verificado altera a licença da empresa: permitido; o mesmo e-mail sem verificação, ou `fenicris@gmail.com.evil`: negado.
 15. **[v4.9]** Comercial altera só campos de licença; suporte lê e não grava; colaborador inativo perde o acesso; só administrador cria colaborador.
+16. **[v5.4]** Ler `config/indicacoes` sem estar logado: permitido; gravar como administrador com `ativa: true`: permitido; como comercial ou cliente: negado.
+17. **[v5.4]** Criar empresa com `indicadoPor: "abcdef0123"`: permitido; com texto fora do formato, ou já com `premios`: negado.
+18. **[v5.4]** Empresa com teste de 20 dias e `premios.fenix-gestor-do-tempo` vigente: o técnico grava em `dados_pessoais/{uid}/fenix-gestor-do-tempo/...`: permitido; em outro app, ou com o prêmio vencido: negado.
 
 **Pontos de atenção**
 - Um app com o core antigo guardado no cache do aparelho não grava o `conviteToken`, então não consegue aceitar convite até abrir com internet e baixar o core novo.
@@ -470,6 +520,9 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 Cada linha diz o que mudou e o que isso exige dos apps. As versões v1.x e v2.x do core vieram antes do livro atual; as versões v3.x são niveladas entre livro, core, templates e documentos legais.
 
 ### Versões v3.x (niveladas)
+- **v5.6**: Termos de Uso e Política de Privacidade passam a informar a escolha da regra 77 (onde guardar os dados e o risco de perda quando ficam só no aparelho); a data "Atualizado em" dos dois passa a 09/11/2026 porque o texto mudou; o restante só sobe a versão. Apps: NÃO.
+- **v5.5**: regra 77 (onde guardar os dados: neste aparelho por padrão ou na nuvem, perguntado no primeiro acesso e mudável em Ajuda ou Configurações); core com `FenixCore.armazenamento` (seção 2.25); Conferência de entrega (regra 72) ganha o item escolha de onde guardar os dados; as regras do Firestore não mudam (só a versão). Apps: SIM, na próxima entrega de cada um (chamar `armazenamento.iniciar`).
+- **v5.4**: regras 74 a 76 (compartilhar o app e campanha Compartilhe e ganhe); core com `FenixCore.compartilhar`, `FenixCore.indicacoes` e `admin.indicacoes` (seções 2.23 e 2.24) e `licenca.acesso` com o prêmio; aba Indicações na página administrativa; **as regras do Firestore mudam (v16)**; Conferência de entrega (regra 72) ganha o item botão Compartilhar; a pasta `testes-regras/` agora copia o `firestore.rules` antes de testar. Apps: SIM, na próxima entrega de cada um (chamar `compartilhar.iniciar`).
 - **v5.3**: regra 72 (conferência de entrega de app), regra 73 (quando os links não abrem para quem constrói) e o arquivo `fenix-bloco-entrega-de-apps.md` para colar no começo do chat de cada app. As regras do Firestore e o core não mudam de conteúdo. Apps: SIM, na próxima entrega de cada um.
 - **v5.2**: regra 71, saída protegida (seção 2.22); core com `FenixCore.saida`. As regras do Firestore não mudam. Apps: SIM, na próxima alteração de cada um.
 - **v5.1**: aviso automático do teste de 15 dias e do somente leitura nos apps com login pelo `criarModuloAuth`, inclusive nos antigos e sem alteração (regra 62, seção 2.19); só o core muda de conteúdo. As regras do Firestore não mudam. Apps: SIM, sem alteração deles; avise os clientes antes de publicar.
@@ -507,6 +560,8 @@ Cada linha diz o que mudou e o que isso exige dos apps. As versões v1.x e v2.x 
 - **v2.1**: anotação dos apps já no padrão. Apps: não.
 
 ### Fênix Core, funções acrescentadas (nada foi removido)
+- **v5.5**: `FenixCore.armazenamento` (`iniciar`, `perguntar`, `montarConfig`, `modo`, `nuvem`, `escolheu`, `definir`, `AVISO_LOCAL`, `AVISO_NUVEM`, `AVISO_PARA_LOCAL`, `AVISO_PARA_NUVEM`; seção 2.25).
+- **v5.4**: `FenixCore.compartilhar` (`iniciar`, `montarBotao`, `abrir`, `links`), `FenixCore.indicacoes` (`ativa`, `definirAtiva`, `avisoAbertura`, `codigo`, `capturar`, `codigoCapturado`, `APPS_PREMIO`, `PREMIO_DIAS`, `TEXTO`), `FenixCore.admin.indicacoes` (`listar`, `liberarPremio`) e o 3º parâmetro de `licenca.acesso` (seções 2.23, 2.24 e 2.19); `criarEmpresa` grava `indicadoPor`.
 - **v5.3**: nenhuma função nova; só a versão sobe.
 - **v5.2**: `FenixCore.saida` (`confirmar`, `guardar`, `proteger`, `formulario`) (seção 2.22).
 - **v5.1**: `licenca.automatico(ligado)`; o `criarModuloAuth(...).aoMudarEstado` passa a ler o acesso e mostrar a faixa de aviso sozinho (seção 2.19).
