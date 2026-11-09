@@ -1,5 +1,5 @@
 // ============================================================================
-// FÊNIX | firestore.rules (Biblioteca Fênix v5.3)
+// FÊNIX | firestore.rules (Biblioteca Fênix v5.6)
 //
 // BASE: as regras publicadas no console do Firebase (projeto fenix-core), nas
 // versões registradas abaixo, enviadas pelo Cristiano em 21/10/2026. O que já
@@ -22,6 +22,9 @@
 // firestore-rules-v13-biblioteca-v5.1 (só a versão sobe: o conteúdo é o mesmo da v11)
 // firestore-rules-v14-biblioteca-v5.2 (só a versão sobe: o conteúdo é o mesmo da v11)
 // firestore-rules-v15-biblioteca-v5.3 (só a versão sobe: o conteúdo é o mesmo da v11)
+// firestore-rules-v18-biblioteca-v5.6 (só a versão sobe: o conteúdo é o mesmo da v16)
+// firestore-rules-v17-biblioteca-v5.5 (só a versão sobe: o conteúdo é o mesmo da v16)
+// firestore-rules-v16-biblioteca-v5.4 (Compartilhe e ganhe: config/indicacoes, indicadoPor na empresa e prêmio por app [v5.4])
 //
 // ORDEM PARA PUBLICAR (importante):
 //   1) publique o fenix-core.js v4.0 no GitHub (ele passa a gravar o
@@ -129,6 +132,19 @@ service cloud.firestore {
         || licencaEmDia(get(/databases/$(database)/documents/empresas/$(empresaId)).data)
         || testeEmDia(get(/databases/$(database)/documents/empresas/$(empresaId)).data);
     }
+    // ---------- [v5.4] Prêmio de indicação (regra 76) ----------
+    // empresas/{id}.premios é um mapa { "nome-do-app": Timestamp de término }, gravado só pelo
+    // administrador (empresa nenhuma cria nem altera o próprio prêmio). Um prêmio em dia libera
+    // a gravação NAQUELE app, nos dados pessoais (dados_pessoais/{uid}/{app} ou {app}_{coleção}).
+    function premioEmDia(emp, app) {
+      return emp.get('premios', null) is map
+        && emp.premios.get(app, null) is timestamp
+        && emp.premios.get(app, null) > request.time;
+    }
+    function pessoalPodeGravarEm(app) {
+      return pessoalPodeGravar()
+        || premioEmDia(get(/databases/$(database)/documents/empresas/$(get(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid)).data.get('empresaId', 'sem-empresa'))).data, app);
+    }
     function pessoalPodeGravar() {
       return !exists(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid))
         || empresaPodeGravar(get(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid)).data.get('empresaId', 'sem-empresa'));
@@ -169,13 +185,28 @@ service cloud.firestore {
       // [v4.9] Toda empresa nasce com testeInicio = hora do servidor (o app não escolhe a data).
       allow create: if autenticado()
         && (!('licenca' in request.resource.data) || request.resource.data.licenca == 'teste')
-        && request.resource.data.get('testeInicio', null) == request.time;
+        && request.resource.data.get('testeInicio', null) == request.time
+        // [v5.4] Quem cria a empresa não pode se dar prêmio nem se marcar como premiado; o código de
+        // indicação (indicadoPor) é só texto de 10 caracteres hexadecimais, conferido pelo administrador.
+        && !request.resource.data.keys().hasAny(['premios', 'indicacaoPremiada', 'indicacaoPremioApp', 'indicacaoPremioEm', 'indicacaoPremioPor'])
+        && (!('indicadoPor' in request.resource.data)
+            || (request.resource.data.indicadoPor is string && request.resource.data.indicadoPor.matches('^[a-f0-9]{10}$')));
       // [v4.9] Licença e início do teste: administrador (qualquer campo) ou comercial (só estes campos).
       allow update: if equipeAdmin()
         || (equipeComercial()
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['licenca', 'licencaAte', 'licencaObs', 'licencaPor', 'licencaEm', 'testeInicio']));
       allow delete: if false;
+    }
+
+    // ---------- [v5.4] Configuração pública (chave da campanha "Compartilhe e ganhe") ----------
+    // Qualquer um lê UM documento (o app lê antes do login); só o administrador grava.
+    match /config/{docId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if equipeAdmin() && docId == 'indicacoes'
+        && request.resource.data.get('ativa', null) is bool;
+      allow delete: if equipeAdmin();
     }
 
     // ---------- [v4.3] Espelho de licença, para o login (antes de saber quem é o usuário) ----------
@@ -304,7 +335,7 @@ service cloud.firestore {
     match /dados_pessoais/{uid}/{colecao}/{docId} {
       allow read: if autenticado() && request.auth.uid == uid;
       // [v4.9] Somente leitura trava a gravação; o documento "relogio" (medição do relógio) fica livre.
-      allow write: if autenticado() && request.auth.uid == uid && (docId == 'relogio' || pessoalPodeGravar());
+      allow write: if autenticado() && request.auth.uid == uid && (docId == 'relogio' || pessoalPodeGravarEm(colecao.split('_')[0]));
     }
   }
 }

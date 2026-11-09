@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v5.3
+ * FÊNIX CORE v5.6
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -321,6 +321,24 @@
         botão Voltar do celular e puxar para atualizar desligado) e
         formulario(form) (detecta campos alterados). Só acréscimos.
  * v5.3 — só a versão sobe (nenhuma função nova): nivelamento com o livro.
+ * v5.6 — só a versão sobe (nenhuma função nova): nivelamento com o livro (Termos e Política atualizados).
+ * v5.5 — NOVO (regra 77): FenixCore.armazenamento (iniciar, perguntar, montarConfig,
+        modo, nuvem, escolheu, definir): no primeiro acesso o usuário escolhe guardar
+        os dados só neste aparelho (PADRÃO, com o aviso de que formatar, limpar o
+        histórico ou os dados do navegador apaga tudo) ou na nuvem da Fênix; pode mudar
+        depois em Ajuda ou Configurações. O core não liga a sincronia sozinho: o app
+        consulta armazenamento.nuvem(app). Só acréscimos (a janela do compartilhar
+        ganhou o modo fixo, sem mudar o comportamento anterior).
+ * v5.4 — NOVO (regras 74 a 76): (1) FenixCore.compartilhar (iniciar, montarBotao,
+        abrir, links): botão Compartilhar com WhatsApp, e-mail, copiar link e opções
+        do aparelho. (2) FenixCore.indicacoes ("Compartilhe e ganhe"): chave liga e
+        desliga no banco (config/indicacoes), aviso na abertura, lista manual de apps
+        do prêmio (APPS_PREMIO), código de indicação no link (?ind=). O prêmio, de 1
+        ano de acesso a outro app, só é liberado depois que o indicado contratar a
+        licença e é liberado à mão (FenixCore.admin.indicacoes). Nunca em dinheiro.
+        (3) licenca.acesso(dados, agora, app): um prêmio válido libera a gravação no
+        app do prêmio. (4) criarEmpresa grava indicadoPor quando o cadastro veio de um
+        link de indicação. Só acréscimos.
  * ============================================================================
  */
 
@@ -966,6 +984,7 @@ function criarModuloEmpresas(db) {
     criarEmpresa(uid, email, nome) {
       const ref = doc(collection(db, "empresas"));
       const empresa = { nome, donoUid: uid, donoEmail: email, criadoEm: serverTimestamp(), testeInicio: serverTimestamp() };
+      try { const ind = indicacoes.codigoCapturado(); if (ind) empresa.indicadoPor = ind; } catch (e) { /* ok */ }
       return setDoc(ref, empresa).then(() =>
         setDoc(doc(db, "empresas", ref.id, "membros", uid), { email, papel: "dono", status: "aprovado", criadoEm: serverTimestamp() })
       ).then(() =>
@@ -3030,7 +3049,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "5.3";
+const _CORE_VERSAO = "5.6";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas
@@ -3246,7 +3265,7 @@ Object.assign(licenca, {
       const v = await getDoc(doc(db, "usuarios_empresa", uid));
       if (v.exists() && v.data().empresaId) {
         const e = await getDoc(doc(db, "empresas", v.data().empresaId));
-        a = { ...licenca.acesso(e.exists() ? e.data() : {}), empresaId: v.data().empresaId };
+        a = { ...licenca.acesso(e.exists() ? e.data() : {}, undefined, _nomeAppChamador), empresaId: v.data().empresaId };
         try { localStorage.setItem(_chaveAcessoCache(uid), JSON.stringify({ modo: a.modo, tipo: a.tipo, podeGravar: a.podeGravar, dias: a.dias, fimMs: a.fim ? a.fim.getTime() : null, motivo: a.motivo, empresaId: a.empresaId })); } catch (x) { /* ok */ }
       } else if (v.exists() === false) {
         a = { tipo: "teste", modo: "ativa", podeGravar: true, dias: null, fim: null, motivo: "sem-empresa", empresaId: null };
@@ -3685,6 +3704,394 @@ const saida = {
 };
 
 // ============================================================================
+// 26. COMPARTILHAR E INDICAR (v5.4, regras 74 a 76)
+// ============================================================================
+/**
+ * compartilhar (regra 74): botão "Compartilhar" com WhatsApp, e-mail, copiar link
+ *   e as opções do aparelho. Não usa banco.
+ *     compartilhar.iniciar({ nomeApp, url, email, container })  uma chamada só: guarda o código de
+ *         indicação do link, desenha o botão no container e, se a campanha estiver ligada, mostra o aviso.
+ *     compartilhar.montarBotao(container, { nomeApp, url, email, texto })  só o botão.
+ *     compartilhar.abrir({ nomeApp, url, email })  abre a janela de compartilhar.
+ *     compartilhar.links({ nomeApp, url, codigo })  { link, mensagem, whatsapp, email } (para o app montar o seu).
+ *
+ * indicacoes (regras 75 e 76): campanha "Compartilhe e ganhe": quem indica ganha 1 ano de acesso a OUTRO
+ *   app da lista APPS_PREMIO, só depois que a pessoa indicada CONTRATAR a licença, e o prêmio é liberado
+ *   à mão pelo Cristiano (página fenix-admin.html). Nunca há prêmio em dinheiro.
+ *     indicacoes.ativa(db)             a campanha está ligada? (config/indicacoes; sem rede vale a última leitura)
+ *     indicacoes.definirAtiva(db, sim, por)   liga e desliga (só administrador; usada pela página admin)
+ *     indicacoes.avisoAbertura(db, { nomeApp, url, email })   mostra o aviso da campanha (uma vez por sessão)
+ *     indicacoes.codigo(email)         código de indicação (10 caracteres) de uma pessoa
+ *     indicacoes.capturar()            guarda o código do link ?ind=... (o core já chama ao carregar)
+ *     indicacoes.codigoCapturado()     o código guardado neste aparelho (criarEmpresa o grava na empresa)
+ *     indicacoes.APPS_PREMIO           a lista manual de apps do prêmio (edite aqui, no core)
+ *   admin.indicacoes.listar / liberarPremio  usados pela página fenix-admin.html.
+ *   licenca.acesso(dados, agora, app)  com o 3º parâmetro, um prêmio válido para o app libera a gravação.
+ */
+const _APPS_PREMIO = Object.freeze([
+  // Lista manual (regra 75): só entram aqui apps que o Cristiano escolheu. id = nome usado no FenixCore.init().
+  Object.freeze({ id: "fenix-gestor-do-tempo", nome: "Gestor do Tempo", url: "https://fenicris-dev.github.io/Fenix-Gestor-do-Tempo/" }),
+  Object.freeze({ id: "fenix-capsula-do-tempo", nome: "Cápsula do Tempo", url: "https://fenicris-dev.github.io/Fenix-Capsula-do-Tempo/" }),
+  Object.freeze({ id: "fenix-controle-de-compras", nome: "Controle de Compras", url: "https://fenicris-dev.github.io/Fenix-Controle-de-Compras/" })
+]);
+const _PREMIO_DIAS = 365;
+const _chaveInd = "fenix_ind";
+const _chaveIndCfg = "fenix_ind_ativa";
+const _chaveIndSessao = "fenix_ind_aviso";
+const _reCodigoInd = /^[a-f0-9]{10}$/;
+const _FX_COMP_ID = "fenix-core-compartilhar";
+
+function _fxCompEstilos() {
+  if (typeof document === "undefined" || document.getElementById(_FX_COMP_ID)) return;
+  const st = document.createElement("style"); st.id = _FX_COMP_ID;
+  st.textContent =
+    ".fx-comp-bt{min-height:44px;min-width:44px;padding:0 16px;border-radius:10px;border:2px solid #0076CE;background:#0076CE;color:#fff;font:600 15px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;cursor:pointer}" +
+    ".fx-comp-fundo{position:fixed;inset:0;z-index:2147483500;background:rgba(2,7,51,.55);display:flex;align-items:center;justify-content:center;padding:16px}" +
+    ".fx-comp-caixa{background:#fff;color:#020733;border-radius:14px;max-width:400px;width:100%;max-height:92vh;overflow:auto;padding:18px;box-shadow:0 8px 28px rgba(2,7,51,.35);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}" +
+    ".fx-comp-caixa h2{margin:0 0 8px;font-size:19px}.fx-comp-caixa p{margin:0 0 10px}.fx-comp-caixa ul{margin:0 0 10px;padding-left:20px}" +
+    ".fx-comp-peq{font-size:13px;color:#4a5170}" +
+    ".fx-comp-lista{display:flex;flex-direction:column;gap:8px;margin-top:10px}" +
+    ".fx-comp-lista a,.fx-comp-lista button{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;border:2px solid #0076CE;background:#fff;color:#0076CE;font:inherit;font-weight:600;text-decoration:none;cursor:pointer;padding:0 12px}" +
+    ".fx-comp-lista .fx-comp-zap{background:#0076CE;color:#fff}" +
+    ".fx-comp-lista a:focus-visible,.fx-comp-lista button:focus-visible,.fx-comp-bt:focus-visible{outline:3px solid #ffcb00;outline-offset:2px}" +
+    ".fx-comp-ok{min-height:20px;font-size:14px;color:#0b6b2f;margin:6px 0 0}" +
+    ".fx-comp-aviso{font-size:14px;background:#fff8e1;border:1px solid #e6c200;border-radius:8px;padding:8px 10px;margin:10px 0}" +
+    ".fx-comp-lista [role=radio]{justify-content:flex-start;text-align:left;padding:8px 12px}" +
+    ".fx-comp-lista [role=radio][aria-checked=true]{border-width:3px}" +
+    ".fx-comp-lista button:disabled{opacity:.55;cursor:not-allowed}";
+  document.head.appendChild(st);
+}
+
+function _fxCompJanela(montar, fixa, aoFechar) {
+  _fxCompEstilos();
+  const ativo = document.activeElement;
+  const fundo = document.createElement("div"); fundo.className = "fx-comp-fundo"; fundo.setAttribute("data-fx-compartilhar", "1");
+  const caixa = document.createElement("div"); caixa.className = "fx-comp-caixa"; caixa.setAttribute("role", "dialog"); caixa.setAttribute("aria-modal", "true");
+  fundo.appendChild(caixa); document.body.appendChild(fundo);
+  const fechar = () => { document.removeEventListener("keydown", tecla, true); fundo.remove(); try { if (ativo && ativo.focus) ativo.focus(); } catch (e) { /* ok */ } };
+  // fixa (v5.5): janela que só fecha pelos botões (a pergunta do primeiro acesso, regra 77)
+  const tecla = (ev) => { if (ev.key === "Escape") { ev.stopPropagation(); if (!fixa) { fechar(); if (aoFechar) aoFechar(); } } };
+  document.addEventListener("keydown", tecla, true);
+  fundo.addEventListener("click", (ev) => { if (ev.target === fundo && !fixa) { fechar(); if (aoFechar) aoFechar(); } });
+  montar(caixa, fechar);
+  return { fechar };
+}
+
+const compartilhar = {
+  /** Monta os endereços de compartilhamento. url padrão: o endereço atual sem ?parâmetros. */
+  links(o) {
+    o = o || {};
+    let base = o.url;
+    if (!base && typeof location !== "undefined") base = location.origin + location.pathname;
+    base = String(base || "https://fenicris-dev.github.io/Fenix-Core/");
+    let link = base;
+    if (o.codigo && _reCodigoInd.test(String(o.codigo))) link = base + (base.indexOf("?") >= 0 ? "&" : "?") + "ind=" + o.codigo;
+    const nome = String(o.nomeApp || "este aplicativo");
+    const mensagem = "Conheça o " + nome + ", da Fênix Soluções Tecnológicas: " + link;
+    return {
+      link, mensagem,
+      whatsapp: "https://wa.me/?text=" + encodeURIComponent(mensagem),
+      email: "mailto:?subject=" + encodeURIComponent("Conheça o " + nome) + "&body=" + encodeURIComponent(mensagem)
+    };
+  },
+
+  /** Abre a janela de compartilhar (WhatsApp, e-mail, copiar link, opções do aparelho). */
+  async abrir(o) {
+    o = o || {};
+    if (typeof document === "undefined") return null;
+    let codigo = null;
+    try { if (o.email) codigo = await indicacoes.codigo(o.email); } catch (e) { codigo = null; }
+    const L = compartilhar.links({ nomeApp: o.nomeApp, url: o.url, codigo });
+    return _fxCompJanela((caixa, fechar) => {
+      caixa.innerHTML = "<h2>" + _esc(o.titulo || "Compartilhar") + "</h2><p>Indique o " + _esc(o.nomeApp || "aplicativo") + " para quem pode gostar.</p>" +
+        '<div class="fx-comp-lista">' +
+        '<a class="fx-comp-zap" href="' + _esc(L.whatsapp) + '" target="_blank" rel="noopener">Enviar por WhatsApp</a>' +
+        '<a href="' + _esc(L.email) + '">Enviar por e-mail</a>' +
+        '<button type="button" data-fx-copiar>Copiar link</button>' +
+        (typeof navigator !== "undefined" && navigator.share ? '<button type="button" data-fx-mais>Mais opções</button>' : "") +
+        '<button type="button" data-fx-fechar>Fechar</button></div><p class="fx-comp-ok" role="status" aria-live="polite"></p>';
+      const ok = caixa.querySelector(".fx-comp-ok");
+      caixa.querySelector("[data-fx-fechar]").addEventListener("click", fechar);
+      caixa.querySelector("[data-fx-copiar]").addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(L.mensagem); ok.textContent = "Link copiado."; }
+        catch (e) { ok.textContent = "Não foi possível copiar. Selecione e copie: " + L.link; }
+      });
+      const mais = caixa.querySelector("[data-fx-mais]");
+      if (mais) mais.addEventListener("click", () => { try { navigator.share({ title: o.nomeApp || "Fênix", text: L.mensagem, url: L.link }); } catch (e) { /* ok */ } });
+      const primeiro = caixa.querySelector("a"); if (primeiro) primeiro.focus();
+    });
+  },
+
+  /** Desenha o botão "Compartilhar" (44 px) dentro do container. */
+  montarBotao(container, o) {
+    const alvo = _resolverContainer(container);
+    if (!alvo) throw new Error("compartilhar.montarBotao: container não encontrado.");
+    _fxCompEstilos();
+    const b = document.createElement("button"); b.type = "button"; b.className = "fx-comp-bt"; b.setAttribute("data-fx-botao-compartilhar", "1");
+    b.textContent = (o && o.texto) || "Compartilhar";
+    b.addEventListener("click", () => { compartilhar.abrir(o || {}); });
+    alvo.appendChild(b);
+    return b;
+  },
+
+  /**
+   * Uma chamada só para o app: guarda o código do link, desenha o botão (se vier container) e,
+   * com a campanha ligada, mostra o aviso na abertura. Nunca lança erro.
+   */
+  iniciar(o) {
+    o = o || {};
+    try { indicacoes.capturar(); } catch (e) { /* ok */ }
+    try { if (o.container) compartilhar.montarBotao(o.container, o); } catch (e) { /* ok */ }
+    try { if (_db) indicacoes.avisoAbertura(_db, o); } catch (e) { /* ok */ }
+  }
+};
+
+const indicacoes = {
+  APPS_PREMIO: _APPS_PREMIO,
+  PREMIO_DIAS: _PREMIO_DIAS,
+  TEXTO: "Compartilhe e ganhe acesso de 1 ano a um dos nossos aplicativos",
+
+  /** Código de indicação de uma pessoa: os 10 primeiros caracteres do SHA-256 do e-mail em minúsculas. */
+  async codigo(email) {
+    const e = _emailMin(email);
+    if (!e) return null;
+    return (await licenca.hashEmail(e)).slice(0, 10);
+  },
+  /** Guarda o código do link (?ind=...) neste aparelho. O primeiro código que chegou vale. */
+  capturar() {
+    try {
+      if (typeof location === "undefined") return null;
+      const c = new URLSearchParams(location.search).get("ind");
+      if (c && _reCodigoInd.test(c) && !localStorage.getItem(_chaveInd)) localStorage.setItem(_chaveInd, c);
+    } catch (e) { /* ok */ }
+    return indicacoes.codigoCapturado();
+  },
+  codigoCapturado() {
+    try { const c = localStorage.getItem(_chaveInd); return _reCodigoInd.test(c || "") ? c : null; } catch (e) { return null; }
+  },
+  /** A campanha está ligada? Lê config/indicacoes; sem rede ou com erro, vale a última leitura guardada. */
+  async ativa(db) {
+    try {
+      const s = await getDoc(doc(db, "config", "indicacoes"));
+      const sim = s.exists() && s.data().ativa === true;
+      try { localStorage.setItem(_chaveIndCfg, sim ? "1" : "0"); } catch (e) { /* ok */ }
+      return sim;
+    } catch (e) {
+      try { return localStorage.getItem(_chaveIndCfg) === "1"; } catch (x) { return false; }
+    }
+  },
+  /** Liga ou desliga a campanha para todos os apps (regras do Firestore: só administrador). */
+  definirAtiva(db, sim, por) {
+    return setDoc(doc(db, "config", "indicacoes"), { ativa: !!sim, atualizadoEm: serverTimestamp(), por: _emailMin(por) }, { merge: true }).then(() => true);
+  },
+  /** Mostra o aviso da campanha, no máximo uma vez por sessão, só com a campanha ligada. Devolve true se mostrou. */
+  async avisoAbertura(db, o) {
+    o = o || {};
+    if (typeof document === "undefined" || !db) return false;
+    try { if (sessionStorage.getItem(_chaveIndSessao) === "1") return false; } catch (e) { /* ok */ }
+    if (!(await indicacoes.ativa(db))) return false;
+    try { sessionStorage.setItem(_chaveIndSessao, "1"); } catch (e) { /* ok */ }
+    _fxCompJanela((caixa, fechar) => {
+      const lista = _APPS_PREMIO.filter((a) => a.id !== _nomeAppChamador).map((a) => "<li>" + _esc(a.nome) + "</li>").join("");
+      caixa.innerHTML = "<h2>" + _esc(indicacoes.TEXTO) + "</h2>" +
+        "<p>Apps que podem ser o seu prêmio:</p><ul>" + lista + "</ul>" +
+        '<p class="fx-comp-peq">O prêmio é liberado quando a pessoa que você indicou contratar a licença. Não há prêmio em dinheiro.</p>' +
+        '<div class="fx-comp-lista"><button type="button" class="fx-comp-zap" data-fx-agora>Compartilhar agora</button><button type="button" data-fx-depois>Agora não</button></div>';
+      caixa.querySelector("[data-fx-depois]").addEventListener("click", fechar);
+      caixa.querySelector("[data-fx-agora]").addEventListener("click", () => { fechar(); compartilhar.abrir(o); });
+      caixa.querySelector("[data-fx-agora]").focus();
+    });
+    return true;
+  }
+};
+
+// Prêmio na licença: um prêmio válido (empresas/{id}.premios.{app} = data de término) libera a gravação NAQUELE app.
+const _licencaAcessoBase = licenca.acesso;
+licenca.acesso = function (dados, agora, app) {
+  const a = _licencaAcessoBase.call(licenca, dados, agora);
+  if (a.modo !== "somente-leitura" || !app || !dados || typeof dados !== "object") return a;
+  const pr = dados.premios && typeof dados.premios === "object" ? dados.premios[app] : null;
+  const fim = _paraData(pr);
+  const hoje = agora || new Date();
+  if (fim && fim.getTime() > hoje.getTime())
+    return { tipo: "premio", modo: "ativa", podeGravar: true, dias: Math.ceil((fim.getTime() - hoje.getTime()) / _MS_DIA), fim, motivo: "premio" };
+  return a;
+};
+
+// Administração das indicações (usada por fenix-admin.html)
+Object.assign(admin, {
+  indicacoes: {
+    /**
+     * Lista as empresas que chegaram por indicação. estado: "aguardando" (indicado ainda em teste ou sem licença),
+     * "elegivel" (indicado contratou a licença e o prêmio ainda não foi liberado), "liberado" ou "invalida"
+     * (código sem dono ou auto-indicação). Cada item traz `indicado` e `indicador` (empresa ou null).
+     */
+    async listar(db) {
+      const todas = await admin.clientes.listar(db);
+      const porCodigo = new Map();
+      for (const e of todas) { if (e.donoEmail) porCodigo.set(await indicacoes.codigo(e.donoEmail), e); }
+      return todas.filter((e) => e.indicadoPor).map((e) => {
+        const indicador = porCodigo.get(e.indicadoPor) || null;
+        const efetivada = (e.acesso.tipo === "tempo" || e.acesso.tipo === "definitiva") && e.acesso.modo === "ativa";
+        let estado = "aguardando";
+        if (e.indicacaoPremiada === true) estado = "liberado";
+        else if (!indicador || indicador.id === e.id) estado = "invalida";
+        else if (efetivada) estado = "elegivel";
+        return { indicado: e, indicador, estado };
+      }).sort((a, b) => String(a.indicado.nome || "").localeCompare(String(b.indicado.nome || "")));
+    },
+    /**
+     * Libera, à mão, o prêmio de 1 ano no app escolhido (da lista APPS_PREMIO) para quem indicou.
+     * Só vale se o indicado contratou a licença e ainda não foi premiado. Grava no indicador
+     * premios.{app} e marca o indicado como premiado, na mesma operação.
+     */
+    async liberarPremio(db, indicadoEmpresaId, appId, por) {
+      if (!_APPS_PREMIO.some((a) => a.id === appId)) throw new Error("Escolha um app da lista do prêmio.");
+      const itens = await admin.indicacoes.listar(db);
+      const it = itens.find((x) => x.indicado.id === indicadoEmpresaId);
+      if (!it) throw new Error("Indicação não encontrada.");
+      if (it.estado === "liberado") throw new Error("O prêmio desta indicação já foi liberado.");
+      if (it.estado === "invalida") throw new Error("Indicação inválida (sem indicador ou auto-indicação).");
+      if (it.estado !== "elegivel") throw new Error("O prêmio só é liberado depois que o indicado contratar a licença.");
+      const agora = Date.now();
+      const atual = it.indicador.premios && it.indicador.premios[appId] ? _paraData(it.indicador.premios[appId]) : null;
+      const base = atual && atual.getTime() > agora ? atual.getTime() : agora;
+      const ate = new Date(base + _PREMIO_DIAS * _MS_DIA);
+      const lote = writeBatch(db);
+      lote.set(doc(db, "empresas", it.indicador.id), { premios: { [appId]: ate } }, { merge: true });
+      lote.update(doc(db, "empresas", it.indicado.id), {
+        indicacaoPremiada: true, indicacaoPremioApp: appId, indicacaoPremioEm: serverTimestamp(), indicacaoPremioPor: _emailMin(por)
+      });
+      await lote.commit();
+      return { indicador: it.indicador.id, app: appId, ate };
+    }
+  }
+});
+
+try { indicacoes.capturar(); } catch (e) { /* ok */ }
+
+// ============================================================================
+// 27. ONDE GUARDAR OS DADOS: NESTE APARELHO OU NA NUVEM (v5.5, regra 77)
+// ============================================================================
+/**
+ * armazenamento (regra 77): a escolha do usuário entre guardar os dados só neste aparelho (PADRÃO)
+ * ou na nuvem da Fênix. Não usa banco: a escolha fica neste aparelho (localStorage).
+ *     armazenamento.iniciar({ app, nomeApp, temNuvem, modoAtual, container, aoMudar })
+ *         uma chamada só: no 1º acesso pergunta (janela que só fecha com a resposta) e, se vier
+ *         container, desenha no menu Ajuda ou Config o bloco "Onde guardar meus dados" para mudar depois.
+ *     armazenamento.modo(app)      "local" ou "nuvem" (sem resposta: o modoAtual do app, ou "local")
+ *     armazenamento.nuvem(app)     true se o app deve gravar/sincronizar na nuvem
+ *     armazenamento.escolheu(app)  true depois que o usuário respondeu
+ *     armazenamento.definir(app, modo)   grava a escolha (o app deve parar/iniciar a sincronia)
+ *     armazenamento.perguntar(opcoes)    abre a pergunta; devolve "local", "nuvem" ou null
+ *     armazenamento.montarConfig(container, opcoes)  bloco para o menu Ajuda ou Config
+ *     armazenamento.AVISO_LOCAL / AVISO_NUVEM       os textos oficiais dos avisos
+ * O core NÃO liga nem desliga a sincronia sozinho: o app consulta nuvem(app) antes de iniciar a sincronia
+ * e usa aoMudar(novo, antigo) para iniciar, parar e enviar os dados locais (apps antigos não mudam de
+ * comportamento sem o app chamar).
+ */
+const _chaveArmaz = (app) => "fenix_armazenamento_" + String(app || "app");
+const _fallbackArmaz = {};
+const armazenamento = {
+  AVISO_LOCAL: "Seus dados ficarão guardados apenas neste aparelho. Se você formatar o aparelho, limpar o histórico ou os dados do navegador, ou desinstalar o app, todos os dados serão perdidos e não poderão ser recuperados. Faça backup com frequência.",
+  AVISO_NUVEM: "Seus dados ficarão guardados na nuvem da Fênix, ligados à sua conta, e poderão ser usados em outros aparelhos. É preciso entrar com a sua conta e ter internet para sincronizar.",
+  AVISO_PARA_LOCAL: "A sincronização será desligada neste aparelho. Os dados que já estão na nuvem continuam lá, mas o que você registrar daqui em diante ficará apenas neste aparelho e será perdido se você formatar o aparelho, limpar o histórico ou os dados do navegador.",
+  AVISO_PARA_NUVEM: "Os dados deste aparelho serão enviados para a nuvem da Fênix e passarão a ser sincronizados. É preciso estar conectado à internet.",
+
+  escolheu(app) {
+    try { const v = localStorage.getItem(_chaveArmaz(app)); return v === "local" || v === "nuvem"; } catch (e) { return false; }
+  },
+  modo(app) {
+    try { const v = localStorage.getItem(_chaveArmaz(app)); if (v === "local" || v === "nuvem") return v; } catch (e) { /* ok */ }
+    return _fallbackArmaz[app] === "nuvem" ? "nuvem" : "local";
+  },
+  nuvem(app) { return armazenamento.modo(app) === "nuvem"; },
+  definir(app, modo) {
+    if (modo !== "local" && modo !== "nuvem") throw new Error('armazenamento.definir: use "local" ou "nuvem".');
+    try { localStorage.setItem(_chaveArmaz(app), modo); localStorage.setItem(_chaveArmaz(app) + "_em", new Date().toISOString()); } catch (e) { /* ok */ }
+    return modo;
+  },
+
+  /** Abre a pergunta. opcoes: { nomeApp, temNuvem (padrão true), atual, obrigatoria }. Devolve "local", "nuvem" ou null (cancelou). */
+  perguntar(o) {
+    o = o || {};
+    if (typeof document === "undefined") return Promise.resolve(null);
+    const temNuvem = o.temNuvem !== false;
+    let escolha = o.atual === "nuvem" && temNuvem ? "nuvem" : "local";
+    return new Promise((resolve) => {
+      _fxCompJanela((caixa, fechar) => {
+        const aviso = () => (o.atual && o.atual !== escolha ? (escolha === "nuvem" ? armazenamento.AVISO_PARA_NUVEM : armazenamento.AVISO_PARA_LOCAL) : (escolha === "nuvem" ? armazenamento.AVISO_NUVEM : armazenamento.AVISO_LOCAL));
+        caixa.innerHTML = "<h2>Onde guardar os seus dados?</h2>" +
+          "<p>Escolha como o " + _esc(o.nomeApp || "aplicativo") + " vai guardar o que você registrar. Você pode mudar depois em Ajuda ou Configurações.</p>" +
+          '<div class="fx-comp-lista" role="radiogroup" aria-label="Onde guardar os dados">' +
+          '<button type="button" role="radio" data-fx-op="local"><span><b>Só neste aparelho</b> (padrão)<br><small>Os dados não saem daqui.</small></span></button>' +
+          '<button type="button" role="radio" data-fx-op="nuvem"' + (temNuvem ? "" : " disabled") + '><span><b>Na nuvem da Fênix</b><br><small>' + (temNuvem ? "Seus dados acompanham a sua conta, em vários aparelhos." : "Este app ainda não guarda dados na nuvem.") + "</small></span></button></div>" +
+          '<p class="fx-comp-aviso" role="status" aria-live="polite"></p>' +
+          '<div class="fx-comp-lista"><button type="button" class="fx-comp-zap" data-fx-ok>Confirmar</button>' + (o.obrigatoria ? "" : '<button type="button" data-fx-cancelar>Cancelar</button>') + "</div>";
+        const av = caixa.querySelector(".fx-comp-aviso");
+        const marcar = () => {
+          caixa.querySelectorAll("[data-fx-op]").forEach((b) => { const on = b.getAttribute("data-fx-op") === escolha; b.setAttribute("aria-checked", on ? "true" : "false"); b.style.background = on ? "#e6f2fb" : "#fff"; });
+          av.textContent = aviso();
+        };
+        caixa.querySelectorAll("[data-fx-op]").forEach((b) => b.addEventListener("click", () => { if (!b.disabled) { escolha = b.getAttribute("data-fx-op"); marcar(); } }));
+        caixa.querySelector("[data-fx-ok]").addEventListener("click", () => { fechar(); resolve(escolha); });
+        const can = caixa.querySelector("[data-fx-cancelar]");
+        if (can) can.addEventListener("click", () => { fechar(); resolve(null); });
+        marcar();
+        caixa.querySelector("[data-fx-ok]").focus();
+      }, !!o.obrigatoria, () => resolve(null));
+    });
+  },
+
+  /** Bloco "Onde guardar meus dados" para o menu Ajuda ou Config. opcoes: { app, nomeApp, temNuvem, aoMudar(novo, antigo) }. */
+  montarConfig(container, o) {
+    o = o || {};
+    const alvo = _resolverContainer(container);
+    if (!alvo) throw new Error("armazenamento.montarConfig: container não encontrado.");
+    _fxCompEstilos();
+    const caixa = document.createElement("div"); caixa.setAttribute("data-fx-armazenamento", "1");
+    caixa.innerHTML = "<b>Onde guardar meus dados</b><p data-fx-atual></p><p class=\"fx-comp-peq\" data-fx-aviso role=\"status\" aria-live=\"polite\"></p><button type=\"button\" class=\"fx-comp-bt\" data-fx-mudar>Alterar</button>";
+    alvo.appendChild(caixa);
+    const atual = caixa.querySelector("[data-fx-atual]"), av = caixa.querySelector("[data-fx-aviso]");
+    const desenhar = () => { const m = armazenamento.modo(o.app); atual.textContent = m === "nuvem" ? "Na nuvem da Fênix." : "Só neste aparelho."; av.textContent = m === "nuvem" ? armazenamento.AVISO_NUVEM : armazenamento.AVISO_LOCAL; };
+    desenhar();
+    caixa.querySelector("[data-fx-mudar]").addEventListener("click", async () => {
+      const antigo = armazenamento.modo(o.app);
+      const novo = await armazenamento.perguntar({ nomeApp: o.nomeApp, temNuvem: o.temNuvem, atual: antigo });
+      if (!novo || novo === antigo) return;
+      try {
+        if (typeof o.aoMudar === "function") await o.aoMudar(novo, antigo);
+        armazenamento.definir(o.app, novo);
+      } catch (e) { av.textContent = "Não foi possível mudar agora: " + (e && e.message ? e.message : "tente de novo."); return; }
+      desenhar();
+    });
+    return { atualizar: desenhar };
+  },
+
+  /**
+   * Uma chamada só para o app. No 1º acesso (ainda sem resposta) abre a pergunta, que só fecha com a resposta;
+   * com container, também monta o bloco para mudar depois. Se o app já usava a nuvem, passe modoAtual:"nuvem"
+   * para o usuário antigo continuar na nuvem até responder. Devolve o modo em vigor.
+   */
+  async iniciar(o) {
+    o = o || {};
+    const app = o.app || _nomeAppChamador || "app";
+    if (o.modoAtual === "nuvem") _fallbackArmaz[app] = "nuvem";
+    let cfg = null;
+    if (o.container) { try { cfg = armazenamento.montarConfig(o.container, { ...o, app }); } catch (e) { /* ok */ } }
+    if (!armazenamento.escolheu(app) && typeof document !== "undefined") {
+      const antigo = armazenamento.modo(app);
+      const r = await armazenamento.perguntar({ nomeApp: o.nomeApp, temNuvem: o.temNuvem, atual: o.modoAtual === "nuvem" ? "nuvem" : undefined, obrigatoria: true });
+      const novo = r || "local";
+      try { if (novo !== antigo && typeof o.aoMudar === "function") await o.aoMudar(novo, antigo); } catch (e) { /* o app mostra o erro */ }
+      armazenamento.definir(app, novo);
+      if (cfg) cfg.atualizar();
+    }
+    return armazenamento.modo(app);
+  }
+};
+
+// ============================================================================
 // EXPORTAÇÃO
 // ============================================================================
 
@@ -3711,6 +4118,9 @@ export const FenixCore = {
   seguranca,
   esquema,
   saida,
+  compartilhar,
+  indicacoes,
+  armazenamento,
   som,
   preferencias,
   versoes,

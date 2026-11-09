@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#041273">
 <meta name="robots" content="noindex">
-<meta name="fenix-livro" content="5.3">
+<meta name="fenix-livro" content="5.6">
 <title>Painel Administrativo Fênix</title>
 <!--
-  PAINEL ADMINISTRATIVO FÊNIX v5.3 (fenix-admin.html)
+  PAINEL ADMINISTRATIVO FÊNIX v5.6 (fenix-admin.html)
   Clientes (teste de 15 dias, licença por tempo ou definitiva) e Equipe (administradores,
   comercial e suporte). Entra com Google (e-mail verificado). Quem manda de verdade são as
   regras do Firestore: esta página só chama o core (FenixCore.admin). Usa SOMENTE a paleta oficial.
+  v5.4: aba Indicações (campanha "Compartilhe e ganhe": liga e desliga, indicados e liberação manual do prêmio).
   Primeiro uso depois de publicar as regras v4.9: Clientes → "Carimbar início do teste" (uma vez).
 -->
 <style>
@@ -73,6 +74,7 @@
   <section id="telaPainel" hidden>
     <div class="abas" role="tablist">
       <button type="button" id="abaClientes" class="on">Clientes</button>
+      <button type="button" id="abaIndicacoes">Indicações</button>
       <button type="button" id="abaEquipe">Equipe</button>
     </div>
 
@@ -90,6 +92,21 @@
         <div id="msgClientes" class="msg" role="status"></div>
       </div>
       <div class="card" id="listaClientes"></div>
+    </div>
+
+    <div id="painelIndicacoes" hidden>
+      <div class="card">
+        <b>Compartilhe e ganhe</b>
+        <div class="sub" style="word-break:normal">Quando ligada, todos os apps mostram na abertura: "Compartilhe e ganhe acesso de 1 ano a um dos nossos aplicativos". O prêmio só é liberado depois que a pessoa indicada contratar a licença, e é liberado por você, aqui. Nunca em dinheiro.</div>
+        <div class="linha" style="margin-top:10px">
+          <span id="indEstado" class="selo s-livre">Verificando…</span>
+          <button type="button" id="btIndLiga">Ligar campanha</button>
+          <button type="button" class="sec" id="btIndRecarregar">Atualizar</button>
+        </div>
+        <div class="sub" style="word-break:normal" id="indApps"></div>
+        <div id="msgInd" class="msg" role="status"></div>
+      </div>
+      <div class="card" id="listaInd"></div>
     </div>
 
     <div id="painelEquipe" hidden>
@@ -112,6 +129,16 @@
   </section>
 </main>
 
+<dialog id="dlgPremio">
+  <b>Liberar prêmio</b>
+  <div class="sub" id="prEmpresa"></div>
+  <label>App do prêmio (1 ano de acesso)
+    <select id="prApp"></select>
+  </label>
+  <div id="prMsg" class="msg erro"></div>
+  <div class="acoes"><button type="button" id="prOk">Liberar prêmio</button><button type="button" class="sec" id="prCancel">Cancelar</button></div>
+</dialog>
+
 <dialog id="dlgLic">
   <b id="dlgTitulo">Licença</b>
   <div class="sub" id="dlgEmpresa"></div>
@@ -127,7 +154,7 @@
 <footer>
   <span id="ano"></span>
   <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a> |
-  <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a> · v5.3
+  <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a> · v5.6
 </footer>
 
 <script type="module">
@@ -138,7 +165,7 @@ $("ano").textContent = new Date().getFullYear();
 
 const { app, db } = F.initFirebase();
 const auth = F.criarModuloAuth(app);
-let usuario = null, nivel = null, clientes = [], equipe = [], empresaDlg = null;
+let usuario = null, nivel = null, clientes = [], equipe = [], indicacoes = [], empresaDlg = null, indDlg = null;
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
 const dt = (v) => v && typeof v.toDate === "function" ? v.toDate() : (v instanceof Date ? v : null);
@@ -172,6 +199,8 @@ auth.aoMudarEstado(async (u) => {
   $("telaEntrar").hidden = true; $("telaPainel").hidden = false;
   $("quem").textContent = u.email + " · " + F.admin.NIVEIS[nivel];
   $("abaEquipe").hidden = !F.admin.pode(nivel, "equipe");
+  $("abaIndicacoes").hidden = !F.admin.pode(nivel, "licenca");
+  $("btIndLiga").hidden = !F.admin.pode(nivel, "equipe");
   $("blocoCarimbo").hidden = !F.admin.pode(nivel, "licenca");
   $("msgCarimbo").hidden = !F.admin.pode(nivel, "licenca");
   carregarClientes();
@@ -179,9 +208,11 @@ auth.aoMudarEstado(async (u) => {
 });
 
 function aba(qual) {
-  $("painelClientes").hidden = qual !== "clientes"; $("painelEquipe").hidden = qual !== "equipe";
-  $("abaClientes").classList.toggle("on", qual === "clientes"); $("abaEquipe").classList.toggle("on", qual === "equipe");
+  $("painelClientes").hidden = qual !== "clientes"; $("painelEquipe").hidden = qual !== "equipe"; $("painelIndicacoes").hidden = qual !== "indicacoes";
+  $("abaClientes").classList.toggle("on", qual === "clientes"); $("abaEquipe").classList.toggle("on", qual === "equipe"); $("abaIndicacoes").classList.toggle("on", qual === "indicacoes");
+  if (qual === "indicacoes") carregarIndicacoes();
 }
+$("abaIndicacoes").onclick = () => aba("indicacoes");
 $("abaClientes").onclick = () => aba("clientes");
 $("abaEquipe").onclick = () => aba("equipe");
 
@@ -259,6 +290,69 @@ $("dlgOk").onclick = async () => {
   try { await F.admin.clientes.definirLicenca(db, empresaDlg.id, { tipo, ate, obs: $("dlgObs").value, por: usuario.email }); $("dlgLic").close(); await carregarClientes(); msg("msgClientes", "Licença concedida.", "ok"); }
   catch (e) { msg("dlgMsg", erroTxt(e), "erro"); }
   $("dlgOk").disabled = false;
+};
+
+
+// ---------- indicações (campanha "Compartilhe e ganhe", v5.4) ----------
+let campanhaAtiva = false;
+const ESTADOS_IND = {
+  aguardando: ["Aguardando contratar a licença", "s-teste"],
+  elegivel: ["Pode liberar o prêmio", "s-ativa"],
+  liberado: ["Prêmio liberado", "s-livre"],
+  invalida: ["Indicação inválida", "s-leitura"]
+};
+async function carregarIndicacoes() {
+  msg("msgInd", "Carregando…");
+  $("indApps").textContent = "Apps do prêmio (lista no core): " + F.indicacoes.APPS_PREMIO.map((a) => a.nome).join(", ") + ".";
+  try {
+    campanhaAtiva = await F.indicacoes.ativa(db);
+    indicacoes = await F.admin.indicacoes.listar(db);
+    msg("msgInd", "");
+  } catch (e) { msg("msgInd", erroTxt(e), "erro"); return; }
+  desenharIndicacoes();
+}
+$("btIndRecarregar").onclick = carregarIndicacoes;
+$("btIndLiga").onclick = async () => {
+  const novo = !campanhaAtiva;
+  if (!confirm(novo ? "Ligar a campanha? Todos os apps passam a mostrar o aviso na abertura." : "Desligar a campanha? O aviso some de todos os apps.")) return;
+  try { await F.indicacoes.definirAtiva(db, novo, usuario.email); campanhaAtiva = novo; desenharIndicacoes(); msg("msgInd", novo ? "Campanha ligada." : "Campanha desligada.", "ok"); }
+  catch (e) { msg("msgInd", erroTxt(e), "erro"); }
+};
+function desenharIndicacoes() {
+  const st = $("indEstado"); st.textContent = campanhaAtiva ? "Campanha LIGADA" : "Campanha desligada"; st.className = "selo " + (campanhaAtiva ? "s-ativa" : "s-leitura");
+  $("btIndLiga").textContent = campanhaAtiva ? "Desligar campanha" : "Ligar campanha";
+  const box = $("listaInd"); box.textContent = "";
+  const cont = { elegivel: 0, aguardando: 0, liberado: 0, invalida: 0 }; indicacoes.forEach((i) => cont[i.estado]++);
+  box.append(el("b", {}, "Indicados (" + indicacoes.length + ")"));
+  box.append(el("div", { class: "resumo" }, ...[["Para liberar", cont.elegivel], ["Aguardando", cont.aguardando], ["Liberados", cont.liberado], ["Inválidas", cont.invalida]].map(([t, n]) => el("span", {}, t + ": " + n))));
+  if (!indicacoes.length) { box.append(el("div", { class: "msg" }, "Nenhuma indicação ainda. Elas aparecem quando alguém se cadastra por um link de indicação.")); return; }
+  const podeLic = F.admin.pode(nivel, "equipe");
+  indicacoes.forEach((i) => {
+    const [txt, cls] = ESTADOS_IND[i.estado];
+    const ind = i.indicado, por = i.indicador;
+    const it = el("div", { class: "item" },
+      el("div", {}, el("b", {}, ind.nome || "(sem nome)"), el("span", { class: "selo " + cls }, txt)),
+      el("div", { class: "sub" }, (ind.donoEmail || "sem e-mail") + " · " + seloDe(ind.acesso)[0]),
+      el("div", { class: "sub" }, "Indicado por: " + (por ? (por.nome || "") + " · " + (por.donoEmail || "") : "código sem dono (" + ind.indicadoPor + ")")));
+    if (i.estado === "liberado") it.append(el("div", { class: "sub" }, "Prêmio: " + ((F.indicacoes.APPS_PREMIO.find((a) => a.id === ind.indicacaoPremioApp) || {}).nome || ind.indicacaoPremioApp) + " · por " + (ind.indicacaoPremioPor || "—") + " em " + fmt(dt(ind.indicacaoPremioEm))));
+    if (i.estado === "elegivel" && podeLic) it.append(el("div", { class: "acoes" }, botao("Liberar prêmio", () => abrirPremio(i), "amar")));
+    box.append(it);
+  });
+}
+function abrirPremio(i) {
+  indDlg = i; $("prEmpresa").textContent = "Para: " + (i.indicador.nome || "") + " · " + (i.indicador.donoEmail || "") + " (indicou " + (i.indicado.nome || "") + ")";
+  const sel = $("prApp"); sel.textContent = "";
+  F.indicacoes.APPS_PREMIO.forEach((a) => sel.append(el("option", { value: a.id }, a.nome)));
+  msg("prMsg", ""); $("dlgPremio").showModal();
+}
+$("prCancel").onclick = () => $("dlgPremio").close();
+$("prOk").onclick = async () => {
+  $("prOk").disabled = true;
+  try {
+    const r = await F.admin.indicacoes.liberarPremio(db, indDlg.indicado.id, $("prApp").value, usuario.email);
+    $("dlgPremio").close(); await carregarIndicacoes(); msg("msgInd", "Prêmio liberado até " + fmt(r.ate) + ".", "ok");
+  } catch (e) { msg("prMsg", erroTxt(e), "erro"); }
+  $("prOk").disabled = false;
 };
 
 // ---------- equipe ----------

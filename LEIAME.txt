@@ -1,4 +1,4 @@
-Biblioteca Fênix v5.3
+Biblioteca Fênix v5.6
 
 Raiz do repositório: index.html (Painel), fenix-admin.html (Painel administrativo), fenix-core.js, versao.json, fenix-template-login.html, fenix-template-onboarding.html, fenix-template-splash.html, firestore.rules
 Icon/   : Fenix_Icone_128.png (os demais ícones já estão no repositório)
@@ -9,7 +9,23 @@ testes-regras/: testes das regras do Firestore, para rodar no SEU computador. N�
 testes-app/ : (NOVO) modelo do teste de fumaça dos apps (regra 68), para rodar no SEU computador. Não sobe para o GitHub Pages.
 versoes/: cópias com a versão no nome, só para controle interno. NUNCA suba esta pasta para a raiz do repositório.
 
-Novo na v5.3:
+Novo na v5.6:
+- Termos de Uso e Política de Privacidade passam a informar a escolha da regra 77 (onde guardar os dados: só neste aparelho, padrão, ou na nuvem; risco de perda ao formatar ou limpar o histórico; dá para mudar em Ajuda ou Configurações). Como o texto mudou, a data "Atualizado em" dos dois agora é 09/11/2026. Publique a pasta Termos/ no GitHub Pages.
+- O resto só sobe a versão. As regras do Firestore continuam com o mesmo conteúdo da v16.
+
+Da v5.5 continuam:
+- Regra 77: onde guardar os dados. No primeiro acesso o app pergunta: só neste aparelho (PADRÃO, com o aviso de que formatar, limpar o histórico ou os dados do navegador apaga tudo) ou na nuvem da Fênix; dá para mudar depois em Ajuda ou Configurações.
+- Core: FenixCore.armazenamento (iniciar, perguntar, montarConfig, modo, nuvem, escolheu, definir). O core não liga a sincronia sozinho: cada app consulta armazenamento.nuvem(app).
+- As regras do Firestore NÃO mudam nesta versão (só o número no cabeçalho); se você já publicou a v16, não precisa publicar de novo.
+
+Da v5.4 continuam:
+- Regras 74, 75 e 76: botão Compartilhar em todo app e campanha "Compartilhe e ganhe" (1 ano de acesso a outro app, só depois que o indicado contratar a licença, liberação manual, nunca em dinheiro).
+- Core: FenixCore.compartilhar, FenixCore.indicacoes e FenixCore.admin.indicacoes.
+- fenix-admin.html: nova aba Indicações (liga e desliga a campanha, lista de indicados, liberar prêmio).
+- ATENÇÃO: as regras do Firestore MUDAM (v16). Siga o checklist da regra 46: publique primeiro o core e o fenix-admin.html no GitHub, rode npm test em testes-regras/, e só depois publique o firestore.rules no console. Depois, em Firestore, nada precisa ser criado à mão: a aba Indicações cria config/indicacoes ao ligar a campanha.
+- Confira a lista APPS_PREMIO no fenix-core.js (nomes e endereços dos apps do prêmio) antes de ligar a campanha.
+
+Da v5.3 continuam:
 - Regra 72: toda entrega de app termina com a linha "Conferência de entrega" (versão no nome, cópia index.html, zip com LEIAME, selo, Changelog e Manual, teste de fumaça, versão de volta).
 - Regra 73: quando quem constrói o app não consegue abrir os links do GitHub Pages, diz isso e pede os arquivos anexados.
 - MD/fenix-bloco-entrega-de-apps.md: bloco curto para colar no começo do chat de cada app (junto com o zip da biblioteca anexado). Suba também para o repositório, na pasta MD/.
