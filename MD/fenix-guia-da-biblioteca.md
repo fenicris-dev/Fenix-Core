@@ -1,4 +1,4 @@
-# GUIA DA BIBLIOTECA FÊNIX (v5.6)
+# GUIA DA BIBLIOTECA FÊNIX (v5.7)
 
 Este guia explica, em português claro, tudo o que existe na biblioteca Fênix: o que cada função do Fênix Core faz e para que serve cada regra do Livro das Regras. Ele também funciona como o **Changelog da biblioteca** (Parte 4). Acompanha todo pacote novo e é atualizado a cada versão, junto com o livro, o core, os templates e os documentos legais, que andam sempre com o mesmo número (regra 7).
 
@@ -9,13 +9,14 @@ Endereço base de tudo: https://fenicris-dev.github.io/Fenix-Core/
 | Arquivo | Onde fica | Para que serve |
 |----------------------------------------|------------------|------------------------------------------|
 | `fenix-core.js` | raiz | Biblioteca de funções que todo app carrega (módulo ES, exporta `FenixCore`). |
-| `versao.json` | raiz | Arquivo pequeno com a versão publicada do core e do livro (`{"core":"5.6","livro":"5.6"}`). O selo dos apps (regra 61) o consulta para avisar que existe core novo. Entra em todo pacote. |
+| `versao.json` | raiz | Arquivo pequeno com a versão publicada do core e do livro (`{"core":"5.7","livro":"5.7"}`). O selo dos apps (regra 61) o consulta para avisar que existe core novo. Entra em todo pacote. |
 | `index.html` | raiz | Painel da biblioteca: testa cada endereço oficial, confere se tudo está na mesma versão e roda testes ao vivo de CNPJ e CEP. |
-| `fenix-admin.html` | raiz | Painel administrativo (v4.9): clientes, licenças e equipe Fênix, com login Google. Só a equipe entra; as regras do Firestore conferem o nível. Não vai dentro de app. |
+| `admin/fenix-admin.html` | pasta `admin/` | Painel administrativo (v4.9): clientes, licenças e equipe Fênix, com login Google. Só a equipe entra; as regras do Firestore conferem o nível. Não vai dentro de app. |
+| `fenix-admin.html` | raiz | Só um redirecionamento para `admin/fenix-admin.html` (v5.7), para os favoritos antigos. Transitório: pode ser apagado quando não for mais necessário. |
 | `firestore.rules` | raiz | Regras de segurança do Firestore: parte das publicadas no console e traz os reforços v4.0 (regra 46). Publique primeiro o core, depois as regras no console. |
-| `fenix-template-login.html` | raiz | Layout oficial de login de todo app com senha, com o farol passando ao fundo e o botão do Google escondido até a licença definitiva. |
-| `fenix-template-onboarding.html` | raiz | Layout oficial da tela de primeiro acesso. |
-| `fenix-template-splash.html` | raiz | Layout oficial do splash de abertura, com os holofotes duplos de baixo para cima (regras 32 e 59). |
+| `templates/fenix-template-login.html` | pasta `templates/` | Layout oficial de login de todo app com senha, com o farol passando ao fundo e o botão do Google escondido até a licença definitiva. |
+| `templates/fenix-template-onboarding.html` | pasta `templates/` | Layout oficial da tela de primeiro acesso. |
+| `templates/fenix-template-splash.html` | pasta `templates/` | Layout oficial do splash de abertura, com os holofotes duplos de baixo para cima (regras 32 e 59). |
 | `Icon/Fenix_Icone_64, 128, 192, 512.png` | pasta `Icon/` | Ícone da águia (branca sobre o degradê): favicon, cabeçalho, PWA, splash e ícone provisório. |
 | `Logo/Fenix_Logo_Azul*.png`, `Fenix_Logo_Branca*.png` | pasta `Logo/` | Logo oficial (Azul) e segunda opção (Branca), também em 320 e 640 px. |
 | `Logo/Fenix_Logo_Black.png`, `Fenix_Logo_Silver.png`, `Fenix_Logo_Gray.png` | pasta `Logo/` | Logos auxiliares, para escolher o melhor contraste. |
@@ -23,15 +24,31 @@ Endereço base de tudo: https://fenicris-dev.github.io/Fenix-Core/
 | `MD/fenix-livro-das-regras.md`, `DOC/fenix-livro-das-regras.docx` | pastas `MD/` e `DOC/` | O Livro das Regras. |
 | `MD/fenix-resumo-do-livro.md`, `DOC/fenix-resumo-do-livro.docx` | pastas `MD/` e `DOC/` | Resumo de uma folha: quais regras do livro valem em cada tipo de trabalho. |
 | `MD/fenix-guia-da-biblioteca.md`, `DOC/fenix-guia-da-biblioteca.docx` | pastas `MD/` e `DOC/` | Este guia. |
-| `testes-app/fumaca-modelo.mjs` | pasta `testes-app/` | Modelo do teste de fumaça de cada app (regra 68): abre, mede 360 px e toques de 44 px, confere rótulos e alt, roda o roteiro de criar, editar e apagar, testa texto injetado e abre sem internet. Roda no seu computador; não vai para o GitHub Pages. |
-| `testes-regras/` | pasta ao lado do `firestore.rules` | Testes automáticos das regras do Firestore (emulador local). Rodam no seu computador; não vão para o GitHub Pages. |
+| `testes/app/fumaca-modelo.mjs` | pasta `testes/app/` | Modelo do teste de fumaça de cada app (regra 68): abre, mede 360 px e toques de 44 px, confere rótulos e alt, roda o roteiro de criar, editar e apagar, testa texto injetado e abre sem internet. Roda no seu computador; não vai para o GitHub Pages. |
+| `testes/regras/` | pasta `testes/regras/` | Testes automáticos das regras do Firestore (emulador local). Rodam no seu computador; não vão para o GitHub Pages. |
 
-Todo material com versão tem duas cópias (regra 11): a **neutra**, sem versão no nome (é a que os apps usam), e a **com versão no nome** (`-v5.6`), só para controle interno.
+**Estrutura de pastas do repositório (regra 78, v5.7):**
+
+```
+Fenix-Core/
+  index.html  fenix-core.js  versao.json  firestore.rules  LEIAME.txt   (raiz: só o que precisa estar na raiz)
+  fenix-admin.html            (só redireciona para admin/, transitório)
+  admin/       fenix-admin.html
+  templates/   fenix-template-login.html, -onboarding.html, -splash.html
+  testes/      app/ (teste de fumaça)   regras/ (testes do Firestore)
+  MD/  DOC/  Termos/  Icon/  Logo/  versoes/
+```
+
+**Modelo para cada app (regra 78):** raiz com `index.html`, `LEIAME.txt` e, se for PWA, `manifest.json` e o service worker; pastas `MD/` (manual em Markdown), `DOC/` (manual em PDF), `Icon/` (ícones próprios, se houver) e `versoes/` (cópias com a versão no nome).
+
+**Para o assistente de IA ler os arquivos (regra 73):** se o GitHub Pages estiver bloqueado, use `https://raw.githubusercontent.com/fenicris-dev/Fenix-Core/main/` + o caminho (ex.: `MD/fenix-livro-das-regras.md`). Em teste de 09/11/2026 esse endereço abriu. Só para leitura: os apps publicados usam o endereço do GitHub Pages.
+
+Todo material com versão tem duas cópias (regra 11): a **neutra**, sem versão no nome (é a que os apps usam), e a **com versão no nome** (`-v5.7`), só para controle interno.
 
 ### Ferramentas de apoio (v4.7)
 
 - **Resumo do livro:** uma folha com sete blocos (vale sempre, app novo, app antigo, alteração pequena, por recurso do app, biblioteca e conflitos). Serve de porta de entrada para quem trabalha nos apps; o livro continua sendo a fonte.
-- **Testes das regras do Firestore (`testes-regras/`):** conferem, com o emulador local, o que cada coleção da biblioteca permite e nega (empresas e licença, convites, membros, usuários, coleções da empresa, administradores, perfis, dados pessoais e cidades). Como rodar: dentro da pasta, `npm install` (uma vez) e `npm test`; precisa de Node.js e Java. Se algum teste falhar, não publique as regras. Os testes não substituem o Playground do console.
+- **Testes das regras do Firestore (`testes/regras/`):** conferem, com o emulador local, o que cada coleção da biblioteca permite e nega (empresas e licença, convites, membros, usuários, coleções da empresa, administradores, perfis, dados pessoais e cidades). Como rodar: dentro da pasta, `npm install` (uma vez) e `npm test`; precisa de Node.js e Java. Se algum teste falhar, não publique as regras. Os testes não substituem o Playground do console.
 - **Teste de aparelho (no Painel):** abra o Painel no celular, expanda "Teste de aparelho" e confira o toque Asas, o farol do login e os holofotes do splash (os próprios templates, ao vivo), o selo de versões e os dados do aparelho (tela, conexão, app instalado, tema, movimento reduzido, armazenamento e áudio).
 - **Varredura de versões:** antes de cada entrega, procura-se em todos os arquivos qualquer número de versão antigo; é um passo de "Como entregar".
 
@@ -218,7 +235,7 @@ O campo se formata sozinho enquanto o usuário digita. Ninguém precisa pedir: v
 - **`sintetizar(contexto, inicio)`:** escreve as três notas em um contexto de áudio (uso interno e testes).
 - **Limite:** navegadores só liberam som depois de um toque do usuário; por isso o toque normal sai no login e não ao abrir o app.
 
-**Animações (só CSS, nos templates):** o `fenix-template-login.html` tem o farol passando ao fundo; o `fenix-template-splash.html` tem os holofotes duplos. As duas param quando o aparelho pede para reduzir movimento.
+**Animações (só CSS, nos templates):** o `templates/fenix-template-login.html` tem o farol passando ao fundo; o `templates/fenix-template-splash.html` tem os holofotes duplos. As duas param quando o aparelho pede para reduzir movimento.
 
 ### 2.16 Preferências do usuário: som, animações e tema (v4.4)
 
@@ -277,7 +294,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 
 ### 2.20 Administração: equipe, níveis e clientes (v5.2)
 
-**`FenixCore.admin`** (regra 63) é o que a página `fenix-admin.html` chama; nenhum app usa.
+**`FenixCore.admin`** (regra 63) é o que a página `admin/fenix-admin.html` chama; nenhum app usa.
 
 - **`admin.ehRaiz(usuario)`:** verdadeiro para fenicris@gmail.com e fenicris.dev@gmail.com, só com e-mail verificado pelo Google.
 - **`admin.meuNivel(db, usuario)`:** `"admin"`, `"comercial"`, `"suporte"` ou `null`. Os raiz são sempre `admin`; os outros vêm de `equipe_fenix/{e-mail em minúsculas}` (ativo e com nível válido).
@@ -288,7 +305,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 - **`admin.clientes.prorrogarTeste(db, empresaId, dias)`** e **`reiniciarTeste(db, empresaId)`:** ampliam ou recomeçam os 15 dias.
 - **`admin.clientes.carimbarSemInicio(db)`:** grava `testeInicio` agora nas empresas antigas sem data e sem licença. **Rode uma vez**, logo depois de publicar as regras da v4.9: é o "15 dias a partir da publicação".
 - **[v5.4] `admin.indicacoes.listar(db)` e `admin.indicacoes.liberarPremio(db, indicadoEmpresaId, appId, por)`:** a primeira devolve as empresas que vieram por indicação com o estado (`aguardando`, `elegivel`, `liberado` ou `invalida`); a segunda libera o prêmio de 1 ano e só aceita indicado `elegivel` e app da lista `APPS_PREMIO`.
-- **A página `fenix-admin.html`:** abas Clientes (busca, resumo, +15 e +30 dias, reiniciar, conceder licença por tempo ou definitiva, revogar, carimbar) e Equipe (adicionar, editar, ativar e desativar, remover; os administradores raiz aparecem fixos). Quem manda de verdade são as regras: um nível que não pode a ação recebe "sem permissão".
+- **A página `admin/fenix-admin.html`:** abas Clientes (busca, resumo, +15 e +30 dias, reiniciar, conceder licença por tempo ou definitiva, revogar, carimbar) e Equipe (adicionar, editar, ativar e desativar, remover; os administradores raiz aparecem fixos). Quem manda de verdade são as regras: um nível que não pode a ação recebe "sem permissão".
 
 ### 2.21 Texto seguro e versão do esquema dos dados (v5.0)
 
@@ -332,7 +349,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 
 **`FenixCore.indicacoes`** (regras 75 e 76) é a campanha em que quem indica ganha **1 ano de acesso a outro app** da lista, só depois que o indicado **contratar a licença** e com liberação **manual** do Cristiano. Nunca em dinheiro.
 
-- **A chave:** o documento `config/indicacoes` (`{ ativa: true | false }`), que qualquer um lê e só o administrador grava. **`indicacoes.ativa(db)`** lê (sem rede vale a última leitura guardada); **`indicacoes.definirAtiva(db, sim, por)`** liga ou desliga; a página `fenix-admin.html` faz isso pela aba Indicações.
+- **A chave:** o documento `config/indicacoes` (`{ ativa: true | false }`), que qualquer um lê e só o administrador grava. **`indicacoes.ativa(db)`** lê (sem rede vale a última leitura guardada); **`indicacoes.definirAtiva(db, sim, por)`** liga ou desliga; a página `admin/fenix-admin.html` faz isso pela aba Indicações.
 - **`indicacoes.avisoAbertura(db, opcoes)`:** mostra, uma vez por sessão e só com a campanha ligada, "Compartilhe e ganhe acesso de 1 ano a um dos nossos aplicativos", a lista dos apps do prêmio e as condições, com os botões Compartilhar agora e Agora não. O app não chama direto: `compartilhar.iniciar` já chama.
 - **`indicacoes.APPS_PREMIO`:** a lista manual de apps do prêmio, escrita no core (`{ id, nome, url }`; o `id` é o nome usado no `FenixCore.init`). Hoje: Gestor do Tempo, Cápsula do Tempo e Controle de Compras. Confira os nomes e endereços antes de ligar a campanha.
 - **O rastro da indicação:** `indicacoes.codigo(email)` devolve o código (10 caracteres, derivado do e-mail); `indicacoes.capturar()` guarda neste aparelho o primeiro `?ind=` que chegar (o core já chama ao carregar); `indicacoes.codigoCapturado()` lê. **`criarEmpresa`** grava esse código em `empresas/{id}.indicadoPor`.
@@ -384,7 +401,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 22. **Rodapé padrão:** degradê, texto branco, `{ANO} <Cristiano Fênix/> | © Fênix Soluções Tecnológicas`, com ano automático, links do WhatsApp e do Instagram e a versão do app visível.
 
 ### Seção 4. Acesso e login
-23. **Layout de login único:** use o `fenix-template-login.html`, sem criar outro.
+23. **Layout de login único:** use o `templates/fenix-template-login.html`, sem criar outro.
 24. **Endereço do template de login** e como versioná-lo.
 25. **O que muda em cada app:** só o nome do app e a ligação da autenticação ao core.
 26. **Autenticação** por e-mail ou Google, sem PIN.
@@ -411,7 +428,7 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 45. **PDF** com cabeçalho padrão: logo Azul e dados da empresa do perfil.
 
 ### Seção 6. Segurança e qualidade
-46. **Regras do Firestore:** nenhuma coleção aberta; cada usuário só lê e grava os próprios dados; as regras seguem junto com a entrega, partindo do arquivo-base `firestore.rules` da biblioteca (veja o quadro "firestore.rules, bloco por bloco" depois da Seção 9), com um checklist de publicação: core e templates no GitHub, testes da pasta `testes-regras/`, backup das regras atuais, Playground, publicar, testar num app real e, se falhar, recolocar o backup.
+46. **Regras do Firestore:** nenhuma coleção aberta; cada usuário só lê e grava os próprios dados; as regras seguem junto com a entrega, partindo do arquivo-base `firestore.rules` da biblioteca (veja o quadro "firestore.rules, bloco por bloco" depois da Seção 9), com um checklist de publicação: core e templates no GitHub, testes da pasta `testes/regras/`, backup das regras atuais, Playground, publicar, testar num app real e, se falhar, recolocar o backup.
 47. **Ações destrutivas** exigem digitar uma palavra (ex.: APAGAR). Nunca o `confirm()` do navegador.
 48. **Validar o JS** com `node --check` (retorno 0) e chaves balanceadas.
 49. **Testar** em tela de 360 px e sem internet.
@@ -438,19 +455,19 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 60. **Preferências e tema escuro:** controles Som de abertura e Reduzir animações na tela Sobre ou no menu do avatar (`FenixCore.preferencias.montarTela`); tema escuro opcional no grupo J, só com a paleta Fênix, por variáveis CSS e `data-tema`; o claro segue como padrão.
 61. **Selo de versões:** todo app mostra `v3.2 | c 4.6` (app e core) ao lado da versão e na Sobre, com `FenixCore.versoes.montarSelo`; a Sobre mostra também Core e Livro; com internet o core lê o `versao.json` e avisa com ponto amarelo quando existe core mais novo (vermelho se o core for menor que o `coreMinimo` do app). Vale para todo app, sem grupo na Ficha.
 62. **Teste de 15 dias e somente leitura (todos os apps):** 15 dias grátis a partir do primeiro acesso (`testeInicio`, gravado pelo servidor); depois, só licença por tempo ou definitiva dá direito a criar, editar e apagar; sem ela o app só lê e exporta o backup. O app chama `licenca.carregar`, mostra `licenca.montarAviso` e trata o erro `FENIX_SOMENTE_LEITURA`; as regras do Firestore recusam a gravação de qualquer jeito. Empresas antigas ficam liberadas até o carimbo (regra 63). Cada app só passa a mostrar o aviso na próxima alteração dele (seção 2.19).
-63. **Administração Fênix:** página `fenix-admin.html` com login Google; níveis administrador, comercial e suporte; administradores raiz fenicris@gmail.com e fenicris.dev@gmail.com (e-mail verificado); demais colaboradores em `equipe_fenix` no banco do core; depois de publicar as regras da v4.9, carimbar as empresas antigas uma vez (seção 2.20).
+63. **Administração Fênix:** página `admin/fenix-admin.html` com login Google; níveis administrador, comercial e suporte; administradores raiz fenicris@gmail.com e fenicris.dev@gmail.com (e-mail verificado); demais colaboradores em `equipe_fenix` no banco do core; depois de publicar as regras da v4.9, carimbar as empresas antigas uma vez (seção 2.20).
 
 ### Seção 12. Segurança, dados, qualidade e continuidade (v5.0; regra 71 na v5.2; regras 72 e 73 na v5.3)
 64. **Texto de usuário na tela:** texto de usuário, de importação ou do banco é texto, nunca código; use `textContent` ou `FenixCore.seguranca` (seção 2.21); nada de concatenar em `innerHTML`, `onclick` ou `href`.
 65. **Versão do esquema dos dados:** todo app registra a versão do formato dos seus dados e migra com `FenixCore.esquema.migrar`, com cópia de segurança antes e registro no Changelog; sem renomear nem trocar formato sem migração.
 66. **Cota do Firestore (grupo A):** listas com `limit` e paginação; um `onSnapshot` por coleção, só onde o tempo real é necessário, cancelado ao sair da tela; cache do aparelho; gravação em lote. As regras do Firestore também leem documentos para conferir licença e vínculo, então não grave em rajada.
 67. **Excluir minha conta e meus dados (grupo B):** Exportar meus dados e Excluir minha conta na Sobre ou no avatar, nesta ordem: backup, apagar os dados pessoais do usuário e só então `excluirConta(senha)`, com a confirmação APAGAR. Conta só com Google pede a exclusão por e-mail. Dados da empresa não se apagam por aqui.
-68. **Teste de fumaça:** antes de entregar, `testes-app/fumaca-modelo.mjs` ajustado ao app (abre sem erro, 360 px, toques de 44 px, rótulos, alt, roteiro criar-editar-apagar, texto injetado, sem internet). Falha impede a entrega; aviso é combinado comigo; se não rodar, diga o motivo.
+68. **Teste de fumaça:** antes de entregar, `testes/app/fumaca-modelo.mjs` ajustado ao app (abre sem erro, 360 px, toques de 44 px, rótulos, alt, roteiro criar-editar-apagar, texto injetado, sem internet). Falha impede a entrega; aviso é combinado comigo; se não rodar, diga o motivo.
 69. **Acessibilidade básica:** rótulo em todo campo, `alt` em toda imagem, `aria-label` em botão só com ícone, contraste de 4,5 para 1, fonte em `rem`, foco visível e erros em texto, não só em cor.
 70. **Plano de volta:** a versão anterior fica guardada com a versão no nome; se a nova falhar depois de publicada, recoloque a anterior primeiro e investigue depois; na entrega, diga a versão de volta; mudança de esquema ou de regra do Firestore exige o backup antes.
 71. **Saída protegida:** nenhuma tela com edição em andamento fecha sem perguntar Continuar editando ou Sair sem salvar (Voltar, Cancelar, janela, Voltar do celular, fechar ou recarregar a aba; puxar para atualizar desligado); consulta sem alteração fecha direto; assistentes e configurações perguntam sempre; use `FenixCore.saida` (seção 2.22), nunca `confirm()`.
-72. **Conferência de entrega de app:** toda entrega de app termina com a linha "Conferência de entrega" (versão no nome, cópia `index.html`, zip com `LEIAME.txt` quando há mais de um arquivo, selo, Changelog e Manual, teste de fumaça, versão de volta, botão Compartilhar e escolha de onde guardar os dados, cada item com sim ou não); sem a linha a entrega é incompleta.
-73. **Quando não dá para abrir os links:** se o ambiente de quem constrói o app (colaborador ou IA) bloqueia o GitHub Pages, ele diz que não abriu, pede os arquivos anexados (zip da biblioteca, livro, guia, core, ícones) e usa só o que foi anexado; o app publicado funciona mesmo assim, porque quem carrega o core é o navegador do cliente.
+72. **Conferência de entrega de app:** toda entrega de app termina com a linha "Conferência de entrega" (versão no nome, cópia `index.html`, zip com `LEIAME.txt` quando há mais de um arquivo, selo, Changelog e Manual, teste de fumaça, versão de volta, botão Compartilhar e escolha de onde guardar os dados, estrutura de pastas do repositório (regra 78), cada item com sim ou não); sem a linha a entrega é incompleta.
+73. **Quando não dá para abrir os links:** se o ambiente de quem constrói o app (colaborador ou IA) bloqueia o GitHub Pages, ele diz que não abriu, tenta o endereço alternativo `raw.githubusercontent.com/fenicris-dev/Fenix-Core/main/` (só para ler) e, se nem esse abrir, pede os arquivos anexados (zip da biblioteca, livro, guia, core, ícones) e usa só o que foi anexado; o app publicado funciona mesmo assim, porque quem carrega o core é o navegador do cliente.
 
 ### Seção 13. Compartilhar e indicar (v5.4)
 74. **Compartilhar o app:** todo app novo ou alterado traz o botão Compartilhar (WhatsApp, e-mail, copiar link e opções do aparelho), montado pelo core com `compartilhar.iniciar` (seção 2.23); o app não lê contatos nem monta mensagem própria.
@@ -460,12 +477,15 @@ O Gestor do Tempo e o Controle de Compras carregavam estas funções **embutidas
 ### Seção 14. Onde ficam os dados (v5.5)
 77. **Onde guardar os dados:** no primeiro acesso o app pergunta se o usuário guarda os dados só neste aparelho (padrão, com o aviso de que formatar, limpar o histórico ou os dados do navegador apaga tudo) ou na nuvem da Fênix, e a escolha pode ser mudada depois em Ajuda ou Configurações; o app consulta `armazenamento.nuvem(app)` antes de sincronizar (seção 2.25). Os Termos e a Política oficiais informam essa escolha.
 
+### Seção 15. Onde ficam os arquivos (v5.7)
+78. **Estrutura de pastas do repositório:** na raiz fica só o que precisa estar lá; o resto vai para pastas pela finalidade. Biblioteca: raiz com `index.html`, `fenix-core.js`, `versao.json`, `firestore.rules` e `LEIAME.txt`; pastas `admin/`, `templates/`, `testes/app/`, `testes/regras/`, `MD/`, `DOC/`, `Termos/`, `Icon/`, `Logo/` e `versoes/`. App: raiz com `index.html`, `LEIAME.txt` e, se for PWA, `manifest.json` e service worker; pastas `MD/`, `DOC/`, `Icon/` e `versoes/`. Nomes de pasta exatos (o GitHub Pages diferencia maiúsculas); `Icon`, `Logo`, `MD`, `DOC` e `Termos` não mudam de nome. Mover arquivo que app publicado usa só numa versão nova do livro, com Painel atualizado e redirecionamento. O zip de entrega já vem montado assim. App existente segue na próxima alteração (item 9 da Conferência).
+
 ### firestore.rules, bloco por bloco
 O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu console** (as versões registradas no cabeçalho). O que já funcionava foi mantido; o que mudou na v4.0 está marcado com `[v4.0]`. Tudo que não está liberado é negado.
 
 **Ordem para publicar:** 1) o `fenix-core.js` mais novo no GitHub (ele grava o `conviteToken` e, desde a v4.4, o nome da empresa no convite); 2) só depois estas regras no console. Teste antes no "Playground de regras" (roteiro abaixo).
 
-**Checklist de publicação (regra 46):** 1) core e templates no GitHub; 2) no seu computador, rode os testes da pasta `testes-regras/` (`npm install` uma vez e `npm test`) e, se algum falhar, não publique; 3) no console, copie as regras atuais para um arquivo de backup; 4) cole as novas no Playground e rode o roteiro abaixo; 5) publique; 5a) na v4.9, abra o `fenix-admin.html` e use Carimbar início do teste (uma vez); 6) abra um app real, entre e grave um registro; 7) se algo falhar, recoloque o backup e avise.
+**Checklist de publicação (regra 46):** 1) core e templates no GitHub; 2) no seu computador, rode os testes da pasta `testes/regras/` (`npm install` uma vez e `npm test`) e, se algum falhar, não publique; 3) no console, copie as regras atuais para um arquivo de backup; 4) cole as novas no Playground e rode o roteiro abaixo; 5) publique; 5a) na v4.9, abra o `admin/fenix-admin.html` e use Carimbar início do teste (uma vez); 6) abra um app real, entre e grave um registro; 7) se algo falhar, recoloque o backup e avise.
 
 - **Funções de apoio:** `autenticado`, `pertenceAEmpresa` (vínculo aprovado em `usuarios_empresa`), `souDonoDaEmpresa`, e, novas, `temVinculoAprovado`, `membroComPapel` e `conviteValido` (convite da empresa, não usado e não cancelado).
 - **Base compartilhada:** `produtos_servicos` e `cidades` como antes. **[v4.0]** `pessoas_fisicas` e `pessoas_juridicas` (CPF e CNPJ, dados pessoais) só para quem tem vínculo aprovado com uma empresa; antes, qualquer conta Google logada em qualquer app lia a base inteira.
@@ -520,6 +540,7 @@ O arquivo está na raiz da biblioteca e **parte das regras publicadas no seu con
 Cada linha diz o que mudou e o que isso exige dos apps. As versões v1.x e v2.x do core vieram antes do livro atual; as versões v3.x são niveladas entre livro, core, templates e documentos legais.
 
 ### Versões v3.x (niveladas)
+- **v5.7**: regra 78 (estrutura de pastas do repositório, para a biblioteca e para todos os apps): `fenix-admin.html` foi para `admin/`, os templates para `templates/` e os testes para `testes/app/` e `testes/regras/`; a raiz fica com `index.html`, `fenix-core.js`, `versao.json`, `firestore.rules` e `LEIAME.txt` (mais um redirecionamento transitório do `fenix-admin.html`). Regra 72 com o item 9 (estrutura de pastas); regra 73 com o endereço alternativo `raw.githubusercontent.com` para o assistente de IA ler os arquivos. A Política de Privacidade informa o código de indicação da campanha. O core só sobe a versão. Apps: NÃO nos já publicados; a partir da próxima alteração de cada um, estrutura de pastas do repositório.
 - **v5.6**: Termos de Uso e Política de Privacidade passam a informar a escolha da regra 77 (onde guardar os dados e o risco de perda quando ficam só no aparelho); a data "Atualizado em" dos dois passa a 09/11/2026 porque o texto mudou; o restante só sobe a versão. Apps: NÃO.
 - **v5.5**: regra 77 (onde guardar os dados: neste aparelho por padrão ou na nuvem, perguntado no primeiro acesso e mudável em Ajuda ou Configurações); core com `FenixCore.armazenamento` (seção 2.25); Conferência de entrega (regra 72) ganha o item escolha de onde guardar os dados; as regras do Firestore não mudam (só a versão). Apps: SIM, na próxima entrega de cada um (chamar `armazenamento.iniciar`).
 - **v5.4**: regras 74 a 76 (compartilhar o app e campanha Compartilhe e ganhe); core com `FenixCore.compartilhar`, `FenixCore.indicacoes` e `admin.indicacoes` (seções 2.23 e 2.24) e `licenca.acesso` com o prêmio; aba Indicações na página administrativa; **as regras do Firestore mudam (v16)**; Conferência de entrega (regra 72) ganha o item botão Compartilhar; a pasta `testes-regras/` agora copia o `firestore.rules` antes de testar. Apps: SIM, na próxima entrega de cada um (chamar `compartilhar.iniciar`).

@@ -1,9 +1,9 @@
-# Bloco de entrega de apps Fênix (v5.6)
+# Bloco de entrega de apps Fênix (v5.7)
 
 Cole este bloco no começo do chat de cada app, junto com o pacote da biblioteca (.zip) anexado.
 
 ## Antes de começar
-1. Use o Livro das Regras e o Guia da biblioteca ANEXADOS (a versão do pacote). Se não conseguir abrir os endereços do GitHub Pages, diga isso e peça os arquivos; nunca trabalhe de memória (regra 73).
+1. Use o Livro das Regras e o Guia da biblioteca ANEXADOS (a versão do pacote). Se não conseguir abrir os endereços do GitHub Pages, tente o endereço alternativo de leitura `https://raw.githubusercontent.com/fenicris-dev/Fenix-Core/main/` + caminho (ex.: `MD/fenix-livro-das-regras.md`); se nem ele abrir, diga isso e peça os arquivos; nunca trabalhe de memória (regra 73).
 2. Confirme comigo a Ficha de aplicação (grupos A a J) antes de construir.
 
 ## Toda entrega de app (novo, alterado ou trazido ao padrão)
@@ -14,9 +14,10 @@ Cole este bloco no começo do chat de cada app, junto com o pacote da biblioteca
 - Changelog e Manual (MD e PDF) atualizados.
 - Botão Compartilhar (regra 74): `FenixCore.compartilhar.iniciar({ nomeApp, url, email, container })` uma vez, depois do `init`. O aviso "Compartilhe e ganhe" (regra 75) vem do core, quando o Cristiano liga a campanha; o app não escreve nada dele.
 - Onde guardar os dados (regra 77): `FenixCore.armazenamento.iniciar({ app, nomeApp, temNuvem, modoAtual, container, aoMudar })` uma vez, depois do `init`: pergunta no primeiro acesso (padrão: só neste aparelho, com o aviso de perda de dados) e deixa mudar em Ajuda ou Configurações; o app só sincroniza se `armazenamento.nuvem(app)` for verdadeiro.
+- Estrutura de pastas do repositório do app (regra 78): na raiz só `index.html`, `LEIAME.txt` e, se for PWA, `manifest.json` e o service worker; manual em `MD/` (md) e `DOC/` (pdf), ícones próprios em `Icon/`, cópias com versão em `versoes/`. O zip já sai nessa estrutura.
 - Teste de fumaça e a versão de volta informada.
 
 ## Última linha de TODA entrega (obrigatória)
-> Conferência de entrega: versão no nome: sim/não | index.html: sim/não | zip com LEIAME: sim/não/não se aplica | selo: sim/não | Changelog e Manual: sim/não | teste de fumaça: sim/não | versão de volta: vX.X | botão Compartilhar: sim/não | onde guardar os dados: sim/não
+> Conferência de entrega: versão no nome: sim/não | index.html: sim/não | zip com LEIAME: sim/não/não se aplica | selo: sim/não | Changelog e Manual: sim/não | teste de fumaça: sim/não | versão de volta: vX.X | botão Compartilhar: sim/não | onde guardar os dados: sim/não | estrutura de pastas: sim/não
 
 Todo "não" vem com o motivo. Sem essa linha, a entrega está incompleta.
