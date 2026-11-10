@@ -1,4 +1,4 @@
-Testes das regras do Firestore (biblioteca Fênix v5.7)
+Testes das regras do Firestore (biblioteca Fênix v5.8)
 
 Para que serve: conferir, no seu computador, se o firestore.rules faz o que o livro promete (regras 46 e 58), ANTES de publicar no console. Não toca no banco real: usa o emulador local (projeto "demo-fenix").
 
