@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v5.6
+ * FÊNIX CORE v5.7
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -321,6 +321,7 @@
         botão Voltar do celular e puxar para atualizar desligado) e
         formulario(form) (detecta campos alterados). Só acréscimos.
  * v5.3 — só a versão sobe (nenhuma função nova): nivelamento com o livro.
+ * v5.7 — só a versão sobe (nenhuma função nova): nivelamento com o livro (regra 78, estrutura de pastas do repositório; a página administrativa passa a ficar em admin/fenix-admin.html e o core continua na raiz).
  * v5.6 — só a versão sobe (nenhuma função nova): nivelamento com o livro (Termos e Política atualizados).
  * v5.5 — NOVO (regra 77): FenixCore.armazenamento (iniciar, perguntar, montarConfig,
         modo, nuvem, escolheu, definir): no primeiro acesso o usuário escolhe guardar
@@ -3049,7 +3050,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "5.6";
+const _CORE_VERSAO = "5.7";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas

@@ -1,13 +1,30 @@
-Biblioteca Fênix v5.6
+Biblioteca Fênix v5.7
 
-Raiz do repositório: index.html (Painel), fenix-admin.html (Painel administrativo), fenix-core.js, versao.json, fenix-template-login.html, fenix-template-onboarding.html, fenix-template-splash.html, firestore.rules
-Icon/   : Fenix_Icone_128.png (os demais ícones já estão no repositório)
-Termos/ : fenix-termos-de-uso.html, fenix-politica-de-privacidade.html (só a versão sobe; o texto é o de 30/10/2026)
-MD/     : fenix-livro-das-regras.md, fenix-resumo-do-livro.md, fenix-guia-da-biblioteca.md (guia e changelog da biblioteca)
-DOC/    : fenix-livro-das-regras.docx, fenix-resumo-do-livro.docx, fenix-guia-da-biblioteca.docx
-testes-regras/: testes das regras do Firestore, para rodar no SEU computador. Não precisa subir para o GitHub Pages.
-testes-app/ : (NOVO) modelo do teste de fumaça dos apps (regra 68), para rodar no SEU computador. Não sobe para o GitHub Pages.
-versoes/: cópias com a versão no nome, só para controle interno. NUNCA suba esta pasta para a raiz do repositório.
+ESTRUTURA DO REPOSITÓRIO (regra 78): na raiz só o que precisa estar na raiz.
+Raiz       : index.html (Painel), fenix-core.js, versao.json, firestore.rules, LEIAME.txt, fenix-admin.html (só redireciona para admin/fenix-admin.html; transitório)
+admin/     : fenix-admin.html (Painel administrativo)
+templates/ : fenix-template-login.html, fenix-template-onboarding.html, fenix-template-splash.html
+testes/    : app/ (teste de fumaça dos apps) e regras/ (testes das regras do Firestore); rodam no SEU computador e não precisam subir
+MD/        : fenix-livro-das-regras.md, fenix-resumo-do-livro.md, fenix-guia-da-biblioteca.md, fenix-bloco-entrega-de-apps.md
+DOC/       : fenix-livro-das-regras.docx, fenix-resumo-do-livro.docx, fenix-guia-da-biblioteca.docx
+Termos/    : fenix-termos-de-uso.html, fenix-politica-de-privacidade.html
+Icon/ e Logo/ : já estão no repositório e não mudam de nome (apps publicados apontam para eles)
+versoes/   : cópias com a versão no nome, só para controle interno. Pode subir como pasta; NUNCA solte esses arquivos na raiz.
+
+ARQUIVOS SOLTOS (fora do zip): têm o mesmo nome, sem pastas; cada um vai na pasta indicada acima. O fenix-admin.html solto é o painel de verdade (vai em admin/); o redirecionamento da raiz só existe dentro do zip.
+
+COMO SUBIR (atenção: o GitHub não apaga sozinho o que ficou para trás):
+1) Suba as pastas novas (admin/, templates/, testes/) e os arquivos da raiz, MD/, DOC/ e Termos/ deste pacote.
+2) Depois APAGUE do repositório os arquivos antigos que mudaram de lugar: fenix-template-login.html, fenix-template-onboarding.html e fenix-template-splash.html (da raiz) e as pastas testes-app/ e testes-regras/. O fenix-admin.html da raiz NÃO se apaga: ele é substituído pelo redirecionamento deste pacote.
+3) Abra o Painel (index.html) e toque em "Testar tudo": nenhum item pode ficar em amarelo.
+4) Troque o favorito do Painel administrativo para .../admin/fenix-admin.html.
+
+Novo na v5.7:
+- Regra 78: estrutura de pastas do repositório, para a biblioteca e como modelo para cada app (raiz só com o essencial; MD/, DOC/, Icon/ e versoes/ nos apps). Apps já publicados não são afetados; cada app segue a regra na próxima alteração dele.
+- Regra 73: o assistente de IA que não abrir o GitHub Pages tenta o endereço alternativo https://raw.githubusercontent.com/fenicris-dev/Fenix-Core/main/ + caminho (só para ler).
+- Regra 72: a Conferência de entrega ganhou o item 9 (estrutura de pastas).
+- Política de Privacidade: passa a informar o código de indicação da campanha "Compartilhe e ganhe". Os Termos só sobem a versão. Publique a pasta Termos/.
+- O restante só sobe a versão. As regras do Firestore continuam com o mesmo conteúdo da v16.
 
 Novo na v5.6:
 - Termos de Uso e Política de Privacidade passam a informar a escolha da regra 77 (onde guardar os dados: só neste aparelho, padrão, ou na nuvem; risco de perda ao formatar ou limpar o histórico; dá para mudar em Ajuda ou Configurações). Como o texto mudou, a data "Atualizado em" dos dois agora é 09/11/2026. Publique a pasta Termos/ no GitHub Pages.
@@ -21,8 +38,8 @@ Da v5.5 continuam:
 Da v5.4 continuam:
 - Regras 74, 75 e 76: botão Compartilhar em todo app e campanha "Compartilhe e ganhe" (1 ano de acesso a outro app, só depois que o indicado contratar a licença, liberação manual, nunca em dinheiro).
 - Core: FenixCore.compartilhar, FenixCore.indicacoes e FenixCore.admin.indicacoes.
-- fenix-admin.html: nova aba Indicações (liga e desliga a campanha, lista de indicados, liberar prêmio).
-- ATENÇÃO: as regras do Firestore MUDAM (v16). Siga o checklist da regra 46: publique primeiro o core e o fenix-admin.html no GitHub, rode npm test em testes-regras/, e só depois publique o firestore.rules no console. Depois, em Firestore, nada precisa ser criado à mão: a aba Indicações cria config/indicacoes ao ligar a campanha.
+- admin/fenix-admin.html: nova aba Indicações (liga e desliga a campanha, lista de indicados, liberar prêmio).
+- ATENÇÃO: as regras do Firestore MUDAM (v16). Siga o checklist da regra 46: publique primeiro o core e o admin/fenix-admin.html no GitHub, rode npm test em testes/regras/, e só depois publique o firestore.rules no console. Depois, em Firestore, nada precisa ser criado à mão: a aba Indicações cria config/indicacoes ao ligar a campanha.
 - Confira a lista APPS_PREMIO no fenix-core.js (nomes e endereços dos apps do prêmio) antes de ligar a campanha.
 
 Da v5.3 continuam:
@@ -39,7 +56,7 @@ Da v5.2 continuam:
 
 Da v5.1 continuam:
 - Aviso automático do teste de 15 dias e do somente leitura, inclusive nos apps ANTIGOS: com o core 5.1 publicado, todo app com login pelo criarModuloAuth passa a ler o acesso depois do login, a travar as gravações do core e a mostrar uma faixa fixa no rodapé (amarela e fechável no teste; vermelha em somente leitura), com o botão de WhatsApp. Sem alterar nenhum app. FenixCore.licenca.automatico(false) desliga. Apps só no aparelho (sem login) não recebem a faixa.
-- AVISE OS CLIENTES ANTES de publicar o core 5.1 e de carimbar as empresas (fenix-admin.html): quem tem teste vencido vê a faixa vermelha e perde a gravação.
+- AVISE OS CLIENTES ANTES de publicar o core 5.1 e de carimbar as empresas (admin/fenix-admin.html): quem tem teste vencido vê a faixa vermelha e perde a gravação.
 - As regras do Firestore não mudam de conteúdo (só o cabeçalho sobe para 5.1).
 
 Da v5.0 continuam:
@@ -49,4 +66,4 @@ Da v5.0 continuam:
 - As regras do Firestore NÃO mudam de conteúdo (só o cabeçalho sobe para a 5.0): não precisam ser republicadas no console. Se quiser, a v4.9 já publicada continua valendo.
 - Os testes de regras e o teste de fumaça não foram executados por mim contra o banco/emulador real; rode no seu computador.
 
-Ordem para publicar: 1) core, versao.json, Painel, fenix-admin.html, templates, Termos, MD/ e DOC/ no GitHub; 2) Painel: "Testar tudo" e "Rodar testes ao vivo" (nenhum item em amarelo); 3) se a v4.9 ainda não foi publicada, siga a ordem do LEIAME dela (regras do Firestore e carimbar as empresas) antes ou junto.
+Ordem para publicar: 1) core, versao.json, Painel, admin/fenix-admin.html, templates, Termos, MD/ e DOC/ no GitHub; 2) Painel: "Testar tudo" e "Rodar testes ao vivo" (nenhum item em amarelo); 3) se a v4.9 ainda não foi publicada, siga a ordem do LEIAME dela (regras do Firestore e carimbar as empresas) antes ou junto.
