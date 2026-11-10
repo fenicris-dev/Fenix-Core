@@ -1,4 +1,4 @@
-Biblioteca Fênix v5.7
+Biblioteca Fênix v5.8
 
 ESTRUTURA DO REPOSITÓRIO (regra 78): na raiz só o que precisa estar na raiz.
 Raiz       : index.html (Painel), fenix-core.js, versao.json, firestore.rules, LEIAME.txt, fenix-admin.html (só redireciona para admin/fenix-admin.html; transitório)
@@ -18,6 +18,12 @@ COMO SUBIR (atenção: o GitHub não apaga sozinho o que ficou para trás):
 2) Depois APAGUE do repositório os arquivos antigos que mudaram de lugar: fenix-template-login.html, fenix-template-onboarding.html e fenix-template-splash.html (da raiz) e as pastas testes-app/ e testes-regras/. O fenix-admin.html da raiz NÃO se apaga: ele é substituído pelo redirecionamento deste pacote.
 3) Abra o Painel (index.html) e toque em "Testar tudo": nenhum item pode ficar em amarelo.
 4) Troque o favorito do Painel administrativo para .../admin/fenix-admin.html.
+
+Novo na v5.8:
+- Livro, Ficha de aplicação: a regra 32 (splash de abertura) agora consta entre as regras que valem SEMPRE, como o texto dela já dizia; o grupo B (login) passa a ser as regras 23 a 31 e 67.
+- Livro, regra 62: o aviso automático do teste de 15 dias nos apps antigos vale desde a v5.1 (estava escrito v5.6).
+- O restante só sobe a versão (core, versao.json, Painel, página administrativa, templates, Termos e Política). O texto dos Termos e da Política NÃO mudou; publique a pasta Termos/ só para o número da versão acompanhar. As regras do Firestore continuam com o mesmo conteúdo da v16.
+- Nada muda para os apps já publicados.
 
 Novo na v5.7:
 - Regra 78: estrutura de pastas do repositório, para a biblioteca e como modelo para cada app (raiz só com o essencial; MD/, DOC/, Icon/ e versoes/ nos apps). Apps já publicados não são afetados; cada app segue a regra na próxima alteração dele.
