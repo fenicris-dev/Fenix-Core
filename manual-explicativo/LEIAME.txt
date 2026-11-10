@@ -1,0 +1,12 @@
+Manual explicativo da Biblioteca Fênix (v5.7)
+
+Refeito do zero a partir do Livro das Regras v5.7 e do fenix-core.js v5.7.
+Parte 1: as 78 regras do Livro, cada uma com "o que diz", "para que serve", "quando vale", "na prática" e "como conferir".
+Parte 2: os módulos do Fênix Core.
+
+Arquivos:
+- fenix-manual-explicativo.md / .docx: cópia neutra (sem versão no nome).
+- fenix-manual-explicativo-v5.7.md / .docx: cópia com a versão no nome (controle interno).
+
+Se houver diferença entre este manual e o Livro ou o Guia, valem o Livro e o Guia.
+Este manual não precisa subir para o GitHub Pages; é material de consulta para o Cristiano e os colaboradores.
