@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v5.8
+ * FÊNIX CORE v6.1
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -321,6 +321,16 @@
         botão Voltar do celular e puxar para atualizar desligado) e
         formulario(form) (detecta campos alterados). Só acréscimos.
  * v5.3 — só a versão sobe (nenhuma função nova): nivelamento com o livro.
+ * v6.1 — correção em FenixCore.salas.entrarAnonimo: espera authStateReady() antes de decidir, para não trocar por anônimo quem já está logado (ex.: o anfitrião). Nenhuma função nova; nivelamento com o livro. O bloco das salas passou para dentro do firestore.rules.
+ * v6.0 — NOVO (regra 80): FenixCore.salas — salas ao vivo para apps de estudo (jogo
+        estilo quiz, estudo em grupo e simulado cronometrado da turma). Entrada sem
+        cadastro por login anônimo (signInAnonymously) + apelido. Funções: disponivel,
+        entrarAnonimo, criar, obter, ouvir, ouvirJogadores, ouvirRespostas,
+        lerPerguntas, lerGabarito, entrar, atualizarSala, iniciarPergunta, liberar,
+        iniciarSimulado, encerrar, gravarPlacar, responder, apagar. Exige ligar
+        "Anônimo" em Authentication e publicar o firestore.rules (que traz o bloco das salas desde a v6.1).
+        Só acréscimos.
+ * v5.9 — só a versão sobe (nenhuma função nova): nivelamento com o livro (regra 79, aplicativos de estudo; Termos e Política com o anexo de apps de estudo).
  * v5.8 — só a versão sobe (nenhuma função nova): nivelamento com o livro (correções na Ficha de aplicação, regra 32, e na data da regra 62).
  * v5.7 — só a versão sobe (nenhuma função nova): nivelamento com o livro (regra 78, estrutura de pastas do repositório; a página administrativa passa a ficar em admin/fenix-admin.html e o core continua na raiz).
  * v5.6 — só a versão sobe (nenhuma função nova): nivelamento com o livro (Termos e Política atualizados).
@@ -356,7 +366,7 @@ import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, signOut,
   GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, sendPasswordResetEmail
-  , EmailAuthProvider, reauthenticateWithCredential, deleteUser
+  , EmailAuthProvider, reauthenticateWithCredential, deleteUser, signInAnonymously
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ============================================================================
@@ -3051,7 +3061,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "5.8";
+const _CORE_VERSAO = "6.1";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas
@@ -4094,10 +4104,183 @@ const armazenamento = {
 };
 
 // ============================================================================
+// SALAS (v6.0) — salas ao vivo para apps de estudo (jogo, estudo em grupo e
+// simulado da turma). Entrada sem cadastro (login anônimo) + apelido.
+// Coleções: salas/{codigo} e, dentro dela: perguntas, gabarito, jogadores, respostas.
+// O gabarito só é lido depois que o anfitrião o libera (regras do Firestore:
+// arquivo firestore.rules-salas). Só acréscimos: nada existente foi alterado.
+// ============================================================================
+const salas = (() => {
+  const ALF = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
+  const MAX_PERG = 50;
+  let _auth = null;
+  let _off = 0; // diferença (ms) entre o relógio do servidor e o do aparelho
+  function _ref(...p) { _garantirInit(); return doc(_db, ...p); }
+  function _col(...p) { _garantirInit(); return collection(_db, ...p); }
+  function _limpaCodigo(c) { return String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8); }
+  function _limpaApelido(a) { return String(a || "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 16); }
+  function _ms(t) { return t && typeof t.toMillis === "function" ? t.toMillis() : (typeof t === "number" ? t : null); }
+
+  function disponivel() { return typeof signInAnonymously === "function"; }
+
+  /** Entra de forma anônima (sem cadastro). Devolve o uid. */
+  async function entrarAnonimo() {
+    _garantirInit();
+    const app = _obterAppFirebase(firebaseConfig);
+    _auth = _auth || getAuth(app);
+    // v6.1: espera o Firebase restaurar o login salvo; sem isso, um anfitrião já logado poderia ser trocado por anônimo.
+    if (typeof _auth.authStateReady === "function") { try { await _auth.authStateReady(); } catch (e) { /* segue: tenta o login anônimo */ } }
+    if (_auth.currentUser) return _auth.currentUser.uid;
+    const r = await signInAnonymously(_auth);
+    return r.user.uid;
+  }
+  function uid() { return _auth && _auth.currentUser ? _auth.currentUser.uid : null; }
+
+  function gerarCodigo(tam) {
+    let s = ""; const n = tam || 6;
+    const a = new Uint32Array(n);
+    (globalThis.crypto || window.crypto).getRandomValues(a);
+    for (let i = 0; i < n; i++) s += ALF[a[i] % ALF.length];
+    return s;
+  }
+
+  /**
+   * Cria a sala. dados = {titulo, modo:'jogo'|'estudo'|'simulado', tempoPerg (s),
+   * tempoTotalMin, ttlHoras, perguntas:[{enun, alts:[...], c:índice, exp, errs}]}
+   * Máximo de 50 perguntas. Devolve o código.
+   */
+  async function criar(dados) {
+    const u = await entrarAnonimo();
+    const P = (dados.perguntas || []).slice(0, MAX_PERG);
+    if (P.length < 1) throw new Error("A sala precisa de pelo menos 1 pergunta.");
+    const modo = ["jogo", "estudo", "simulado"].includes(dados.modo) ? dados.modo : "jogo";
+    let codigo = "", ok = false;
+    for (let t = 0; t < 6 && !ok; t++) {
+      codigo = gerarCodigo(6);
+      const ex = await getDoc(_ref("salas", codigo));
+      ok = !ex.exists();
+    }
+    if (!ok) throw new Error("Não foi possível gerar o código da sala. Tente de novo.");
+    const ttl = Math.min(72, Math.max(1, Number(dados.ttlHoras) || 24));
+    await setDoc(_ref("salas", codigo), {
+      host: u, titulo: String(dados.titulo || "Sala de estudo").slice(0, 60), modo,
+      estado: "espera", idx: -1, n: P.length, liberadas: modo === "estudo" ? P.length : 0,
+      tempoPerg: Number(dados.tempoPerg) || 20, tempoTotalMin: Number(dados.tempoTotalMin) || 0,
+      inicioPerg: null,
+      criadoEm: serverTimestamp(), expiraEm: new Date(Date.now() + ttl * 3600 * 1000), app: _nomeAppChamador
+    });
+    await _calibrar(_ref("salas", codigo), "criadoEm");
+    for (let i = 0; i < P.length; i += 200) { /* lotes (cada pergunta usa 2 gravações) */
+      const b = writeBatch(_db);
+      P.slice(i, i + 200).forEach((q, k) => {
+        const n = i + k;
+        b.set(_ref("salas", codigo, "perguntas", String(n)), { n, enun: String(q.enun || "").slice(0, 1500), alts: (q.alts || []).map(a => String(a).slice(0, 400)) });
+        b.set(_ref("salas", codigo, "gabarito", String(n)), { n, c: q.c | 0, exp: String(q.exp || "").slice(0, 3000), errs: String(q.errs || "").slice(0, 3000) });
+      });
+      await b.commit();
+    }
+    return codigo;
+  }
+
+  async function obter(codigo) {
+    const s = await getDoc(_ref("salas", _limpaCodigo(codigo)));
+    return s.exists() ? _norm(s.data()) : null;
+  }
+  function _norm(d) { return Object.assign({}, d, { inicioMs: _ms(d.inicioPerg), criadoMs: _ms(d.criadoEm), expiraMs: _ms(d.expiraEm) }); }
+  /** Hora do servidor (ms), corrigida pela calibragem feita ao criar/entrar numa sala. */
+  function agora() { return Date.now() + _off; }
+  async function _calibrar(ref, campo) {
+    try { const t0 = Date.now(); const s = await getDocFromServer(ref); const m = _ms(s.data()[campo]); if (m) _off = m - Math.round((t0 + Date.now()) / 2); } catch (e) { /* segue sem calibrar */ }
+  }
+
+  function ouvir(codigo, cb, cbErro) {
+    return onSnapshot(_ref("salas", _limpaCodigo(codigo)), s => cb(s.exists() ? _norm(s.data()) : null), cbErro || (() => {}));
+  }
+  function ouvirJogadores(codigo, cb, cbErro) {
+    return onSnapshot(_col("salas", _limpaCodigo(codigo), "jogadores"), q => cb(q.docs.map(d => Object.assign({ uid: d.id }, d.data()))), cbErro || (() => {}));
+  }
+  function ouvirRespostas(codigo, cb, cbErro) {
+    return onSnapshot(_col("salas", _limpaCodigo(codigo), "respostas"), q => cb(q.docs.map(d => { const x = d.data(); return { n: x.n, uid: x.uid, alt: x.alt, tsMs: _ms(x.ts) }; })), cbErro || (() => {}));
+  }
+  async function lerPerguntas(codigo) {
+    const q = await getDocs(_col("salas", _limpaCodigo(codigo), "perguntas"));
+    return q.docs.map(d => d.data()).sort((a, b) => a.n - b.n);
+  }
+  /** Lê o gabarito de uma pergunta; falha (permissão) se o anfitrião ainda não liberou. */
+  async function lerGabarito(codigo, n) {
+    const s = await getDocFromServer(_ref("salas", _limpaCodigo(codigo), "gabarito", String(n)));
+    return s.exists() ? s.data() : null;
+  }
+
+  /** Participante entra (ou troca o apelido). */
+  async function entrar(codigo, apelido) {
+    const u = await entrarAnonimo();
+    const c = _limpaCodigo(codigo), ap = _limpaApelido(apelido);
+    if (!ap) throw new Error("Digite um apelido.");
+    const sala = await obter(c);
+    if (!sala) throw new Error("Sala não encontrada. Confira o código.");
+    if (sala.expiraMs && agora() > sala.expiraMs) throw new Error("Esta sala já expirou.");
+    const r = _ref("salas", c, "jogadores", u);
+    const ex = await getDoc(r);
+    if (ex.exists()) await updateDoc(r, { apelido: ap });
+    else await setDoc(r, { apelido: ap, pontos: 0, acertos: 0, entrou: serverTimestamp() });
+    await _calibrar(r, "entrou");
+    return { uid: u, sala };
+  }
+
+  // ----- anfitrião -----
+  function atualizarSala(codigo, campos) { return updateDoc(_ref("salas", _limpaCodigo(codigo)), campos); }
+  /** Inicia (ou avança para) a pergunta idx no modo jogo. */
+  function iniciarPergunta(codigo, idx) {
+    return updateDoc(_ref("salas", _limpaCodigo(codigo)), { estado: "andamento", idx, inicioPerg: serverTimestamp() });
+  }
+  /** Libera o gabarito das perguntas 0..n-1 (n = quantidade liberada). */
+  function liberar(codigo, n) { return updateDoc(_ref("salas", _limpaCodigo(codigo)), { liberadas: n }); }
+  /** Começa o simulado cronometrado da turma. O fim = inicioPerg (hora do servidor) + tempoTotalMin. */
+  function iniciarSimulado(codigo, minutos) {
+    return updateDoc(_ref("salas", _limpaCodigo(codigo)), { estado: "andamento", idx: 0, inicioPerg: serverTimestamp(), tempoTotalMin: Number(minutos) || 0 });
+  }
+  function encerrar(codigo, liberarTudo, n) {
+    const d = { estado: "fim" }; if (liberarTudo) d.liberadas = n;
+    return updateDoc(_ref("salas", _limpaCodigo(codigo)), d);
+  }
+  /** Grava os pontos (calculados no aparelho do anfitrião). placar = {uid:{pontos,acertos}} */
+  async function gravarPlacar(codigo, placar) {
+    const c = _limpaCodigo(codigo); const ids = Object.keys(placar);
+    for (let i = 0; i < ids.length; i += 400) {
+      const b = writeBatch(_db);
+      ids.slice(i, i + 400).forEach(id => b.update(_ref("salas", c, "jogadores", id), { pontos: placar[id].pontos | 0, acertos: placar[id].acertos | 0 }));
+      await b.commit();
+    }
+  }
+  /** Responde uma pergunta (uma vez só; o servidor carimba a hora). */
+  async function responder(codigo, n, alt) {
+    const u = await entrarAnonimo();
+    return setDoc(_ref("salas", _limpaCodigo(codigo), "respostas", n + "_" + u), { n, uid: u, alt, ts: serverTimestamp() });
+  }
+  /** Apaga a sala inteira (só o anfitrião). */
+  async function apagar(codigo) {
+    const c = _limpaCodigo(codigo);
+    for (const sub of ["respostas", "jogadores", "gabarito", "perguntas"]) {
+      const q = await getDocs(_col("salas", c, sub));
+      for (let i = 0; i < q.docs.length; i += 400) {
+        const b = writeBatch(_db); q.docs.slice(i, i + 400).forEach(d => b.delete(d.ref)); await b.commit();
+      }
+    }
+    await deleteDoc(_ref("salas", c));
+  }
+
+  return { disponivel, entrarAnonimo, uid, agora, gerarCodigo, criar, obter, ouvir, ouvirJogadores, ouvirRespostas,
+    lerPerguntas, lerGabarito, entrar, atualizarSala, iniciarPergunta, liberar, iniciarSimulado, encerrar,
+    gravarPlacar, responder, apagar, MAX_PERG };
+})();
+
+// ============================================================================
 // EXPORTAÇÃO
 // ============================================================================
 
 export const FenixCore = {
+  salas,
   init,
   initFirebase,
   initFirebaseComCache,

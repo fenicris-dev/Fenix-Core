@@ -1,5 +1,5 @@
 // ============================================================================
-// FÊNIX | firestore.rules (Biblioteca Fênix v5.8)
+// FÊNIX | firestore.rules (Biblioteca Fênix v6.1)
 //
 // BASE: as regras publicadas no console do Firebase (projeto fenix-core), nas
 // versões registradas abaixo, enviadas pelo Cristiano em 21/10/2026. O que já
@@ -22,10 +22,11 @@
 // firestore-rules-v13-biblioteca-v5.1 (só a versão sobe: o conteúdo é o mesmo da v11)
 // firestore-rules-v14-biblioteca-v5.2 (só a versão sobe: o conteúdo é o mesmo da v11)
 // firestore-rules-v15-biblioteca-v5.3 (só a versão sobe: o conteúdo é o mesmo da v11)
-// firestore-rules-v20-biblioteca-v5.8 (só a versão sobe: o conteúdo é o mesmo da v16)
 // firestore-rules-v18-biblioteca-v5.6 (só a versão sobe: o conteúdo é o mesmo da v16)
 // firestore-rules-v17-biblioteca-v5.5 (só a versão sobe: o conteúdo é o mesmo da v16)
 // firestore-rules-v16-biblioteca-v5.4 (Compartilhe e ganhe: config/indicacoes, indicadoPor na empresa e prêmio por app [v5.4])
+// firestore-rules-v20-biblioteca-v5.8 (só a versão sobe: o conteúdo é o mesmo da v16)
+// firestore-rules-v21-biblioteca-v6.1 (acrescenta o bloco das salas online, regra 80: match /salas/{codigo} [v6.0/v6.1]; o resto é igual ao da v16)
 //
 // ORDEM PARA PUBLICAR (importante):
 //   1) publique o fenix-core.js v4.0 no GitHub (ele passa a gravar o
@@ -337,6 +338,79 @@ service cloud.firestore {
       allow read: if autenticado() && request.auth.uid == uid;
       // [v4.9] Somente leitura trava a gravação; o documento "relogio" (medição do relógio) fica livre.
       allow write: if autenticado() && request.auth.uid == uid && (docId == 'relogio' || pessoalPodeGravarEm(colecao.split('_')[0]));
+    }
+
+    // ---------- [v6.1] Salas online (regra 80, FenixCore.salas) ----------
+    // Escrito sem emulador: rode os testes de testes/regras/ e o Playground antes de publicar.
+    // Exige Authentication > Anônimo ligado. Só vale para apps que abrem salas.
+    // Ponto em aberto: qualquer pessoa logada (inclusive anônima) pode criar sala; a licença do anfitrião é conferida pelo app.
+    match /salas/{codigo} {
+      function logado() { return request.auth != null; }
+      function ehHost() { return logado() && request.auth.uid == resource.data.host; }
+      function sala() { return get(/databases/$(database)/documents/salas/$(codigo)).data; }
+      function souHost() { return logado() && request.auth.uid == sala().host; }
+
+      // Sala: qualquer pessoa logada (anônima também) lê; só o anfitrião muda.
+      allow get: if logado();
+      allow list: if false;                       // ninguém lista todas as salas
+      allow create: if logado()
+        && request.resource.data.host == request.auth.uid
+        && request.resource.data.n <= 50;
+      allow update: if ehHost() && request.resource.data.host == resource.data.host;
+      allow delete: if ehHost();
+
+      // Perguntas (sem resposta certa): todos lêem; o anfitrião grava.
+      match /perguntas/{n} {
+        allow read: if logado();
+        allow create, update, delete: if souHost();
+      }
+
+      // Gabarito: só depois que o anfitrião liberar (sala.liberadas > número da pergunta).
+      match /gabarito/{n} {
+        allow get: if souHost() || (logado() && sala().liberadas > int(n));
+        allow list: if false;
+        allow create, update, delete: if souHost();
+      }
+
+      // Jogadores: cada um cria/edita só o próprio apelido; o anfitrião grava pontos.
+      match /jogadores/{u} {
+        allow read: if logado();
+        allow create: if logado() && request.auth.uid == u
+          && request.resource.data.pontos == 0 && request.resource.data.acertos == 0
+          && request.resource.data.apelido is string
+          && request.resource.data.apelido.size() > 0 && request.resource.data.apelido.size() <= 16;
+        allow update: if (logado() && request.auth.uid == u
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['apelido'])
+            && request.resource.data.apelido is string
+            && request.resource.data.apelido.size() > 0 && request.resource.data.apelido.size() <= 16)
+          || (souHost()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pontos', 'acertos']));
+        allow delete: if souHost();
+      }
+
+      // Respostas: hora carimbada pelo servidor e dentro da janela. No jogo e no estudo valem uma vez só;
+      // no simulado o aluno pode trocar a resposta até o fim do tempo.
+      match /respostas/{id} {
+        function janela() {
+          return sala().estado == 'andamento'
+            && (sala().modo != 'jogo' || request.resource.data.n == sala().idx)
+            && (sala().modo != 'simulado' || sala().tempoTotalMin == 0
+                || request.time.toMillis() <= sala().inicioPerg.toMillis() + sala().tempoTotalMin * 60000 + 5000);
+        }
+        function valida() {
+          return logado()
+            && id == string(request.resource.data.n) + '_' + request.auth.uid
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.ts == request.time
+            && request.resource.data.alt is int && request.resource.data.alt >= 0 && request.resource.data.alt <= 4
+            && janela()
+            && exists(/databases/$(database)/documents/salas/$(codigo)/jogadores/$(request.auth.uid));
+        }
+        allow read: if logado();
+        allow create: if valida();
+        allow update: if valida() && sala().modo == 'simulado';
+        allow delete: if souHost();
+      }
     }
   }
 }

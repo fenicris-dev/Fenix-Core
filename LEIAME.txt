@@ -1,4 +1,4 @@
-Biblioteca Fênix v5.8
+Biblioteca Fênix v6.1
 
 ESTRUTURA DO REPOSITÓRIO (regra 78): na raiz só o que precisa estar na raiz.
 Raiz       : index.html (Painel), fenix-core.js, versao.json, firestore.rules, LEIAME.txt, fenix-admin.html (só redireciona para admin/fenix-admin.html; transitório)
@@ -19,7 +19,18 @@ COMO SUBIR (atenção: o GitHub não apaga sozinho o que ficou para trás):
 3) Abra o Painel (index.html) e toque em "Testar tudo": nenhum item pode ficar em amarelo.
 4) Troque o favorito do Painel administrativo para .../admin/fenix-admin.html.
 
-Novo na v5.8:
+Novo na v6.1 (consolida o pacote do colaborador v5.9 e v6.0; tudo no mesmo número):
+- Regras 79 (apps de estudo) e 80 (salas online) do pacote do colaborador, conferidas e mantidas. O Resumo agora traz as duas.
+- O bloco das salas está DENTRO do firestore.rules. O arquivo firestore.rules-salas deixou de existir: se você o subiu para a raiz do repositório, APAGUE-o.
+- Core: entrarAnonimo espera o Firebase restaurar o login (authStateReady), para não trocar por anônimo quem já está logado. Só correção.
+- Livro, regra 80(f): o app segue a escolha da regra 77; a nuvem da sala é à parte.
+- Painel, página administrativa, firestore.rules, testes/, Resumo, bloco de entrega e templates sobem para 6.1. Termos e Política: texto igual ao da v6.0 (16/11/2026), só o número da versão.
+- testes/regras/ ganhou casos das salas (não executados por mim, sem emulador): rode npm install e npm test no seu computador.
+- ORDEM para usar salas: 1) publicar core e documentos; 2) Firebase > Authentication > ligar "Anônimo"; 3) publicar o firestore.rules pelo checklist da regra 46 (backup, npm test, Playground); 4) testar com 2 aparelhos.
+- Pendente de decisão sua: as regras deixam qualquer pessoa logada criar sala (a licença do anfitrião é conferida só pelo app); e a cláusula de menores de idade dos Termos e da Política (LGPD, art. 14) merece revisão de advogado antes do lançamento público.
+- Nada muda para os apps já publicados.
+
+Da v5.8 continuam:
 - Livro, Ficha de aplicação: a regra 32 (splash de abertura) agora consta entre as regras que valem SEMPRE, como o texto dela já dizia; o grupo B (login) passa a ser as regras 23 a 31 e 67.
 - Livro, regra 62: o aviso automático do teste de 15 dias nos apps antigos vale desde a v5.1 (estava escrito v5.6).
 - O restante só sobe a versão (core, versao.json, Painel, página administrativa, templates, Termos e Política). O texto dos Termos e da Política NÃO mudou; publique a pasta Termos/ só para o número da versão acompanhar. As regras do Firestore continuam com o mesmo conteúdo da v16.
