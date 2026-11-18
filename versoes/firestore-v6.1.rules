@@ -1,0 +1,416 @@
+// ============================================================================
+// FÊNIX | firestore.rules (Biblioteca Fênix v6.1)
+//
+// BASE: as regras publicadas no console do Firebase (projeto fenix-core), nas
+// versões registradas abaixo, enviadas pelo Cristiano em 21/10/2026. O que já
+// funciona em produção foi MANTIDO. Os reforços da v4.0 estão marcados com
+// [v4.0] e explicados no guia (firestore.rules, bloco por bloco).
+//
+// ---------- Versões ----------
+// Fenix_Ativos_v4.6
+// fenix-core-v1.7
+// firestore-rules-v4-catalogos-raiz
+// firestore-rules-v4-convites
+// firestore-rules-v5-dados-pessoais (Gestor de Tempo)
+// firestore-rules-v6-biblioteca-v4.0 (reforços [v4.0])
+// firestore-rules-v7-biblioteca-v4.3 (licença definitiva: campo [v4.3] em empresas e espelho licencas)
+// firestore-rules-v8-biblioteca-v4.4 (empresas/{id} só para membros e para o dono [v4.4])
+// firestore-rules-v9-biblioteca-v4.5 (perfis e admins, cadastro com aprovação [v4.5])
+// firestore-rules-v10-biblioteca-v4.8 (empresas/{id}/cidades sem gravação: o curinga da empresa deixa de liberar [v4.8])
+// firestore-rules-v11-biblioteca-v4.9 (teste de 15 dias, licença e somente leitura; equipe Fênix e níveis [v4.9])
+// firestore-rules-v12-biblioteca-v5.0 (só a versão sobe: o conteúdo é o mesmo da v11)
+// firestore-rules-v13-biblioteca-v5.1 (só a versão sobe: o conteúdo é o mesmo da v11)
+// firestore-rules-v14-biblioteca-v5.2 (só a versão sobe: o conteúdo é o mesmo da v11)
+// firestore-rules-v15-biblioteca-v5.3 (só a versão sobe: o conteúdo é o mesmo da v11)
+// firestore-rules-v18-biblioteca-v5.6 (só a versão sobe: o conteúdo é o mesmo da v16)
+// firestore-rules-v17-biblioteca-v5.5 (só a versão sobe: o conteúdo é o mesmo da v16)
+// firestore-rules-v16-biblioteca-v5.4 (Compartilhe e ganhe: config/indicacoes, indicadoPor na empresa e prêmio por app [v5.4])
+// firestore-rules-v20-biblioteca-v5.8 (só a versão sobe: o conteúdo é o mesmo da v16)
+// firestore-rules-v21-biblioteca-v6.1 (acrescenta o bloco das salas online, regra 80: match /salas/{codigo} [v6.0/v6.1]; o resto é igual ao da v16)
+//
+// ORDEM PARA PUBLICAR (importante):
+//   1) publique o fenix-core.js v4.0 no GitHub (ele passa a gravar o
+//      "conviteToken" no registro de técnico);
+//   2) só depois publique estas regras no console.
+//   Testar antes no "Playground de regras" (roteiro no guia).
+// ============================================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- funções de apoio ----------
+    function autenticado() {
+      return request.auth != null;
+    }
+    function vinculoDoUsuario() {
+      return get(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid)).data;
+    }
+    function pertenceAEmpresa(empresaId) {
+      return autenticado()
+        && exists(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid))
+        && vinculoDoUsuario().empresaId == empresaId
+        && vinculoDoUsuario().status == 'aprovado';
+    }
+    function souDonoDaEmpresa(empresaId) {
+      return pertenceAEmpresa(empresaId) && vinculoDoUsuario().papel == 'dono';
+    }
+    // [v4.0] vínculo aprovado com qualquer empresa (usado na base de pessoas)
+    function temVinculoAprovado() {
+      return autenticado()
+        && exists(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid))
+        && vinculoDoUsuario().status == 'aprovado';
+    }
+    // [v4.0] provas para criar o vínculo: registro de membro da empresa
+    function caminhoMembro(empresaId, uid) {
+      return /databases/$(database)/documents/empresas/$(empresaId)/membros/$(uid);
+    }
+    function membroComPapel(empresaId, uid, papel) {
+      return exists(caminhoMembro(empresaId, uid))
+        && get(caminhoMembro(empresaId, uid)).data.papel == papel;
+    }
+    // [v4.0] convite existente, da empresa, não usado e não cancelado
+    function conviteValido(empresaId, token) {
+      return token is string && token.size() > 0
+        && exists(/databases/$(database)/documents/convites/$(token))
+        && get(/databases/$(database)/documents/convites/$(token)).data.empresaId == empresaId
+        && get(/databases/$(database)/documents/convites/$(token)).data.usado == false
+        && get(/databases/$(database)/documents/convites/$(token)).data.get('cancelado', false) == false;
+    }
+
+    // ---------- Compartilhado entre todos os apps Fênix (raiz) ----------
+    // Cadastro nacional de CPF/CNPJ e produtos genéricos.
+    // [v4.0] CPF e CNPJ (dados pessoais, LGPD): só quem tem vínculo aprovado com
+    // uma empresa lê e grava. Antes, qualquer usuário logado (basta uma conta
+    // Google) lia a base inteira. Se algum app sem empresa usar estas
+    // coleções, ele para de funcionar: nesse caso troque temVinculoAprovado()
+    // por autenticado() só nessa linha e me avise.
+    // ---------- [v4.9] Equipe Fênix (administração) ----------
+    // Administradores raiz: os e-mails abaixo, SÓ com e-mail verificado pelo Google
+    // (sem a verificação, qualquer um poderia criar uma conta com o e-mail alheio).
+    // Os demais da equipe ficam em equipe_fenix/{e-mail em minúsculas}:
+    // { email, nome, nivel: admin | comercial | suporte, ativo: true }.
+    function emailVerificado() {
+      return autenticado() && request.auth.token.email_verified == true;
+    }
+    function adminRaiz() {
+      return emailVerificado()
+        && request.auth.token.email.lower() in ['fenicris@gmail.com', 'fenicris.dev@gmail.com'];
+    }
+    function temEquipeAtiva() {
+      return emailVerificado()
+        && exists(/databases/$(database)/documents/equipe_fenix/$(request.auth.token.email.lower()))
+        && get(/databases/$(database)/documents/equipe_fenix/$(request.auth.token.email.lower())).data.get('ativo', false) == true;
+    }
+    function nivelDaEquipe() {
+      return get(/databases/$(database)/documents/equipe_fenix/$(request.auth.token.email.lower())).data.get('nivel', '');
+    }
+    function equipeAdmin() {
+      return adminRaiz() || (temEquipeAtiva() && nivelDaEquipe() == 'admin');
+    }
+    function equipeComercial() {
+      return equipeAdmin() || (temEquipeAtiva() && nivelDaEquipe() == 'comercial');
+    }
+    function equipeSuporte() {
+      return equipeComercial() || (temEquipeAtiva() && nivelDaEquipe() == 'suporte');
+    }
+
+    // ---------- [v4.9] Teste de 15 dias, licença e somente leitura ----------
+    // A empresa grava (cria, edita, apaga) se: (a) tem licença definitiva ou por tempo em dia
+    // (licencaAte é Timestamp; definitiva sem licencaAte não vence); ou (b) está nos 15 dias
+    // a partir de testeInicio (360 horas); ou (c) ainda não tem testeInicio (empresa criada
+    // antes da v4.9, até o administrador carimbar). Vencidas, só leitura.
+    function licencaEmDia(emp) {
+      return (emp.get('licenca', 'teste') == 'definitiva'
+               && (!(emp.get('licencaAte', null) is timestamp) || emp.licencaAte > request.time))
+          || (emp.get('licenca', 'teste') == 'tempo'
+               && emp.get('licencaAte', null) is timestamp && emp.licencaAte > request.time);
+    }
+    function testeEmDia(emp) {
+      return !(emp.get('testeInicio', null) is timestamp)
+        || request.time < emp.testeInicio + duration.time(360, 0, 0, 0);
+    }
+    function empresaPodeGravar(empresaId) {
+      return !exists(/databases/$(database)/documents/empresas/$(empresaId))
+        || licencaEmDia(get(/databases/$(database)/documents/empresas/$(empresaId)).data)
+        || testeEmDia(get(/databases/$(database)/documents/empresas/$(empresaId)).data);
+    }
+    // ---------- [v5.4] Prêmio de indicação (regra 76) ----------
+    // empresas/{id}.premios é um mapa { "nome-do-app": Timestamp de término }, gravado só pelo
+    // administrador (empresa nenhuma cria nem altera o próprio prêmio). Um prêmio em dia libera
+    // a gravação NAQUELE app, nos dados pessoais (dados_pessoais/{uid}/{app} ou {app}_{coleção}).
+    function premioEmDia(emp, app) {
+      return emp.get('premios', null) is map
+        && emp.premios.get(app, null) is timestamp
+        && emp.premios.get(app, null) > request.time;
+    }
+    function pessoalPodeGravarEm(app) {
+      return pessoalPodeGravar()
+        || premioEmDia(get(/databases/$(database)/documents/empresas/$(get(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid)).data.get('empresaId', 'sem-empresa'))).data, app);
+    }
+    function pessoalPodeGravar() {
+      return !exists(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid))
+        || empresaPodeGravar(get(/databases/$(database)/documents/usuarios_empresa/$(request.auth.uid)).data.get('empresaId', 'sem-empresa'));
+    }
+
+    match /pessoas_fisicas/{cpf} {
+      allow read: if temVinculoAprovado();
+      allow write: if temVinculoAprovado() && empresaPodeGravar(vinculoDoUsuario().empresaId);
+    }
+    match /pessoas_juridicas/{cnpj} {
+      allow read: if temVinculoAprovado();
+      allow write: if temVinculoAprovado() && empresaPodeGravar(vinculoDoUsuario().empresaId);
+    }
+    match /produtos_servicos/{id} {
+      allow read, write: if autenticado();
+    }
+    match /cidades/{codigoIBGE} {
+      allow read: if true; // localização é público, sem dado sensível
+      allow write: if autenticado();
+      match /bairros/{bairroId} {
+        allow read: if true;
+        allow write: if autenticado();
+      }
+    }
+
+    // ---------- Empresas ----------
+    match /empresas/{empresaId} {
+      // [v4.4] Antes, qualquer logado lia o nome da empresa e o e-mail do dono.
+      // Agora só lê o dono (donoUid) e quem tem vínculo aprovado. O convite leva o
+      // nome da empresa dentro dele (core v4.4), então quem ainda vai entrar não
+      // precisa ler a empresa.
+      allow read: if autenticado()
+        && (resource.data.get('donoUid', '') == request.auth.uid || pertenceAEmpresa(empresaId) || equipeSuporte());
+      // [v4.3] Licença definitiva (regra 58 do livro): o app NUNCA grava o campo
+      // "licenca" como definitiva. Só o Cristiano grava, pelo console do Firebase
+      // (o console não passa por estas regras). Quem cria a empresa só pode deixar
+      // o campo de fora ou usar "teste". Ninguém altera nem apaga depois.
+      // [v4.9] Toda empresa nasce com testeInicio = hora do servidor (o app não escolhe a data).
+      allow create: if autenticado()
+        && (!('licenca' in request.resource.data) || request.resource.data.licenca == 'teste')
+        && request.resource.data.get('testeInicio', null) == request.time
+        // [v5.4] Quem cria a empresa não pode se dar prêmio nem se marcar como premiado; o código de
+        // indicação (indicadoPor) é só texto de 10 caracteres hexadecimais, conferido pelo administrador.
+        && !request.resource.data.keys().hasAny(['premios', 'indicacaoPremiada', 'indicacaoPremioApp', 'indicacaoPremioEm', 'indicacaoPremioPor'])
+        && (!('indicadoPor' in request.resource.data)
+            || (request.resource.data.indicadoPor is string && request.resource.data.indicadoPor.matches('^[a-f0-9]{10}$')));
+      // [v4.9] Licença e início do teste: administrador (qualquer campo) ou comercial (só estes campos).
+      allow update: if equipeAdmin()
+        || (equipeComercial()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['licenca', 'licencaAte', 'licencaObs', 'licencaPor', 'licencaEm', 'testeInicio']));
+      allow delete: if false;
+    }
+
+    // ---------- [v5.4] Configuração pública (chave da campanha "Compartilhe e ganhe") ----------
+    // Qualquer um lê UM documento (o app lê antes do login); só o administrador grava.
+    match /config/{docId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if equipeAdmin() && docId == 'indicacoes'
+        && request.resource.data.get('ativa', null) is bool;
+      allow delete: if equipeAdmin();
+    }
+
+    // ---------- [v4.3] Espelho de licença, para o login (antes de saber quem é o usuário) ----------
+    // O ID do documento é o SHA-256 do e-mail em minúsculas (FenixCore.licenca.hashEmail).
+    // Só leitura pontual (get): não dá para listar e a gravação é só pelo console.
+    match /licencas/{hashEmail} {
+      allow get: if true;
+      // [v4.9] O espelho passa a ser mantido pela equipe comercial (antes, só o console).
+      allow list: if equipeSuporte();
+      allow create, update, delete: if equipeComercial();
+    }
+
+    // ---------- [v4.9] Equipe Fênix ----------
+    match /equipe_fenix/{email} {
+      allow get: if emailVerificado() && (request.auth.token.email.lower() == email || equipeSuporte());
+      allow list: if equipeAdmin();
+      allow create, update: if equipeAdmin()
+        && request.resource.data.get('nivel', '') in ['admin', 'comercial', 'suporte']
+        && request.resource.data.get('email', '') == email;
+      allow delete: if equipeAdmin();
+    }
+
+    // ---------- Vínculo usuário -> empresa ----------
+    // Cada um lê o próprio vínculo; o titular também pode listar/remover
+    // vínculos de quem já pertence à mesma empresa (gestão de equipe).
+    match /usuarios_empresa/{uid} {
+      allow get: if autenticado() && (request.auth.uid == uid || souDonoDaEmpresa(resource.data.empresaId));
+      allow list: if autenticado() && souDonoDaEmpresa(resource.data.empresaId);
+      // [v4.0] Antes, qualquer logado criava o próprio vínculo com QUALQUER
+      // empresa e papel "dono" (e passava a ver os dados dela). Agora só cria
+      // o vínculo quem já tem o registro de membro com o mesmo papel, e esse
+      // registro exige ser o dono da empresa ou ter um convite válido.
+      allow create: if autenticado() && request.auth.uid == uid
+        && membroComPapel(request.resource.data.empresaId, uid, request.resource.data.papel);
+      // [v4.0] Atualizar sem trocar empresa nem papel continua livre; trocar
+      // exige a mesma prova do create.
+      allow update: if autenticado() && request.auth.uid == uid
+        && (
+          (request.resource.data.empresaId == resource.data.empresaId
+            && request.resource.data.papel == resource.data.papel)
+          || membroComPapel(request.resource.data.empresaId, uid, request.resource.data.papel)
+        );
+      allow delete: if autenticado() && (request.auth.uid == uid || souDonoDaEmpresa(resource.data.empresaId));
+    }
+
+    // ---------- Convites ----------
+    // Ler UM convite específico (pelo token) é liberado pra qualquer
+    // autenticado: o próprio token é o segredo, e é assim que a pessoa
+    // convidada vê/aceita antes de pertencer à empresa. Listar é só do titular.
+    match /convites/{token} {
+      allow get: if autenticado();
+      allow list: if autenticado() && souDonoDaEmpresa(resource.data.empresaId);
+      allow create: if autenticado() && souDonoDaEmpresa(request.resource.data.empresaId);
+      // [v4.0] Antes, qualquer logado alterava qualquer campo de um convite não
+      // usado (até a empresa). Agora: o titular só cancela; o convidado só marca
+      // como usado, uma vez, com o próprio uid.
+      allow update: if autenticado() && (
+        (souDonoDaEmpresa(resource.data.empresaId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cancelado']))
+        || (resource.data.usado == false
+          && resource.data.get('cancelado', false) == false
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usado', 'usadoPorUid', 'usadoEm'])
+          && request.resource.data.usado == true
+          && request.resource.data.usadoPorUid == request.auth.uid)
+      );
+      allow delete: if autenticado() && souDonoDaEmpresa(resource.data.empresaId);
+    }
+
+    // ---------- [v4.0] Equipe: registros de membro ----------
+    // O dono cria o próprio registro ao criar a empresa (a empresa tem de ter
+    // donoUid igual ao uid); o técnico cria o seu com o "conviteToken" válido
+    // que o core v4.0 grava. Só o titular altera; o titular ou o próprio apaga.
+    match /empresas/{empresaId}/membros/{uid} {
+      allow create: if autenticado() && request.auth.uid == uid
+        && exists(/databases/$(database)/documents/empresas/$(empresaId))
+        && (
+          (request.resource.data.papel == 'dono'
+            && get(/databases/$(database)/documents/empresas/$(empresaId)).data.donoUid == uid)
+          || (request.resource.data.papel == 'tecnico'
+            && conviteValido(empresaId, request.resource.data.get('conviteToken', '')))
+        );
+      allow update: if souDonoDaEmpresa(empresaId);
+      allow delete: if autenticado() && (request.auth.uid == uid || souDonoDaEmpresa(empresaId));
+    }
+
+    // ---------- Dados de cada empresa (isolados) ----------
+    // [v4.0] Membros leem tudo; a gravação fica de fora da coleção "membros",
+    // que tem a regra própria acima. [v4.8] Também fica de fora a coleção "cidades":
+    // antes, este curinga liberava a gravação e a regra "write: if false" abaixo não valia.
+    match /empresas/{empresaId}/{tipoColecao}/{docId} {
+      allow read: if pertenceAEmpresa(empresaId);
+      allow write: if tipoColecao != 'membros' && tipoColecao != 'cidades' && pertenceAEmpresa(empresaId)
+        && empresaPodeGravar(empresaId);   // [v4.9] teste vencido ou licença vencida: só leitura
+    }
+    match /empresas/{empresaId}/cidades/{codigoIBGE} {
+      allow read: if pertenceAEmpresa(empresaId);
+      allow write: if false;
+      match /bairros/{bairroId} {
+        allow read: if pertenceAEmpresa(empresaId);
+        allow write: if pertenceAEmpresa(empresaId);
+      }
+    }
+
+    // ---------- [v4.5] Cadastro com aprovação do administrador (FenixCore.criarModuloAcesso) ----------
+    // Só vale para app que usa criarModuloAcesso. Cada pessoa pede acesso criando o próprio perfil
+    // como "pendente"; só quem tem o documento admins/{uid} (criado à mão no console) aprova.
+    function souAdmin() {
+      return (autenticado()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid)))
+        || equipeAdmin();   // [v4.9] a equipe Fênix também aprova perfis
+    }
+    match /admins/{uid} {
+      allow get: if autenticado() && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+    match /perfis/{uid} {
+      allow get: if autenticado() && (request.auth.uid == uid || souAdmin());
+      allow list: if souAdmin();
+      allow create: if autenticado() && request.auth.uid == uid
+        && request.resource.data.get('status', '') == 'pendente';
+      allow update, delete: if souAdmin();
+    }
+
+    // ---------- Dados pessoais por usuário (v5: Gestor de Tempo e outros apps pessoais) ----------
+    // Cada usuário lê e grava só o que está sob o próprio uid. Nada de empresa envolvido.
+    match /dados_pessoais/{uid}/{colecao}/{docId} {
+      allow read: if autenticado() && request.auth.uid == uid;
+      // [v4.9] Somente leitura trava a gravação; o documento "relogio" (medição do relógio) fica livre.
+      allow write: if autenticado() && request.auth.uid == uid && (docId == 'relogio' || pessoalPodeGravarEm(colecao.split('_')[0]));
+    }
+
+    // ---------- [v6.1] Salas online (regra 80, FenixCore.salas) ----------
+    // Escrito sem emulador: rode os testes de testes/regras/ e o Playground antes de publicar.
+    // Exige Authentication > Anônimo ligado. Só vale para apps que abrem salas.
+    // Ponto em aberto: qualquer pessoa logada (inclusive anônima) pode criar sala; a licença do anfitrião é conferida pelo app.
+    match /salas/{codigo} {
+      function logado() { return request.auth != null; }
+      function ehHost() { return logado() && request.auth.uid == resource.data.host; }
+      function sala() { return get(/databases/$(database)/documents/salas/$(codigo)).data; }
+      function souHost() { return logado() && request.auth.uid == sala().host; }
+
+      // Sala: qualquer pessoa logada (anônima também) lê; só o anfitrião muda.
+      allow get: if logado();
+      allow list: if false;                       // ninguém lista todas as salas
+      allow create: if logado()
+        && request.resource.data.host == request.auth.uid
+        && request.resource.data.n <= 50;
+      allow update: if ehHost() && request.resource.data.host == resource.data.host;
+      allow delete: if ehHost();
+
+      // Perguntas (sem resposta certa): todos lêem; o anfitrião grava.
+      match /perguntas/{n} {
+        allow read: if logado();
+        allow create, update, delete: if souHost();
+      }
+
+      // Gabarito: só depois que o anfitrião liberar (sala.liberadas > número da pergunta).
+      match /gabarito/{n} {
+        allow get: if souHost() || (logado() && sala().liberadas > int(n));
+        allow list: if false;
+        allow create, update, delete: if souHost();
+      }
+
+      // Jogadores: cada um cria/edita só o próprio apelido; o anfitrião grava pontos.
+      match /jogadores/{u} {
+        allow read: if logado();
+        allow create: if logado() && request.auth.uid == u
+          && request.resource.data.pontos == 0 && request.resource.data.acertos == 0
+          && request.resource.data.apelido is string
+          && request.resource.data.apelido.size() > 0 && request.resource.data.apelido.size() <= 16;
+        allow update: if (logado() && request.auth.uid == u
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['apelido'])
+            && request.resource.data.apelido is string
+            && request.resource.data.apelido.size() > 0 && request.resource.data.apelido.size() <= 16)
+          || (souHost()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pontos', 'acertos']));
+        allow delete: if souHost();
+      }
+
+      // Respostas: hora carimbada pelo servidor e dentro da janela. No jogo e no estudo valem uma vez só;
+      // no simulado o aluno pode trocar a resposta até o fim do tempo.
+      match /respostas/{id} {
+        function janela() {
+          return sala().estado == 'andamento'
+            && (sala().modo != 'jogo' || request.resource.data.n == sala().idx)
+            && (sala().modo != 'simulado' || sala().tempoTotalMin == 0
+                || request.time.toMillis() <= sala().inicioPerg.toMillis() + sala().tempoTotalMin * 60000 + 5000);
+        }
+        function valida() {
+          return logado()
+            && id == string(request.resource.data.n) + '_' + request.auth.uid
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.ts == request.time
+            && request.resource.data.alt is int && request.resource.data.alt >= 0 && request.resource.data.alt <= 4
+            && janela()
+            && exists(/databases/$(database)/documents/salas/$(codigo)/jogadores/$(request.auth.uid));
+        }
+        allow read: if logado();
+        allow create: if valida();
+        allow update: if valida() && sala().modo == 'simulado';
+        allow delete: if souHost();
+      }
+    }
+  }
+}
