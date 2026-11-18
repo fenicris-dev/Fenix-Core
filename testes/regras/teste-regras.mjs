@@ -226,3 +226,48 @@ test("v5.4 prêmio: NÃO libera gravar em outro app", async () => { await estado
 test("v5.4 prêmio: prêmio vencido NÃO libera", async () => { await estado({ testeInicio: dias(-20), premios: { "fenix-gestor-do-tempo": dias(-1) } }); await assertFails(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-gestor-do-tempo/t9"), { titulo: "x" })); });
 test("v5.4 prêmio: sem prêmio e teste vencido continua NEGADO", async () => { await estado({ testeInicio: dias(-20) }); await assertFails(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-gestor-do-tempo/t9"), { titulo: "x" })); });
 test("v5.4 prêmio: teste em dia grava normalmente (sem prêmio)", async () => { await estado({ testeInicio: dias(-3) }); await assertSucceeds(setDoc(doc(como("tec1"), "dados_pessoais/tec1/fenix-gestor-do-tempo/t9"), { titulo: "x" })); });
+
+// =====================================================================
+// v6.0 — Salas online (regra 80): match /salas/{codigo}
+// =====================================================================
+const semear = async (sala, extras = {}) => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, "salas/S1"), Object.assign({ host: "hostA", n: 3, modo: "jogo", estado: "andamento", idx: 0, liberadas: 0, tempoTotalMin: 0 }, sala));
+    await setDoc(doc(db, "salas/S1/perguntas/0"), { texto: "P0" });
+    await setDoc(doc(db, "salas/S1/gabarito/0"), { certa: 2 });
+    await setDoc(doc(db, "salas/S1/gabarito/1"), { certa: 1 });
+    await setDoc(doc(db, "salas/S1/jogadores/jog1"), { apelido: "Ana", pontos: 0, acertos: 0 });
+    if (extras.inicioPerg) await setDoc(doc(db, "salas/S1"), { inicioPerg: extras.inicioPerg }, { merge: true });
+  });
+};
+test("v6.0 salas: logado (anônimo) lê a sala pelo código (get)", async () => { await semear({}); await assertSucceeds(getDoc(doc(como("jog1"), "salas/S1"))); });
+test("v6.0 salas: sem login NÃO lê a sala", async () => { await semear({}); await assertFails(getDoc(doc(anonimo(), "salas/S1"))); });
+test("v6.0 salas: listar as salas é NEGADO", async () => { await semear({}); await assertFails(getDocs(collection(como("jog1"), "salas"))); });
+test("v6.0 salas: criar sala como anfitrião (host = o próprio uid, n <= 50) é permitido", () => assertSucceeds(setDoc(doc(como("hostB"), "salas/S2"), { host: "hostB", n: 10 })));
+test("v6.0 salas: criar sala com host de outra pessoa é NEGADO", () => assertFails(setDoc(doc(como("hostB"), "salas/S2"), { host: "hostA", n: 10 })));
+test("v6.0 salas: criar sala com mais de 50 perguntas é NEGADO", () => assertFails(setDoc(doc(como("hostB"), "salas/S2"), { host: "hostB", n: 51 })));
+test("v6.0 salas: só o anfitrião atualiza a sala", async () => { await semear({}); await assertSucceeds(updateDoc(doc(como("hostA"), "salas/S1"), { idx: 1 })); await assertFails(updateDoc(doc(como("jog1"), "salas/S1"), { idx: 1 })); });
+test("v6.0 salas: o anfitrião NÃO passa a sala para outro host", async () => { await semear({}); await assertFails(updateDoc(doc(como("hostA"), "salas/S1"), { host: "jog1" })); });
+test("v6.0 salas: só o anfitrião apaga a sala", async () => { await semear({}); await assertFails(deleteDoc(doc(como("jog1"), "salas/S1"))); await assertSucceeds(deleteDoc(doc(como("hostA"), "salas/S1"))); });
+test("v6.0 salas: participante lê as perguntas, mas não grava", async () => { await semear({}); await assertSucceeds(getDoc(doc(como("jog1"), "salas/S1/perguntas/0"))); await assertFails(setDoc(doc(como("jog1"), "salas/S1/perguntas/9"), { texto: "x" })); });
+test("v6.0 salas: gabarito NEGADO antes de liberar", async () => { await semear({ liberadas: 0 }); await assertFails(getDoc(doc(como("jog1"), "salas/S1/gabarito/0"))); });
+test("v6.0 salas: gabarito liberado (liberadas > n) é lido; a pergunta seguinte continua fechada", async () => { await semear({ liberadas: 1 }); await assertSucceeds(getDoc(doc(como("jog1"), "salas/S1/gabarito/0"))); await assertFails(getDoc(doc(como("jog1"), "salas/S1/gabarito/1"))); });
+test("v6.0 salas: anfitrião lê o gabarito a qualquer hora", async () => { await semear({ liberadas: 0 }); await assertSucceeds(getDoc(doc(como("hostA"), "salas/S1/gabarito/0"))); });
+test("v6.0 salas: listar o gabarito é NEGADO", async () => { await semear({ liberadas: 3 }); await assertFails(getDocs(collection(como("jog1"), "salas/S1/gabarito"))); });
+test("v6.0 salas: jogador entra com o próprio uid, pontos 0 e apelido até 16 letras", async () => { await semear({}); await assertSucceeds(setDoc(doc(como("jog2"), "salas/S1/jogadores/jog2"), { apelido: "Beto", pontos: 0, acertos: 0 })); });
+test("v6.0 salas: jogador NÃO entra já com pontos", async () => { await semear({}); await assertFails(setDoc(doc(como("jog2"), "salas/S1/jogadores/jog2"), { apelido: "Beto", pontos: 50, acertos: 0 })); });
+test("v6.0 salas: jogador NÃO entra no lugar de outro uid", async () => { await semear({}); await assertFails(setDoc(doc(como("jog2"), "salas/S1/jogadores/jog3"), { apelido: "Beto", pontos: 0, acertos: 0 })); });
+test("v6.0 salas: apelido com mais de 16 letras é NEGADO", async () => { await semear({}); await assertFails(setDoc(doc(como("jog2"), "salas/S1/jogadores/jog2"), { apelido: "x".repeat(17), pontos: 0, acertos: 0 })); });
+test("v6.0 salas: jogador troca só o apelido; NÃO muda os próprios pontos", async () => { await semear({}); await assertSucceeds(updateDoc(doc(como("jog1"), "salas/S1/jogadores/jog1"), { apelido: "Aninha" })); await assertFails(updateDoc(doc(como("jog1"), "salas/S1/jogadores/jog1"), { pontos: 999 })); });
+test("v6.0 salas: anfitrião grava os pontos; só pontos e acertos", async () => { await semear({}); await assertSucceeds(updateDoc(doc(como("hostA"), "salas/S1/jogadores/jog1"), { pontos: 10, acertos: 1 })); await assertFails(updateDoc(doc(como("hostA"), "salas/S1/jogadores/jog1"), { apelido: "Outro" })); });
+test("v6.0 salas: resposta válida (id n_uid, ts do servidor, alt 0 a 4, pergunta atual) é permitida", async () => { await semear({}); await assertSucceeds(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); });
+test("v6.0 salas: resposta com hora do aparelho (não do servidor) é NEGADA", async () => { await semear({}); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: Timestamp.fromDate(new Date()) })); });
+test("v6.0 salas: resposta em nome de outro uid é NEGADA", async () => { await semear({}); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog2"), { n: 0, uid: "jog2", alt: 2, ts: serverTimestamp() })); });
+test("v6.0 salas: jogo: resposta de pergunta que não é a atual é NEGADA", async () => { await semear({ idx: 1 }); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); });
+test("v6.0 salas: resposta com sala encerrada é NEGADA", async () => { await semear({ estado: "encerrada" }); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); });
+test("v6.0 salas: resposta de quem não entrou na sala (sem jogador) é NEGADA", async () => { await semear({}); await assertFails(setDoc(doc(como("jog9"), "salas/S1/respostas/0_jog9"), { n: 0, uid: "jog9", alt: 2, ts: serverTimestamp() })); });
+test("v6.0 salas: alternativa fora de 0 a 4 é NEGADA", async () => { await semear({}); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 7, ts: serverTimestamp() })); });
+test("v6.0 salas: jogo: trocar a resposta já dada é NEGADO", async () => { await semear({}); await assertSucceeds(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 3, ts: serverTimestamp() })); });
+test("v6.0 salas: simulado: o aluno pode trocar a resposta até o fim do tempo", async () => { await semear({ modo: "simulado", tempoTotalMin: 0 }); await assertSucceeds(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); await assertSucceeds(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 3, ts: serverTimestamp() })); });
+test("v6.0 salas: simulado: resposta depois do tempo total é NEGADA", async () => { await semear({ modo: "simulado", tempoTotalMin: 5 }, { inicioPerg: Timestamp.fromMillis(Date.now() - 20 * 60000) }); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); });

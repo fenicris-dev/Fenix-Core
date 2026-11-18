@@ -1,4 +1,4 @@
-Testes das regras do Firestore (biblioteca Fênix v5.8)
+Testes das regras do Firestore (biblioteca Fênix v6.1)
 
 Para que serve: conferir, no seu computador, se o firestore.rules faz o que o livro promete (regras 46 e 58), ANTES de publicar no console. Não toca no banco real: usa o emulador local (projeto "demo-fenix").
 
@@ -18,3 +18,5 @@ Observações:
 Novo na v4.9 (mantido na v5.0): testes do teste de 15 dias, da licença, do modo somente leitura, dos administradores raiz e da equipe (níveis admin, comercial e suporte). Os mesmos avisos valem: não foram executados por mim; rode npm install e npm test no seu computador antes de publicar.
 
 Novo na v5.4: testes de config/indicacoes, do indicadoPor, da trava do prêmio na criação da empresa e do prêmio por app em dados_pessoais. Correção: o caminho ../firestore.rules no firebase.json fazia o emulador recusar o projeto ("outside of project directory"); agora o npm test copia o arquivo antes. Os testes das regras NÃO foram executados por mim (o emulador do Firestore não baixa no meu ambiente): rode npm install e npm test no seu computador antes de publicar.
+
+Novo na v6.1: casos das salas online (regra 80) no fim de teste-regras.mjs (seção v6.0): leitura, criação, gabarito só depois de liberado, apelido, resposta com hora do servidor, janela do jogo e do simulado. NÃO foram executados por mim (sem emulador no meu ambiente): rode npm install e npm test no seu computador antes de publicar o firestore.rules.
