@@ -1,4 +1,4 @@
-# Bloco de entrega de apps Fênix (v6.5)
+# Bloco de entrega de apps Fênix (v6.6)
 
 Cole este bloco no começo do chat de cada app, junto com o pacote da biblioteca (.zip) anexado.
 
