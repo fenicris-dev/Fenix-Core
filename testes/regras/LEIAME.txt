@@ -1,0 +1,26 @@
+Testes das regras do Firestore (biblioteca Fênix v6.6)
+
+Para que serve: conferir, no seu computador, se o firestore.rules faz o que o livro promete (regras 46 e 58), ANTES de publicar no console. Não toca no banco real: usa o emulador local (projeto "demo-fenix").
+
+Precisa de: Node.js 18 ou mais novo e Java 11 ou mais novo (o emulador do Firestore usa Java).
+
+Como rodar (dentro desta pasta, no terminal):
+  npm install       (só na primeira vez)
+  npm test
+
+O resultado mostra uma linha por teste: ✔ passou, ✖ falhou. Se algum falhar, NÃO publique as regras: me mande a saída do terminal.
+
+Observações:
+- Este conjunto cobre as coleções da biblioteca (empresas, licencas, pessoas, usuarios_empresa, convites, membros, coleções da empresa, admins, perfis, dados_pessoais e cidades). Coleções próprias de um app que não estejam no firestore.rules não são testadas aqui.
+- Passar nos testes não substitui o Playground do console: o roteiro da regra 46 continua valendo (backup das regras atuais, Playground, publicar, abrir um app real).
+- A pasta (testes/regras/) fica dentro de testes/: antes de testar, o `npm test` copia ../../firestore.rules (da raiz do repositório) para dentro dela (o emulador exige o arquivo dentro da pasta do projeto). Essa cópia é descartável e não precisa subir para o GitHub Pages.
+
+Novo na v4.9 (mantido na v5.0): testes do teste de 15 dias, da licença, do modo somente leitura, dos administradores raiz e da equipe (níveis admin, comercial e suporte). Os mesmos avisos valem: não foram executados por mim; rode npm install e npm test no seu computador antes de publicar.
+
+Novo na v5.4: testes de config/indicacoes, do indicadoPor, da trava do prêmio na criação da empresa e do prêmio por app em dados_pessoais. Correção: o caminho ../firestore.rules no firebase.json fazia o emulador recusar o projeto ("outside of project directory"); agora o npm test copia o arquivo antes. Os testes das regras NÃO foram executados por mim (o emulador do Firestore não baixa no meu ambiente): rode npm install e npm test no seu computador antes de publicar.
+
+Novo na v6.1: casos das salas online (regra 80) no fim de teste-regras.mjs (seção v6.0): leitura, criação, gabarito só depois de liberado, apelido, resposta com hora do servidor, janela do jogo e do simulado. NÃO foram executados por mim (sem emulador no meu ambiente): rode npm install e npm test no seu computador antes de publicar o firestore.rules.
+
+Novo na v6.5: casos da mescla (reforços v5.9, administração raiz, Controle de Compras, catálogo, Laudos Técnicos e regra final) no fim de teste-regras.mjs. NÃO foram executados por mim (sem emulador): rode npm install e npm test no seu computador e só publique se todos passarem.
+
+Novo na v6.6: casos da hierarquia (4 e-mails raiz, Supremo, criadoPor, administrador só remove os auxiliares que criou) no fim de teste-regras.mjs. NÃO foram executados por quem montou o pacote (sem emulador no ambiente): rode npm test no seu computador antes de publicar.
