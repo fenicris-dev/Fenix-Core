@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#041273">
 <meta name="robots" content="noindex">
-<meta name="fenix-livro" content="6.5">
+<meta name="fenix-livro" content="6.6">
 <title>Painel Administrativo Fênix</title>
 <!--
-  PAINEL ADMINISTRATIVO FÊNIX v6.5 (fenix-admin.html)
+  PAINEL ADMINISTRATIVO FÊNIX v6.6 (fenix-admin.html)
   Clientes (teste de 15 dias, licença por tempo ou definitiva) e Equipe (administradores,
   comercial e suporte). Entra com Google (e-mail verificado). Quem manda de verdade são as
   regras do Firestore: esta página só chama o core (FenixCore.admin). Usa SOMENTE a paleta oficial.
@@ -154,7 +154,7 @@
 <footer>
   <span id="ano"></span>
   <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a> |
-  <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a> · v6.5
+  <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a> · v6.6
 </footer>
 
 <script type="module">
@@ -363,21 +363,23 @@ async function carregarEquipe() {
 function desenharEquipe() {
   const box = $("listaEquipe"); box.textContent = "";
   box.append(el("b", {}, "Equipe"));
-  F.admin.EMAILS_RAIZ.forEach((e) => box.append(el("div", { class: "item" }, el("div", {}, el("b", {}, e), el("span", { class: "selo s-ativa" }, "Administrador raiz")), el("div", { class: "sub" }, "Fixo: não depende do banco e não pode ser removido."))));
+  F.admin.EMAILS_RAIZ.forEach((e) => { const sup = e === F.admin.SUPREMO; box.append(el("div", { class: "item" }, el("div", {}, el("b", {}, e), el("span", { class: "selo s-ativa" }, sup ? "Supremo" : "Administrador raiz")), el("div", { class: "sub" }, sup ? "Fixo: único que remove administradores e auxiliares criados por outros." : "Fixo: não depende do banco e não pode ser removido."))); });
   equipe.filter((m) => !F.admin.EMAILS_RAIZ.includes(m.id)).forEach((m) => {
     const ativo = m.ativo !== false;
+    const gere = F.admin.equipe.podeGerir(usuario, m);
     box.append(el("div", { class: "item" },
       el("div", {}, el("b", {}, m.nome || m.email), el("span", { class: "selo " + (ativo ? "s-ativa" : "s-leitura") }, (F.admin.NIVEIS[m.nivel] || m.nivel) + (ativo ? "" : " · inativo"))),
-      el("div", { class: "sub" }, m.email),
+      el("div", { class: "sub" }, m.email + " · criado por " + (m.criadoPor || "Supremo (cadastro anterior)")),
+      !gere ? el("div", { class: "sub" }, "Somente " + (m.nivel === "admin" ? "o Supremo" : (m.criadoPor ? "quem criou ou o Supremo" : "o Supremo")) + " altera ou remove.") :
       el("div", { class: "acoes" },
         botao(ativo ? "Desativar" : "Ativar", () => salvarEq({ ...m, ativo: !ativo })),
         botao("Editar", () => { $("eqEmail").value = m.email; $("eqNome").value = m.nome || ""; $("eqNivel").value = m.nivel; window.scrollTo({ top: 0, behavior: "smooth" }); }),
-        botao("Remover", () => { if (confirm("Remover " + m.email + " da equipe?")) F.admin.equipe.excluir(db, m.email).then(carregarEquipe).catch((e) => msg("msgEquipe", erroTxt(e), "erro")); }, "perigo"))));
+        botao("Remover", () => { if (confirm("Remover " + m.email + " da equipe? (Prefira Desativar: mantém o histórico.) Tem certeza que quer remover?")) F.admin.equipe.excluir(db, m.email).then(carregarEquipe).catch((e) => msg("msgEquipe", erroTxt(e), "erro")); }, "perigo"))));
   });
   if (!equipe.length) box.append(el("div", { class: "msg" }, "Nenhum colaborador no banco ainda."));
 }
 async function salvarEq(m) {
-  try { await F.admin.equipe.salvar(db, m); msg("msgEquipe", "Colaborador salvo.", "ok"); await carregarEquipe(); } catch (e) { msg("msgEquipe", erroTxt(e), "erro"); }
+  try { await F.admin.equipe.salvar(db, m, usuario.email); msg("msgEquipe", "Colaborador salvo.", "ok"); await carregarEquipe(); } catch (e) { msg("msgEquipe", erroTxt(e), "erro"); }
 }
 $("btEqSalvar").onclick = async () => {
   await salvarEq({ email: $("eqEmail").value, nome: $("eqNome").value, nivel: $("eqNivel").value, ativo: true });
