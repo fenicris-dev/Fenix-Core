@@ -176,11 +176,11 @@ test("v4.9 raiz: não apaga empresa", () => assertFails(deleteDoc(doc(comEmail("
 
 // ---------- equipe_fenix ----------
 const equipe = (email, nivel, ativo = true) => semRegras((db) => setDoc(doc(db, "equipe_fenix/" + email), { email, nivel, ativo, nome: email }));
-test("v4.9 equipe: raiz cria membro comercial", () => assertSucceeds(setDoc(doc(comEmail("r1", RAIZ1), "equipe_fenix/ana@x.com"), { email: "ana@x.com", nivel: "comercial", ativo: true })));
+test("v4.9 equipe: raiz cria membro comercial", () => assertSucceeds(setDoc(doc(comEmail("r1", RAIZ1), "equipe_fenix/ana@x.com"), { email: "ana@x.com", nivel: "comercial", ativo: true, criadoPor: RAIZ1 })));
 test("v4.9 equipe: nível inválido é NEGADO", () => assertFails(setDoc(doc(comEmail("r1", RAIZ1), "equipe_fenix/ana@x.com"), { email: "ana@x.com", nivel: "chefe", ativo: true })));
 test("v4.9 equipe: id diferente do e-mail é NEGADO", () => assertFails(setDoc(doc(comEmail("r1", RAIZ1), "equipe_fenix/ana@x.com"), { email: "outro@x.com", nivel: "suporte", ativo: true })));
 test("v4.9 equipe: comercial NÃO cria membro", async () => { await equipe("com@x.com", "comercial"); await assertFails(setDoc(doc(comEmail("c1", "com@x.com"), "equipe_fenix/zed@x.com"), { email: "zed@x.com", nivel: "admin", ativo: true })); });
-test("v4.9 equipe: admin da equipe cria membro", async () => { await equipe("adm@x.com", "admin"); await assertSucceeds(setDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/zed@x.com"), { email: "zed@x.com", nivel: "suporte", ativo: true })); });
+test("v4.9 equipe: admin da equipe cria membro", async () => { await equipe("adm@x.com", "admin"); await assertSucceeds(setDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/zed@x.com"), { email: "zed@x.com", nivel: "suporte", ativo: true, criadoPor: "adm@x.com" })); });
 test("v4.9 equipe: admin da equipe lista", async () => { await equipe("adm@x.com", "admin"); await assertSucceeds(getDocs(collection(comEmail("a1", "adm@x.com"), "equipe_fenix"))); });
 test("v4.9 equipe: suporte NÃO lista", async () => { await equipe("sup@x.com", "suporte"); await assertFails(getDocs(collection(comEmail("s1", "sup@x.com"), "equipe_fenix"))); });
 test("v4.9 equipe: o próprio membro lê o seu documento", async () => { await equipe("sup@x.com", "suporte"); await assertSucceeds(getDoc(doc(comEmail("s1", "sup@x.com"), "equipe_fenix/sup@x.com"))); });
@@ -407,4 +407,71 @@ test("v6.5 laudos: teste vencido da empresa NEGA criar laudo", async () => {
 test("v6.5 coleção que não existe nas regras é NEGADA", async () => {
   await assertFails(setDoc(doc(como("u1"), "qualquer_coisa/x"), { a: 1 }));
   await assertFails(getDoc(doc(como("u1"), "qualquer_coisa/x")));
+});
+
+// ---------- v6.6: 4 e-mails raiz, Supremo e hierarquia da equipe ----------
+const SUP = "fenicris@gmail.com", RAIZ4 = "baudofenix@gmail.com";
+const eqDoc = (email, nivel, criadoPor, ativo = true) => semRegras((db) => setDoc(doc(db, "equipe_fenix/" + email), { email, nivel, ativo, nome: email, ...(criadoPor ? { criadoPor } : {}) }));
+test("v6.6 raiz: baudofenix@gmail.com verificado altera a licença", () => assertSucceeds(updateDoc(doc(comEmail("r4b", RAIZ4), "empresas/e1"), { licenca: "definitiva" })));
+test("v6.6 raiz: baudofenix@gmail.com NÃO verificado é NEGADO", () => assertFails(updateDoc(doc(comEmail("r4c", RAIZ4, false), "empresas/e1"), { licenca: "definitiva" })));
+test("v6.6 raiz: trampodofenix@gmail.com altera a licença (agora raiz em tudo)", () => assertSucceeds(updateDoc(doc(comEmail("r3b", RAIZ3), "empresas/e1"), { licenca: "definitiva" })));
+test("v6.6 raiz: baudofenix@gmail.com administra o arquivo fx", () => assertSucceeds(setDoc(doc(comEmail("r4d", RAIZ4), "dados_pessoais/_fenix_equipe/admins/novo@x.com"), { dados: { ativo: true, vinculadoA: RAIZ4 } })));
+test("v6.6 equipe: administrador cria administrador com criadoPor = ele", async () => { await equipe("adm@x.com", "admin"); await assertSucceeds(setDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/novo@x.com"), { email: "novo@x.com", nivel: "admin", ativo: true, criadoPor: "adm@x.com" })); });
+test("v6.6 equipe: criar SEM criadoPor, ou com criadoPor de outro, é NEGADO", async () => {
+  await equipe("adm@x.com", "admin");
+  await assertFails(setDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/n1@x.com"), { email: "n1@x.com", nivel: "suporte", ativo: true }));
+  await assertFails(setDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/n2@x.com"), { email: "n2@x.com", nivel: "suporte", ativo: true, criadoPor: "outro@x.com" }));
+});
+test("v6.6 equipe: administrador NÃO apaga nem altera outro administrador", async () => {
+  await equipe("adm@x.com", "admin"); await eqDoc("adm2@x.com", "admin", "adm@x.com");
+  await assertFails(deleteDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/adm2@x.com")));
+  await assertFails(updateDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/adm2@x.com"), { ativo: false }));
+});
+test("v6.6 equipe: administrador altera e apaga o auxiliar que ELE criou", async () => {
+  await equipe("adm@x.com", "admin"); await eqDoc("aux@x.com", "suporte", "adm@x.com");
+  await assertSucceeds(updateDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/aux@x.com"), { ativo: false }));
+  await assertSucceeds(deleteDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/aux@x.com")));
+});
+test("v6.6 equipe: administrador NÃO mexe no auxiliar criado por outro administrador", async () => {
+  await equipe("adm@x.com", "admin"); await eqDoc("aux@x.com", "comercial", "outro@x.com");
+  await assertFails(updateDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/aux@x.com"), { ativo: false }));
+  await assertFails(deleteDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/aux@x.com")));
+});
+test("v6.6 equipe: criadoPor não pode ser alterado (nem pelo dono do auxiliar)", async () => {
+  await equipe("adm@x.com", "admin"); await eqDoc("aux@x.com", "suporte", "adm@x.com");
+  await assertFails(updateDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/aux@x.com"), { criadoPor: "outro@x.com" }));
+});
+test("v6.6 equipe: Supremo apaga e altera administrador e auxiliar de qualquer um", async () => {
+  await eqDoc("adm2@x.com", "admin", "adm@x.com"); await eqDoc("aux@x.com", "suporte", "adm@x.com");
+  await assertSucceeds(updateDoc(doc(comEmail("s0", SUP), "equipe_fenix/adm2@x.com"), { ativo: false }));
+  await assertSucceeds(deleteDoc(doc(comEmail("s0", SUP), "equipe_fenix/adm2@x.com")));
+  await assertSucceeds(deleteDoc(doc(comEmail("s0", SUP), "equipe_fenix/aux@x.com")));
+});
+test("v6.6 equipe: Supremo NÃO verificado é NEGADO", async () => { await eqDoc("aux@x.com", "suporte", "adm@x.com"); await assertFails(deleteDoc(doc(comEmail("s0", SUP, false), "equipe_fenix/aux@x.com"))); });
+test("v6.6 equipe: raiz que não é o Supremo NÃO apaga administrador nem auxiliar alheio", async () => {
+  await eqDoc("adm2@x.com", "admin", "adm@x.com"); await eqDoc("aux@x.com", "suporte", "adm@x.com");
+  await assertFails(deleteDoc(doc(comEmail("r2", RAIZ2), "equipe_fenix/adm2@x.com")));
+  await assertFails(deleteDoc(doc(comEmail("r3", RAIZ3), "equipe_fenix/aux@x.com")));
+  await assertFails(deleteDoc(doc(comEmail("r4e", RAIZ4), "equipe_fenix/aux@x.com")));
+});
+test("v6.6 equipe: raiz que não é o Supremo cria administrador e gere o auxiliar que criou", async () => {
+  await assertSucceeds(setDoc(doc(comEmail("r2", RAIZ2), "equipe_fenix/a9@x.com"), { email: "a9@x.com", nivel: "admin", ativo: true, criadoPor: RAIZ2 }));
+  await assertSucceeds(setDoc(doc(comEmail("r2", RAIZ2), "equipe_fenix/s9@x.com"), { email: "s9@x.com", nivel: "suporte", ativo: true, criadoPor: RAIZ2 }));
+  await assertSucceeds(deleteDoc(doc(comEmail("r2", RAIZ2), "equipe_fenix/s9@x.com")));
+  await assertFails(deleteDoc(doc(comEmail("r2", RAIZ2), "equipe_fenix/a9@x.com")));
+});
+test("v6.6 equipe: cadastro antigo sem criadoPor só o Supremo mexe", async () => {
+  await equipe("adm@x.com", "admin"); await eqDoc("velho@x.com", "suporte", null);
+  await assertFails(deleteDoc(doc(comEmail("a1", "adm@x.com"), "equipe_fenix/velho@x.com")));
+  await assertSucceeds(deleteDoc(doc(comEmail("s0", SUP), "equipe_fenix/velho@x.com")));
+});
+test("v6.6 equipe: comercial e suporte NÃO criam nem apagam", async () => {
+  await equipe("com@x.com", "comercial"); await eqDoc("aux@x.com", "suporte", "com@x.com");
+  await assertFails(setDoc(doc(comEmail("c1", "com@x.com"), "equipe_fenix/n@x.com"), { email: "n@x.com", nivel: "suporte", ativo: true, criadoPor: "com@x.com" }));
+  await assertFails(deleteDoc(doc(comEmail("c1", "com@x.com"), "equipe_fenix/aux@x.com")));
+});
+test("v6.6 fx: só o Supremo apaga administrador do arquivo fx", async () => {
+  await semRegras((db) => setDoc(doc(db, "dados_pessoais/_fenix_equipe/admins/z@x.com"), { dados: { ativo: true, vinculadoA: SUP } }));
+  await assertFails(deleteDoc(doc(comEmail("r2", RAIZ2), "dados_pessoais/_fenix_equipe/admins/z@x.com")));
+  await assertSucceeds(deleteDoc(doc(comEmail("s0", SUP), "dados_pessoais/_fenix_equipe/admins/z@x.com")));
 });
