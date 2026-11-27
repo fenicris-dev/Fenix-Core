@@ -271,3 +271,140 @@ test("v6.0 salas: alternativa fora de 0 a 4 é NEGADA", async () => { await seme
 test("v6.0 salas: jogo: trocar a resposta já dada é NEGADO", async () => { await semear({}); await assertSucceeds(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 3, ts: serverTimestamp() })); });
 test("v6.0 salas: simulado: o aluno pode trocar a resposta até o fim do tempo", async () => { await semear({ modo: "simulado", tempoTotalMin: 0 }); await assertSucceeds(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); await assertSucceeds(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 3, ts: serverTimestamp() })); });
 test("v6.0 salas: simulado: resposta depois do tempo total é NEGADA", async () => { await semear({ modo: "simulado", tempoTotalMin: 5 }, { inicioPerg: Timestamp.fromMillis(Date.now() - 20 * 60000) }); await assertFails(setDoc(doc(como("jog1"), "salas/S1/respostas/0_jog1"), { n: 0, uid: "jog1", alt: 2, ts: serverTimestamp() })); });
+
+// =====================================================================
+// v6.5 — Mescla com as regras publicadas no console (linhagem v5.9 e Controle de Compras) e Laudos Técnicos
+// NÃO foram executados por mim (sem emulador no meu ambiente): rode npm install e npm test no seu computador.
+// =====================================================================
+const RAIZ3 = "trampodofenix@gmail.com";
+// ---------- [v5.9] reforços ----------
+test("v6.5 pessoas_fisicas: ID com letras ou pontuação é NEGADO", async () => {
+  await assertFails(setDoc(doc(como("tec1"), "pessoas_fisicas/123.456.789-00"), { nome: "X" }));
+  await assertFails(setDoc(doc(como("tec1"), "pessoas_fisicas/1234567890"), { nome: "X" }));
+});
+test("v6.5 pessoas_juridicas: CNPJ com 14 dígitos é permitido; com 13 é NEGADO", async () => {
+  await assertSucceeds(setDoc(doc(como("tec1"), "pessoas_juridicas/12345678000199"), { razaoSocial: "X" }));
+  await assertFails(setDoc(doc(como("tec1"), "pessoas_juridicas/1234567800019"), { razaoSocial: "X" }));
+});
+test("v6.5 pessoas_fisicas: técnico NÃO apaga; administrador raiz apaga", async () => {
+  await assertFails(deleteDoc(doc(como("tec1"), "pessoas_fisicas/12345678900")));
+  await assertSucceeds(deleteDoc(doc(comEmail("r1", RAIZ1), "pessoas_fisicas/12345678900")));
+});
+test("v6.5 produtos_servicos: logado cria e lê; só administrador apaga", async () => {
+  await assertSucceeds(setDoc(doc(como("tec1"), "produtos_servicos/p1"), { nome: "Cabo" }));
+  await assertSucceeds(getDoc(doc(como("tec1"), "produtos_servicos/p1")));
+  await assertFails(deleteDoc(doc(como("tec1"), "produtos_servicos/p1")));
+  await assertSucceeds(deleteDoc(doc(comEmail("r1", RAIZ1), "produtos_servicos/p1")));
+});
+test("v6.5 cidades: logado CRIA uma nova, mas NÃO altera nem apaga uma existente", async () => {
+  await semRegras((db) => setDoc(doc(db, "cidades/2800308"), { nome: "Aracaju" }));
+  await assertSucceeds(setDoc(doc(como("tec1"), "cidades/3550308"), { nome: "São Paulo" }));
+  await assertFails(setDoc(doc(como("tec1"), "cidades/2800308"), { nome: "Outra" }));
+  await assertFails(deleteDoc(doc(como("tec1"), "cidades/2800308")));
+});
+test("v6.5 bairros: criar logado; alterar NEGADO", async () => {
+  await semRegras((db) => setDoc(doc(db, "cidades/2800308/bairros/centro"), { nomeOriginal: "Centro" }));
+  await assertSucceeds(setDoc(doc(como("tec1"), "cidades/2800308/bairros/jardins"), { nomeOriginal: "Jardins" }));
+  await assertFails(setDoc(doc(como("tec1"), "cidades/2800308/bairros/centro"), { nomeOriginal: "X" }));
+});
+test("v6.5 empresas: criar com donoUid de outra pessoa é NEGADO", () => assertFails(setDoc(doc(como("novo1"), "empresas/e9"), { nome: "N", donoUid: "outro", testeInicio: serverTimestamp() })));
+test("v6.5 dados_pessoais: nomes reservados _fenix_* NÃO caem no curinga", () => assertFails(setDoc(doc(como("_fenix_equipe"), "dados_pessoais/_fenix_equipe/qualquer/x"), { a: 1 })));
+// ---------- [v5.9] administração raiz ----------
+const adm = "novoadm@x.com";
+test("v6.5 fx: raiz (3 e-mails) cria administrador vinculado a um raiz", async () => {
+  await assertSucceeds(setDoc(doc(comEmail("r3", RAIZ3), "dados_pessoais/_fenix_equipe/admins/" + adm), { dados: { ativo: true, vinculadoA: RAIZ3 } }));
+});
+test("v6.5 fx: administrador vinculado a e-mail que não é raiz é NEGADO", () => assertFails(setDoc(doc(comEmail("r1", RAIZ1), "dados_pessoais/_fenix_equipe/admins/" + adm), { dados: { ativo: true, vinculadoA: "qualquer@x.com" } })));
+test("v6.5 fx: e-mail raiz NÃO verificado é NEGADO", () => assertFails(setDoc(doc(comEmail("r1", RAIZ1, false), "dados_pessoais/_fenix_equipe/admins/" + adm), { dados: { ativo: true, vinculadoA: RAIZ1 } })));
+test("v6.5 fx: a pessoa lê o próprio documento de administrador; outro NÃO", async () => {
+  await semRegras((db) => setDoc(doc(db, "dados_pessoais/_fenix_equipe/admins/" + adm), { dados: { ativo: true, vinculadoA: RAIZ1 } }));
+  await assertSucceeds(getDoc(doc(comEmail("a1", adm), "dados_pessoais/_fenix_equipe/admins/" + adm)));
+  await assertFails(getDoc(doc(comEmail("b1", "outro@x.com"), "dados_pessoais/_fenix_equipe/admins/" + adm)));
+});
+test("v6.5 fx arquivo: usuário cria a cópia dos próprios itens, mas NÃO a lê; administrador lê", async () => {
+  const chave = "u1__app1";
+  await assertSucceeds(setDoc(doc(como("u1"), "dados_pessoais/_fenix_admin/arquivo/" + chave), { dados: { uid: "u1", appId: "app1" } }));
+  await assertFails(getDoc(doc(como("u1"), "dados_pessoais/_fenix_admin/arquivo/" + chave)));
+  await assertSucceeds(getDoc(doc(comEmail("r1", RAIZ1), "dados_pessoais/_fenix_admin/arquivo/" + chave)));
+});
+test("v6.5 fx arquivo: chave que não é uid__appId é NEGADA", () => assertFails(setDoc(doc(como("u1"), "dados_pessoais/_fenix_admin/arquivo/outra"), { dados: { uid: "u1", appId: "app1" } })));
+// ---------- Controle de Compras ----------
+const ambBase = (dono) => ({ dono, membrosUids: [dono], papeis: { [dono]: { p: "gestor" } } });
+test("v6.5 ambientes: quem cria vira o único membro e gestor", () => assertSucceeds(setDoc(doc(como("g1"), "ambientes_compartilhados/a1"), ambBase("g1"))));
+test("v6.5 ambientes: criar com dono de outra pessoa é NEGADO", () => assertFails(setDoc(doc(como("g1"), "ambientes_compartilhados/a1"), ambBase("g2"))));
+test("v6.5 ambientes: só membro lê", async () => {
+  await semRegras((db) => setDoc(doc(db, "ambientes_compartilhados/a1"), ambBase("g1")));
+  await assertSucceeds(getDoc(doc(como("g1"), "ambientes_compartilhados/a1")));
+  await assertFails(getDoc(doc(como("g2"), "ambientes_compartilhados/a1")));
+});
+test("v6.5 ambientes: leitor NÃO grava no estoque; gestor grava", async () => {
+  await semRegras(async (db) => { await setDoc(doc(db, "ambientes_compartilhados/a1"), { dono: "g1", membrosUids: ["g1", "l1"], papeis: { g1: { p: "gestor" }, l1: { p: "leitor" } } }); });
+  await assertFails(setDoc(doc(como("l1"), "ambientes_compartilhados/a1/dados/r1"), { x: 1 }));
+  await assertSucceeds(setDoc(doc(como("g1"), "ambientes_compartilhados/a1/dados/r1"), { x: 1 }));
+  await assertSucceeds(getDoc(doc(como("l1"), "ambientes_compartilhados/a1/dados/r1")));
+});
+test("v6.5 ambientes: só o dono apaga o ambiente", async () => {
+  await semRegras((db) => setDoc(doc(db, "ambientes_compartilhados/a1"), { dono: "g1", membrosUids: ["g1", "c1"], papeis: { g1: { p: "gestor" }, c1: { p: "cuidador" } } }));
+  await assertFails(deleteDoc(doc(como("c1"), "ambientes_compartilhados/a1")));
+  await assertSucceeds(deleteDoc(doc(como("g1"), "ambientes_compartilhados/a1")));
+});
+test("v6.5 ambientes: só o dono cria convite (cuidador ou leitor)", async () => {
+  await semRegras((db) => setDoc(doc(db, "ambientes_compartilhados/a1"), ambBase("g1")));
+  await assertSucceeds(setDoc(doc(como("g1"), "ambientes_compartilhados/a1/convites/t1"), { papel: "leitor", ate: Date.now() + 86400000 }));
+  await assertFails(setDoc(doc(como("g1"), "ambientes_compartilhados/a1/convites/t2"), { papel: "gestor", ate: Date.now() + 86400000 }));
+  await assertFails(setDoc(doc(como("g2"), "ambientes_compartilhados/a1/convites/t3"), { papel: "leitor", ate: Date.now() + 86400000 }));
+});
+const prod = (ean) => ({ ean, nome: "Arroz", modo: "emb", unidade: "un" });
+test("v6.5 catalogo_produtos: logado cria código novo (EAN 8 a 14 dígitos) e lê", async () => {
+  await assertSucceeds(setDoc(doc(como("u1"), "catalogo_produtos/7891234567895"), prod("7891234567895")));
+  await assertSucceeds(getDoc(doc(como("u2"), "catalogo_produtos/7891234567895")));
+});
+test("v6.5 catalogo_produtos: EAN inválido, campo extra e foto de não administrador são NEGADOS", async () => {
+  await assertFails(setDoc(doc(como("u1"), "catalogo_produtos/abc"), prod("abc")));
+  await assertFails(setDoc(doc(como("u1"), "catalogo_produtos/7891234567895"), { ...prod("7891234567895"), preco: 9 }));
+  await assertFails(setDoc(doc(como("u1"), "catalogo_produtos/7891234567895"), { ...prod("7891234567895"), foto: "x" }));
+});
+test("v6.5 catalogo_produtos: alterar e apagar um existente é só de administrador (admins/{uid})", async () => {
+  await semRegras((db) => setDoc(doc(db, "catalogo_produtos/7891234567895"), prod("7891234567895")));
+  await assertFails(updateDoc(doc(como("u1"), "catalogo_produtos/7891234567895"), { nome: "Outro" }));
+  await assertSucceeds(updateDoc(doc(como("adm1"), "catalogo_produtos/7891234567895"), { nome: "Outro" }));
+});
+test("v6.5 catalogo_denuncias: logado cria com o próprio uid; só administrador lê", async () => {
+  await assertSucceeds(setDoc(doc(como("u1"), "catalogo_denuncias/d1"), { ean: "7891234567895", motivo: "nome", por: "u1" }));
+  await assertFails(setDoc(doc(como("u1"), "catalogo_denuncias/d2"), { ean: "7891234567895", motivo: "nome", por: "outro" }));
+  await assertFails(getDoc(doc(como("u1"), "catalogo_denuncias/d1")));
+  await assertSucceeds(getDoc(doc(como("adm1"), "catalogo_denuncias/d1")));
+});
+// ---------- Laudos Técnicos ----------
+const hash64 = "a".repeat(64), cod20 = "ABCDEFGHJKLMNPQRSTUV";
+const laudo = (uid, extra = {}) => ({ uid, app: "fenix-laudos-tecnicos", numero: "1", hash: hash64, html: "<p>laudo</p>", status: "vigente", ...extra });
+test("v6.5 laudos: qualquer pessoa lê um laudo pelo código (get), mesmo sem login", async () => {
+  await semRegras((db) => setDoc(doc(db, "verificacoes_laudos/" + cod20), laudo("u1")));
+  await assertSucceeds(getDoc(doc(anonimo(), "verificacoes_laudos/" + cod20)));
+});
+test("v6.5 laudos: listar a coleção é NEGADO", () => assertFails(getDocs(collection(como("u1"), "verificacoes_laudos"))));
+test("v6.5 laudos: dono cria com código de 20+ caracteres", () => assertSucceeds(setDoc(doc(como("u1"), "verificacoes_laudos/" + cod20), laudo("u1"))));
+test("v6.5 laudos: código curto, uid alheio, hash curto, status inválido e campo extra são NEGADOS", async () => {
+  await assertFails(setDoc(doc(como("u1"), "verificacoes_laudos/curto"), laudo("u1")));
+  await assertFails(setDoc(doc(como("u1"), "verificacoes_laudos/" + cod20), laudo("u2")));
+  await assertFails(setDoc(doc(como("u1"), "verificacoes_laudos/" + cod20), laudo("u1", { hash: "abc" })));
+  await assertFails(setDoc(doc(como("u1"), "verificacoes_laudos/" + cod20), laudo("u1", { status: "outro" })));
+  await assertFails(setDoc(doc(como("u1"), "verificacoes_laudos/" + cod20), laudo("u1", { cpf: "123" })));
+});
+test("v6.5 laudos: sem login NÃO cria", () => assertFails(setDoc(doc(anonimo(), "verificacoes_laudos/" + cod20), laudo("u1"))));
+test("v6.5 laudos: dono muda só status; NÃO muda o html nem o uid; ninguém apaga", async () => {
+  await semRegras((db) => setDoc(doc(db, "verificacoes_laudos/" + cod20), laudo("u1")));
+  await assertSucceeds(updateDoc(doc(como("u1"), "verificacoes_laudos/" + cod20), { status: "revogado", atualizadoEm: serverTimestamp() }));
+  await assertFails(updateDoc(doc(como("u1"), "verificacoes_laudos/" + cod20), { html: "<p>outro</p>" }));
+  await assertFails(updateDoc(doc(como("u2"), "verificacoes_laudos/" + cod20), { status: "arquivado" }));
+  await assertFails(deleteDoc(doc(como("u1"), "verificacoes_laudos/" + cod20)));
+});
+test("v6.5 laudos: teste vencido da empresa NEGA criar laudo", async () => {
+  await estado({ testeInicio: dias(-20) });
+  await assertFails(setDoc(doc(como("tec1"), "verificacoes_laudos/" + cod20), laudo("tec1")));
+});
+// ---------- regra final ----------
+test("v6.5 coleção que não existe nas regras é NEGADA", async () => {
+  await assertFails(setDoc(doc(como("u1"), "qualquer_coisa/x"), { a: 1 }));
+  await assertFails(getDoc(doc(como("u1"), "qualquer_coisa/x")));
+});
