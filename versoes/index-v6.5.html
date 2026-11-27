@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="fenix-livro" content="6.5">
+<meta name="fenix-ficha" content="">
+<title>Painel da Biblioteca Fênix</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAWfmNhQlgAABZ+anVtYgAAAB5qdW1kYzJwYQARABCAAACqADibcQNjMnBhAAAAFlhqdW1iAAAAR2p1bWRjMm1hABEAEIAAAKoAOJtxA3VybjpjMnBhOmZlYTUxOTk2LWE3OTktNDJlYy04ZTg0LWFkNjk4OTNiYWEwYwAAAAOTanVtYgAAAClqdW1kYzJhcwARABCAAACqADibcQNjMnBhLmFzc2VydGlvbnMAAAAAuGp1bWIAAABEanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5pbmdyZWRpZW50LnYzAAAAABhjMnNoDD9UG29Lr4ASQqLJPonnzwAAAGxjYm9yo2lkYzpmb3JtYXRpaW1hZ2UvcG5namluc3RhbmNlSUR4LHhtcDppaWQ6NGI5YmNlMDgtZjNlNi00Y2IzLWFiMTQtYTk1Y2RhMzBmNTc4bHJlbGF0aW9uc2hpcGhwYXJlbnRPZgAAAeJqdW1iAAAAQWp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuYWN0aW9ucy52MgAAAAAYYzJzaNWlGHSSUUeE31hEV+tmCCkAAAGZY2JvcqJnYWN0aW9uc4KiZmFjdGlvbmtjMnBhLm9wZW5lZGpwYXJhbWV0ZXJzoWtpbmdyZWRpZW50c4GiY3VybHgtc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5pbmdyZWRpZW50LnYzZGhhc2hYIEwdsBUc6IJVFYlc8akImwRrwYXZ9GVrf8iRGcmaKiCHpGZhY3Rpb254HWNvbS5hbnRocm9waWMuY2xhdWRlLnByb3ZpZGVkanBhcmFtZXRlcnOheB9jb20uYW50aHJvcGljLm9yaWdpbi1jb25maWRlbmNlZ3Vua25vd25rZGVzY3JpcHRpb254ZkNsYXVkZSBwcm92aWRlZCB0aGlzIGZpbGUgYXQgdGhlIHJlcXVlc3Qgb2YgYSB1c2VyIGFuZCBtYXkgaGF2ZSBjcmVhdGVkIG9yIG1vZGlmaWVkIHRoZSBmaWxlIGNvbnRlbnRzLm1zb2Z0d2FyZUFnZW50oWRuYW1lZkNsYXVkZXJhbGxBY3Rpb25zSW5jbHVkZWT1AAAAyGp1bWIAAABAanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5oYXNoLmRhdGEAAAAAGGMyc2hDM5gTqA9Z+kwRgvMEwueZAAAAgGNib3KlY2FsZ2ZzaGEyNTZjcGFkTQAAAAAAAAAAAAAAAABkaGFzaFggbhawA3un98B1ATWr0197Ajkq9XcbmPBOj+BdRSoBoiFkbmFtZW5qdW1iZiBtYW5pZmVzdGpleGNsdXNpb25zgaJlc3RhcnQYIWZsZW5ndGgZFooAAAI+anVtYgAAACdqdW1kYzJjbAARABCAAACqADibcQNjMnBhLmNsYWltLnYyAAAAAg9jYm9ypWNhbGdmc2hhMjU2aXNpZ25hdHVyZXhNc2VsZiNqdW1iZj0vYzJwYS91cm46YzJwYTpmZWE1MTk5Ni1hNzk5LTQyZWMtOGU4NC1hZDY5ODkzYmFhMGMvYzJwYS5zaWduYXR1cmVqaW5zdGFuY2VJRHgseG1wOmlpZDo1ZGE1ZjdhNi0yNGQzLTQzZTktYWMwNC1hYTEzNDBlNGY5NGVyY3JlYXRlZF9hc3NlcnRpb25zg6JjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggTB2wFRzoglUViVzxqQibBGvBhdn0ZWt/yJEZyZoqIIeiY3VybHgqc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5hY3Rpb25zLnYyZGhhc2hYIP5wYWY/yEGB4og+EM5FhUZfQKRxCGDODwmV4DaowonvomN1cmx4KXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaGFzaC5kYXRhZGhhc2hYIBS6dKLrYKZrJzLJQvKSoFa3mtaXQOPnI36YE1DSDD6OdGNsYWltX2dlbmVyYXRvcl9pbmZvo2RuYW1lb0FudGhyb3BpYyBGaWxlc2d2ZXJzaW9uZTEuMC4wa3NwZWNWZXJzaW9uZTIuNC4wAAAQOGp1bWIAAAAoanVtZGMyY3MAEQAQgAAAqgA4m3EDYzJwYS5zaWduYXR1cmUAAAAQCGNib3LShFkCEqIBJhghWQIKMIICBjCCAY2gAwIBAgIUQOWgCu7COdC+uIP6BkIFPWdVEwAwCgYIKoZIzj0EAwMwSTEXMBUGA1UEChMOQW50aHJvcGljLCBQQkMxLjAsBgNVBAMTJUFudGhyb3BpYyBDb250ZW50IENyZWRlbnRpYWxzIFJvb3QgQ0EwHhcNMjYwODA3MTg0MzU2WhcNMjgwODA2MTk0MzU2WjBEMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEpMCcGA1UEAxMgQW50aHJvcGljIENsYXVkZSBDb250ZW50IFNpZ25pbmcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASYegpry1AYBRTVNL1CpTlbROnY3dey+UrsF9C3phYrATN3ZHf93Mo8RQN0KOUuOn19P4oWNFWe5n2/She9N7eTo1gwVjAOBgNVHQ8BAf8EBAMCB4AwFQYDVR0lBA4wDAYKKwYBBAGD6F4CATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFM5R4gSBTmRbI/jjxM+aPpzB11zCMAoGCCqGSM49BAMDA2cAMGQCMDFzHRSeAXrSy1WOzkbhPZ6Km2wGTmZ/2gK18k8BQGXyqz88Rdrz6CTX9flAnYNVxgIwcF9c3fVhqmJKpi+UhasNUMko69cyX6STPfta3Q8EjyzDjzoyrol46FP6VFHhvUcJoWNwYWRZDZ4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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">
+<!--
+  PAINEL DA BIBLIOTECA FÊNIX v6.5 (index.html)
+  Página de conferência: testa, um a um, os endereços oficiais da biblioteca
+  (core, painel administrativo, templates, ícones, logos, Termos, Política e livro) e confere se todos
+  estão na mesma versão. Usa SOMENTE a paleta oficial Fênix.
+  O template de login NÃO fica mais aqui: fica só em templates/fenix-template-login.html.
+-->
+<style>
+  :root { --azul:#041273; --dell:#0076CE; --amarelo:#ffcb00; --fundo:#F3F4F9; --texto:#020733; --g1:#040798; --g2:#0076CE; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--fundo); color:var(--texto); min-height:100vh; display:flex; flex-direction:column; }
+  header { background:linear-gradient(135deg,var(--g1),var(--g2)); color:#fff; padding:1.2rem 16px; }
+  .topo { max-width:900px; margin:0 auto; display:flex; align-items:center; gap:.9rem; }
+  .topo img { width:48px; height:48px; border-radius:10px; }
+  .topo h1 { font-size:1.2rem; margin:0; }
+  .topo p { margin:.15rem 0 0; font-size:.85rem; opacity:.9; }
+  main { flex:1; width:100%; max-width:900px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border-radius:14px; box-shadow:0 2px 10px rgba(4,18,115,.08); margin-bottom:12px; overflow:hidden; }
+  .resumo { padding:14px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+  .resumo b { font-size:1rem; }
+  .resumo small { display:block; color:#4a5070; margin-top:2px; }
+  button, .btn { min-height:44px; min-width:44px; padding:0 16px; border:0; border-radius:10px; background:var(--dell); color:#fff; font:inherit; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+  #mascCampos input { display:block; width:100%; margin-top:4px; padding:10px 12px; font-size:1rem; border:1px solid #c9cde6; border-radius:10px; color:var(--texto); background:#fff; }
+  #mascCampos input:focus { outline:2px solid var(--dell); }
+  button:hover, .btn:hover { background:var(--amarelo); color:var(--texto); }
+  .sec { background:#fff; color:var(--azul); border:2px solid var(--dell); }
+  details > summary { list-style:none; cursor:pointer; padding:14px 16px; min-height:44px; display:flex; justify-content:space-between; align-items:center; gap:8px; font-weight:700; color:var(--azul); }
+  details > summary::-webkit-details-marker { display:none; }
+  details > summary::after { content:"▾"; margin-left:auto; }
+  details[open] > summary::after { content:"▴"; }
+  .chip { font-size:.78rem; font-weight:700; padding:3px 10px; border-radius:99px; background:#e6eaf7; color:var(--azul); white-space:nowrap; }
+  .chip.ok { background:var(--dell); color:#fff; }
+  .chip.erro { background:var(--amarelo); color:var(--texto); }
+  .linha { border-top:1px solid #e6e9f4; padding:12px 16px; display:grid; grid-template-columns:1fr; gap:8px; }
+  .linha .nome { font-weight:600; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .linha .url { font-size:.78rem; color:#4a5070; word-break:break-all; }
+  .linha .msg { font-size:.85rem; }
+  .linha .acoes { display:flex; gap:8px; flex-wrap:wrap; }
+  .miniatura { width:44px; height:44px; object-fit:contain; border-radius:8px; background:repeating-conic-gradient(#e6e9f4 0 25%,#fff 0 50%) 50%/12px 12px; border:1px solid #d5d9ec; }
+  .aviso { padding:12px 16px; background:#fff8d6; border-left:5px solid var(--amarelo); border-radius:10px; margin-bottom:12px; font-size:.9rem; display:none; }
+  footer { background:linear-gradient(90deg,var(--g1),var(--g2)); color:#fff; text-align:center; padding:.9rem 16px; font-size:.85rem; }
+  footer a { color:#fff; text-decoration:none; } footer a:hover { color:var(--amarelo); }
+  @media (min-width:700px){ .linha { grid-template-columns:1fr auto; align-items:center; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="topo">
+    <img alt="Fênix" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAWfmNhQlgAABZ+anVtYgAAAB5qdW1kYzJwYQARABCAAACqADibcQNjMnBhAAAAFlhqdW1iAAAAR2p1bWRjMm1hABEAEIAAAKoAOJtxA3VybjpjMnBhOmZlYTUxOTk2LWE3OTktNDJlYy04ZTg0LWFkNjk4OTNiYWEwYwAAAAOTanVtYgAAAClqdW1kYzJhcwARABCAAACqADibcQNjMnBhLmFzc2VydGlvbnMAAAAAuGp1bWIAAABEanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5pbmdyZWRpZW50LnYzAAAAABhjMnNoDD9UG29Lr4ASQqLJPonnzwAAAGxjYm9yo2lkYzpmb3JtYXRpaW1hZ2UvcG5namluc3RhbmNlSUR4LHhtcDppaWQ6NGI5YmNlMDgtZjNlNi00Y2IzLWFiMTQtYTk1Y2RhMzBmNTc4bHJlbGF0aW9uc2hpcGhwYXJlbnRPZgAAAeJqdW1iAAAAQWp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuYWN0aW9ucy52MgAAAAAYYzJzaNWlGHSSUUeE31hEV+tmCCkAAAGZY2JvcqJnYWN0aW9uc4KiZmFjdGlvbmtjMnBhLm9wZW5lZGpwYXJhbWV0ZXJzoWtpbmdyZWRpZW50c4GiY3VybHgtc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5pbmdyZWRpZW50LnYzZGhhc2hYIEwdsBUc6IJVFYlc8akImwRrwYXZ9GVrf8iRGcmaKiCHpGZhY3Rpb254HWNvbS5hbnRocm9waWMuY2xhdWRlLnByb3ZpZGVkanBhcmFtZXRlcnOheB9jb20uYW50aHJvcGljLm9yaWdpbi1jb25maWRlbmNlZ3Vua25vd25rZGVzY3JpcHRpb254ZkNsYXVkZSBwcm92aWRlZCB0aGlzIGZpbGUgYXQgdGhlIHJlcXVlc3Qgb2YgYSB1c2VyIGFuZCBtYXkgaGF2ZSBjcmVhdGVkIG9yIG1vZGlmaWVkIHRoZSBmaWxlIGNvbnRlbnRzLm1zb2Z0d2FyZUFnZW50oWRuYW1lZkNsYXVkZXJhbGxBY3Rpb25zSW5jbHVkZWT1AAAAyGp1bWIAAABAanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5oYXNoLmRhdGEAAAAAGGMyc2hDM5gTqA9Z+kwRgvMEwueZAAAAgGNib3KlY2FsZ2ZzaGEyNTZjcGFkTQAAAAAAAAAAAAAAAABkaGFzaFggbhawA3un98B1ATWr0197Ajkq9XcbmPBOj+BdRSoBoiFkbmFtZW5qdW1iZiBtYW5pZmVzdGpleGNsdXNpb25zgaJlc3RhcnQYIWZsZW5ndGgZFooAAAI+anVtYgAAACdqdW1kYzJjbAARABCAAACqADibcQNjMnBhLmNsYWltLnYyAAAAAg9jYm9ypWNhbGdmc2hhMjU2aXNpZ25hdHVyZXhNc2VsZiNqdW1iZj0vYzJwYS91cm46YzJwYTpmZWE1MTk5Ni1hNzk5LTQyZWMtOGU4NC1hZDY5ODkzYmFhMGMvYzJwYS5zaWduYXR1cmVqaW5zdGFuY2VJRHgseG1wOmlpZDo1ZGE1ZjdhNi0yNGQzLTQzZTktYWMwNC1hYTEzNDBlNGY5NGVyY3JlYXRlZF9hc3NlcnRpb25zg6JjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggTB2wFRzoglUViVzxqQibBGvBhdn0ZWt/yJEZyZoqIIeiY3VybHgqc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5hY3Rpb25zLnYyZGhhc2hYIP5wYWY/yEGB4og+EM5FhUZfQKRxCGDODwmV4DaowonvomN1cmx4KXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaGFzaC5kYXRhZGhhc2hYIBS6dKLrYKZrJzLJQvKSoFa3mtaXQOPnI36YE1DSDD6OdGNsYWltX2dlbmVyYXRvcl9pbmZvo2RuYW1lb0FudGhyb3BpYyBGaWxlc2d2ZXJzaW9uZTEuMC4wa3NwZWNWZXJzaW9uZTIuNC4wAAAQOGp1bWIAAAAoanVtZGMyY3MAEQAQgAAAqgA4m3EDYzJwYS5zaWduYXR1cmUAAAAQCGNib3LShFkCEqIBJhghWQIKMIICBjCCAY2gAwIBAgIUQOWgCu7COdC+uIP6BkIFPWdVEwAwCgYIKoZIzj0EAwMwSTEXMBUGA1UEChMOQW50aHJvcGljLCBQQkMxLjAsBgNVBAMTJUFudGhyb3BpYyBDb250ZW50IENyZWRlbnRpYWxzIFJvb3QgQ0EwHhcNMjYwODA3MTg0MzU2WhcNMjgwODA2MTk0MzU2WjBEMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEpMCcGA1UEAxMgQW50aHJvcGljIENsYXVkZSBDb250ZW50IFNpZ25pbmcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASYegpry1AYBRTVNL1CpTlbROnY3dey+UrsF9C3phYrATN3ZHf93Mo8RQN0KOUuOn19P4oWNFWe5n2/She9N7eTo1gwVjAOBgNVHQ8BAf8EBAMCB4AwFQYDVR0lBA4wDAYKKwYBBAGD6F4CATAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFM5R4gSBTmRbI/jjxM+aPpzB11zCMAoGCCqGSM49BAMDA2cAMGQCMDFzHRSeAXrSy1WOzkbhPZ6Km2wGTmZ/2gK18k8BQGXyqz88Rdrz6CTX9flAnYNVxgIwcF9c3fVhqmJKpi+UhasNUMko69cyX6STPfta3Q8EjyzDjzoyrol46FP6VFHhvUcJoWNwYWRZDZ4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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">
+    <div>
+      <h1>Painel da Biblioteca Fênix</h1>
+      <p id="subtitulo">Teste cada endereço oficial e confira se tudo está na versão 4.8.</p>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="aviso" id="aviso"></div>
+  <div class="card resumo">
+    <div><b id="placar">Nada testado ainda</b><small>Toque em "Testar tudo" ou abra um grupo e teste item a item.</small></div>
+    <button id="btTudo" type="button">Testar tudo</button>
+  </div>
+  <div id="grupos"></div>
+  <div class="card">
+    <details>
+      <summary><span>Testes ao vivo (CNPJ, CEP e máscaras)</span><span class="chip" id="lv-chip">não testado</span></summary>
+      <div class="linha"><div>
+        <div class="msg">Roda de verdade as funções do core que consultam o CNPJ e o CEP na internet. Nada é gravado no banco.</div>
+        <div id="lv-lista"></div></div>
+        <div class="acoes"><button type="button" id="btLive">Rodar testes ao vivo</button></div></div>
+    </details>
+  </div>
+  <div class="card">
+    <details id="detMasc">
+      <summary><span>Testar máscaras (digite à vontade)</span><span class="chip">manual</span></summary>
+      <div class="linha"><div id="mascCampos" style="width:100%">
+        <div class="msg">Nada é salvo. Digite só números: o campo coloca pontos, vírgulas, traços e parênteses sozinho.</div>
+        <label class="msg" style="display:block;margin-top:10px">Moeda (1000 vira R$ 10,00; 010 vira R$ 0,10)<input data-mask="moeda" placeholder="R$ 0,00"></label>
+        <label class="msg" style="display:block;margin-top:10px">CPF ou CNPJ (passou de 11 dígitos, vira CNPJ)<input data-mask="cpfcnpj" placeholder="000.000.000-00"></label>
+        <label class="msg" style="display:block;margin-top:10px">Telefone (fixo ou celular)<input data-mask="telefone" placeholder="(79) 9 9968-0880"></label>
+        <label class="msg" style="display:block;margin-top:10px">CEP<input data-mask="cep" placeholder="00000-000"></label>
+        <label class="msg" style="display:block;margin-top:10px">Data<input data-mask="data" placeholder="dd/mm/aaaa"></label>
+        <label class="msg" style="display:block;margin-top:10px">Hora<input data-mask="hora" placeholder="HH:mm"></label>
+        <label class="msg" style="display:block;margin-top:10px">Placa<input data-mask="placa" placeholder="ABC-1D23"></label>
+        <label class="msg" style="display:block;margin-top:10px">IP<input data-mask="ip" placeholder="192.168.0.10"></label>
+        <label class="msg" style="display:block;margin-top:10px">MAC<input data-mask="mac" placeholder="AA:BB:CC:DD:EE:FF"></label>
+        <label class="msg" style="display:block;margin-top:10px">Inscrição estadual de Sergipe (SE)<input data-mask="ie" data-mask-uf="SE" placeholder="00000000-0"></label>
+        <label class="msg" style="display:block;margin-top:10px">RG<input data-mask="rg" placeholder="00.000.000-0"></label>
+        <label class="msg" style="display:block;margin-top:10px">UF<input data-mask="uf" placeholder="SE"></label>
+        <label class="msg" style="display:block;margin-top:10px">Percentual<input data-mask="percentual" placeholder="0,00%"></label>
+      </div></div>
+    </details>
+  </div>
+  <div class="card">
+    <details id="detLic">
+      <summary><span>Licença definitiva e toque (manual)</span><span class="chip">manual</span></summary>
+      <div class="linha"><div style="width:100%">
+        <div class="msg">Nada é salvo nem enviado. Toque no botão para ouvir o toque Asas (o navegador só toca depois de um toque seu).</div>
+        <div class="acoes" style="margin-top:10px"><button type="button" id="btToque">Ouvir o toque Asas</button></div>
+        <div class="msg" style="margin-top:14px">ID do espelho de licença: digite o e-mail do usuário e copie o ID para criar o documento <b>licencas/ID</b> no console do Firebase, com o campo <b>licenca = definitiva</b>.</div>
+        <label class="msg" style="display:block;margin-top:10px">E-mail<input id="licEmail" type="email" placeholder="usuario@email.com"></label>
+        <div class="msg" id="licId" style="word-break:break-all;margin-top:8px"></div>
+        <div class="msg" style="margin-top:14px">Preferências do usuário (som, animações e tema). A escolha vale já nesta página.</div>
+        <div id="prefTela" style="margin-top:6px"></div>
+      </div></div>
+    </details>
+  </div>
+  <div class="card">
+    <details id="detDisp">
+      <summary><span>Teste de aparelho (celular, manual)</span><span class="chip">manual</span></summary>
+      <div class="linha"><div style="width:100%">
+        <div class="msg">Abra este painel no celular para conferir o aparelho de verdade. Nada é salvo nem enviado.</div>
+        <div class="acoes" style="margin-top:10px"><button type="button" id="btToque2">Ouvir o toque Asas</button><button type="button" id="btDispRepetir">Repetir as animações</button></div>
+        <div class="msg" style="margin-top:14px"><b>Selo de versões deste aparelho</b></div>
+        <div id="dispSelo" class="msg" style="margin-top:4px"></div>
+        <div class="msg" style="margin-top:14px"><b>Farol do login e holofotes do splash</b> (os próprios templates oficiais, ao vivo)</div>
+        <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px">
+          <iframe id="dispLogin" title="Template de login" style="width:100%;height:440px;border:1px solid #d5d9ec;border-radius:10px" loading="lazy"></iframe>
+          <iframe id="dispSplash" title="Template de splash" style="width:100%;height:440px;border:1px solid #d5d9ec;border-radius:10px" loading="lazy"></iframe>
+        </div>
+        <div class="msg" style="margin-top:14px"><b>O que este aparelho informa</b></div>
+        <div id="dispInfo" class="msg" style="margin-top:4px"></div>
+      </div></div>
+    </details>
+  </div>
+</main>
+<footer>
+  <span id="ano"></span>
+  <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a>
+  |
+  <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a>
+  · v6.5
+</footer>
+<script>
+var VERSAO = '6.5';
+var BASE = 'https://fenicris-dev.github.io/Fenix-Core/';
+var $ = function (id) { return document.getElementById(id); };
+$('ano').textContent = new Date().getFullYear();
+$('subtitulo').textContent = 'Teste cada endereço oficial e confira se tudo está na versão ' + VERSAO + '.';
+
+var RE_CORE = /FÊNIX CORE v([\d.]+)/, RE_TPL = /Template v([\d.]+)/, RE_DOC = /Versão ([\d.]+)/, RE_LIVRO = /\(v([\d.]+)\)/, RE_FS = /Biblioteca Fênix v([\d.]+)/, RE_ADM = /ADMINISTRATIVO FÊNIX v([\d.]+)/;
+var GRUPOS = [
+  { nome:'Fênix Core', itens:[ { n:'fenix-core.js', p:'fenix-core.js', t:'texto', re:RE_CORE, core:true } ] },
+  { nome:'Painel administrativo (pasta admin/)', itens:[ { n:'admin/fenix-admin.html (clientes, licenças e equipe)', p:'admin/fenix-admin.html', t:'texto', re:RE_ADM } ] },
+  { nome:'Templates (pasta templates/)', itens:[
+    { n:'Template de login', p:'templates/fenix-template-login.html', t:'texto', re:RE_TPL },
+    { n:'Template de onboarding', p:'templates/fenix-template-onboarding.html', t:'texto', re:RE_TPL },
+    { n:'Template de splash', p:'templates/fenix-template-splash.html', t:'texto', re:RE_TPL } ] },
+  { nome:'Ícones (pasta Icon/)', itens:[64,128,192,512].map(function (m) { return { n:'Fenix_Icone_' + m + '.png', p:'Icon/Fenix_Icone_' + m + '.png', t:'img' }; }) },
+  { nome:'Logos (pasta Logo/)', itens:[
+    'Fenix_Logo_Azul.png','Fenix_Logo_Azul_320.png','Fenix_Logo_Azul_640.png',
+    'Fenix_Logo_Branca.png','Fenix_Logo_Branca_320.png','Fenix_Logo_Branca_640.png',
+    'Fenix_Logo_Black.png','Fenix_Logo_Silver.png','Fenix_Logo_Gray.png'
+  ].map(function (f) { return { n:f, p:'Logo/' + f, t:'img' }; }) },
+  { nome:'Termos e Política (pasta Termos/)', itens:[
+    { n:'Termos de Uso', p:'Termos/fenix-termos-de-uso.html', t:'texto', re:RE_DOC },
+    { n:'Política de Privacidade', p:'Termos/fenix-politica-de-privacidade.html', t:'texto', re:RE_DOC } ] },
+  { nome:'Livro das Regras', itens:[
+    { n:'Livro em Markdown (.md)', p:'MD/fenix-livro-das-regras.md', t:'texto', re:RE_LIVRO },
+    { n:'Livro em Word (.docx)', p:'DOC/fenix-livro-das-regras.docx', t:'arquivo' },
+    { n:'Resumo do livro em Markdown (.md)', p:'MD/fenix-resumo-do-livro.md', t:'texto', re:RE_LIVRO },
+    { n:'Resumo do livro em Word (.docx)', p:'DOC/fenix-resumo-do-livro.docx', t:'arquivo' } ] },
+  { nome:'Guia da biblioteca', itens:[
+    { n:'Guia em Markdown (.md)', p:'MD/fenix-guia-da-biblioteca.md', t:'texto', re:RE_LIVRO },
+    { n:'Guia em Word (.docx)', p:'DOC/fenix-guia-da-biblioteca.docx', t:'arquivo' } ] },
+  { nome:'Versões publicadas (raiz)', itens:[ { n:'versao.json (lido pelo selo dos apps)', p:'versao.json', t:'json' } ] },
+  { nome:'Regras do Firestore (proposta)', itens:[
+    { n:'firestore.rules', p:'firestore.rules', t:'texto', re:RE_FS } ] }
+];
+var estado = {};
+
+function urlDe(item) { return BASE + encodeURI(item.p); }
+function ehEsperada(v) { return v === VERSAO; }
+
+function pintar(id, ok, texto, msg) {
+  var chip = $('c-' + id), m = $('m-' + id);
+  chip.className = 'chip ' + (ok ? 'ok' : 'erro');
+  chip.textContent = texto;
+  m.textContent = msg || '';
+  estado[id] = ok;
+  placar();
+}
+function placar() {
+  var total = 0, ok = 0, testados = 0;
+  GRUPOS.forEach(function (g, gi) {
+    var gok = 0, gt = 0;
+    g.itens.forEach(function (it, ii) {
+      total++; gt++;
+      var s = estado[gi + '-' + ii];
+      if (s !== undefined) { testados++; if (s) { ok++; gok++; } }
+    });
+    var ch = $('g-' + gi);
+    var tg = g.itens.filter(function (it, ii) { return estado[gi + '-' + ii] !== undefined; }).length;
+    ch.textContent = tg ? (gok + '/' + gt + ' OK') : 'não testado';
+    ch.className = 'chip' + (tg ? (gok === gt ? ' ok' : ' erro') : '');
+  });
+  $('placar').textContent = testados ? (ok + ' de ' + total + ' endereços funcionando') : 'Nada testado ainda';
+  var av = $('aviso');
+  if (testados && ok < testados) {
+    av.style.display = 'block';
+    av.textContent = 'Alguns endereços não abriram ou estão em outra versão. Confira se o arquivo foi publicado na pasta certa do repositório.';
+  } else av.style.display = 'none';
+}
+function testar(gi, ii) {
+  var item = GRUPOS[gi].itens[ii], id = gi + '-' + ii, url = urlDe(item);
+  var chip = $('c-' + id); chip.className = 'chip'; chip.textContent = 'testando…'; $('m-' + id).textContent = '';
+  if (item.t === 'img') {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { pintar(id, true, 'OK', im.naturalWidth + ' × ' + im.naturalHeight + ' px'); res(); };
+      im.onerror = function () { pintar(id, false, 'Não abriu', 'A imagem não foi encontrada nesse endereço.'); res(); };
+      im.src = url + (url.indexOf('?') < 0 ? '?t=' : '&t=') + Date.now();
+    });
+  }
+  return fetch(url, { cache:'no-store' }).then(function (r) {
+    if (!r.ok) { pintar(id, false, 'Não abriu', 'O endereço respondeu ' + r.status + '.'); return; }
+    if (item.t === 'json') {
+      return r.json().then(function (j) {
+        var c = j && j.core ? String(j.core) : '', l = j && j.livro ? String(j.livro) : '';
+        if (!c) pintar(id, false, 'Sem versão', 'O arquivo abriu, mas não traz o campo "core".');
+        else if (!ehEsperada(c) || (l && !ehEsperada(l))) pintar(id, false, 'core ' + c, 'Abre, mas traz core ' + c + ' e livro ' + (l || '—') + '; o painel está na ' + VERSAO + '.');
+        else pintar(id, true, 'OK · core ' + c, 'Core ' + c + ' e livro ' + (l || '—') + ' niveladas.');
+      }, function () { pintar(id, false, 'JSON inválido', 'O arquivo abriu, mas não é um JSON válido.'); });
+    }
+    if (item.t === 'arquivo') {
+      return r.blob().then(function (b) { pintar(id, true, 'OK', Math.round(b.size / 1024) + ' KB'); });
+    }
+    return r.text().then(function (txt) {
+      var m = item.re ? item.re.exec(txt) : null;
+      var v = m ? m[1] : null;
+      if (v && !ehEsperada(v)) pintar(id, false, 'v' + v, 'Abre, mas está na versão ' + v + ' e o painel está na ' + VERSAO + '.');
+      else pintar(id, true, v ? 'OK · v' + v : 'OK', v ? 'Versão ' + v + ' nivelada.' : 'Abriu, mas não encontrei o número da versão.');
+    });
+  }).catch(function () {
+    pintar(id, false, 'Sem acesso', 'Não consegui consultar. Abra este painel pelo endereço do GitHub Pages e com internet.');
+  });
+}
+function testarCore() {
+  var id = '0-0', url = urlDe(GRUPOS[0].itens[0]);
+  $('m-' + id).textContent = 'Carregando o core…';
+  import(url).then(function (mod) {
+    var f = mod.FenixCore;
+    if (!f) { pintar(id, false, 'Sem FenixCore', 'O arquivo abriu, mas não exporta o FenixCore.'); return; }
+    pintar(id, true, 'OK · carregou', 'FenixCore com ' + Object.keys(f).length + ' módulos/funções disponíveis.');
+  }).catch(function () {
+    pintar(id, false, 'Falhou', 'O core não carregou como módulo. Confira o endereço e a internet.');
+  });
+}
+function testarTudo() {
+  var fila = [];
+  GRUPOS.forEach(function (g, gi) { g.itens.forEach(function (it, ii) { fila.push([gi, ii]); }); });
+  var bt = $('btTudo'); bt.disabled = true; bt.textContent = 'Testando…';
+  Promise.all(fila.map(function (f) { return testar(f[0], f[1]); })).then(function () { bt.disabled = false; bt.textContent = 'Testar tudo de novo'; });
+}
+function montar() {
+  var html = '';
+  GRUPOS.forEach(function (g, gi) {
+    html += '<div class="card"><details><summary><span>' + g.nome + '</span><span class="chip" id="g-' + gi + '">não testado</span></summary>';
+    g.itens.forEach(function (it, ii) {
+      var id = gi + '-' + ii, url = urlDe(it);
+      html += '<div class="linha"><div><div class="nome">' +
+        (it.t === 'img' ? '<img class="miniatura" alt="" src="' + url + '" onerror="this.style.visibility=\'hidden\'">' : '') +
+        '<span>' + it.n + '</span><span class="chip" id="c-' + id + '">não testado</span></div>' +
+        '<div class="url">' + url + '</div><div class="msg" id="m-' + id + '"></div></div>' +
+        '<div class="acoes"><button type="button" class="sec" data-t="' + gi + ',' + ii + '">Testar</button>' +
+        (it.core ? '<button type="button" class="sec" data-core="1">Carregar o core</button>' : '') +
+        '<a class="btn" href="' + url + '" target="_blank" rel="noopener">Abrir</a></div></div>';
+    });
+    html += '</details></div>';
+  });
+  $('grupos').innerHTML = html;
+  $('grupos').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.getAttribute('data-core')) return testarCore();
+    var p = b.getAttribute('data-t'); if (p) { var a = p.split(','); testar(+a[0], +a[1]); }
+  });
+}
+montar();
+$('btTudo').addEventListener('click', testarTudo);
+
+var AOVIVO = [
+  { n:'Consulta de CNPJ (consultarCNPJ), CNPJ da Fênix', f:function (F) { return F.pessoas.consultarCNPJ('60.292.878/0001-70').then(function (d) {
+      if (!d || !d.razaoSocial) return [false, 'Não encontrou o CNPJ.'];
+      var e = d.endereco || {};
+      return [true, d.razaoSocial + ' · ' + [e.logradouro, e.numero, e.bairro, e.cidade, e.uf].filter(Boolean).join(', ') + ' · endereço completo: ' + (d.enderecoCompleto ? 'sim' : 'não') + ' (' + d.origemEndereco + ')'];
+    }); } },
+  { n:'CEP sem banco (buscarPorCEPSemBanco), 01310-100', f:function (F) { return F.localidades.buscarPorCEPSemBanco('01310-100').then(function (r) {
+      return r && r.cidade ? [true, [r.logradouro, r.bairro, r.cidade + '/' + r.uf].filter(Boolean).join(' · ')] : [false, 'CEP não encontrado.'];
+    }); } },
+  { n:'Máscaras automáticas (mascaras), sem internet', f:function (F) { var M = F.mascaras; if (!M) return Promise.resolve([false, 'Este core não tem FenixCore.mascaras.']);
+      var casos = [['moeda','1','R$ 1'], ['moeda','10','R$ 1,0'], ['moeda','100','R$ 1,00'], ['moeda','1000','R$ 10,00'], ['moeda','100000','R$ 1.000,00'], ['moeda','010','R$ 0,10'], ['rg','528972580','52.897.258-0'], ['placa','0er0c32','0ER-0C32'], ['placa','abc1234','ABC-1234'], ['uf','se1','SE'], ['cpfcnpj','11111111111','111.111.111-11'], ['cpfcnpj','111111111111','11.111.111/1111'], ['cpfcnpj','11111111111111','11.111.111/1111-11'], ['telefone','79999680880','(79) 9 9968-0880'], ['telefone','7932221234','(79) 3222-1234'], ['cep','49000000','49000-000'], ['data','25122026','25/12/2026'], ['hora','0930','09:30']];
+      var erros = casos.filter(function (c) { return M[c[0] === 'cpfcnpj' ? 'cpfCnpj' : c[0]](c[1]) !== c[2]; });
+      return Promise.resolve(erros.length ? [false, 'Diferente do esperado em: ' + erros.map(function (c) { return c[0] + ' ' + c[1]; }).join(', ')] : [true, casos.length + ' formatos conferidos (moeda, CPF/CNPJ, telefone, CEP, data, hora, RG e UF).']);
+    } },
+  { n:'Google, dados pessoais e sincronia (funções do core), sem internet', f:function (F) {
+      var falta = ['criarModuloAuth', 'criarModuloDadosPessoais', 'criarSincronia', 'initFirebaseComCache', 'criarModuloSincronia', 'criarModuloAcesso'].filter(function (k) { return typeof F[k] !== 'function'; });
+      return Promise.resolve(falta.length ? [false, 'Este core não tem: ' + falta.join(', ') + '.'] : [true, 'criarModuloAuth (com entrarComGoogle), criarModuloDadosPessoais, criarSincronia, initFirebaseComCache, criarModuloSincronia e criarModuloAcesso presentes.']);
+    } },
+  { n:'Selo de versões (FenixCore.versoes), sem internet', f:function (F) {
+      var V = F.versoes;
+      if (!V || typeof V.montarSelo !== 'function') return Promise.resolve([false, 'Este core não tem FenixCore.versoes (v4.6).']);
+      var okTxt = V.selo('3.2') === 'v3.2 | c ' + V.core && V.selo('v3.2') === V.selo('3.2');
+      var okCmp = V.comparar('4.10', '4.9') === 1 && V.comparar('4.6', '4.6') === 0 && V.comparar('4.5', '4.6') === -1;
+      var okVer = V.core === VERSAO;
+      var box = document.createElement('div'); V.montarSelo(box, '3.2', { verificar: false });
+      var okBtn = !!box.querySelector('[data-fx-selo]');
+      return Promise.resolve(okTxt && okCmp && okVer && okBtn ? [true, 'Selo ' + V.selo('3.2') + ' e comparação de versões conferidos.'] : [false, 'Falhou em: ' + [!okTxt && 'texto do selo', !okCmp && 'comparação', !okVer && ('versão do core (' + V.core + ' ≠ ' + VERSAO + ')'), !okBtn && 'desenho do selo'].filter(Boolean).join(', ') + '.']);
+    } },
+  { n:'Licença (com validade), preferências e toque Asas (funções do core), sem internet', f:function (F) {
+      if (!F.licenca || !F.som) return Promise.resolve([false, 'Este core não tem FenixCore.licenca e FenixCore.som (v4.3).']);
+      if (!F.preferencias || typeof F.licenca.situacao !== 'function') return Promise.resolve([false, 'Este core não tem FenixCore.preferencias e licenca.situacao (v4.4).']);
+      var L = F.licenca, okLic = L.ehDefinitiva({ licenca: 'definitiva' }) && !L.ehDefinitiva({ licenca: 'teste' }) && !L.ehDefinitiva({})
+        && !L.ehDefinitiva({ licenca: 'definitiva', licencaAte: '2000-01-01' }) && L.situacao({ licenca: 'definitiva', licencaAte: '2000-01-01' }).tipo === 'vencida'
+        && L.ehDefinitiva({ licenca: 'definitiva', licencaAte: '2999-12-31' });
+      return L.hashEmail('abc').then(function (h) {
+        var okHash = h === 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad';
+        var Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (!Off) return [okLic && okHash, 'Licença e hash conferidos; este navegador não renderiza áudio para teste.'];
+        var oc = new Off(1, 44100 * 2, 44100); F.som.sintetizar(oc, 0);
+        return oc.startRendering().then(function (buf) {
+          var d = buf.getChannelData(0), p = 0; for (var i = 0; i < d.length; i++) { var v = Math.abs(d[i]); if (v > p) p = v; }
+          var okSom = p > 0.1 && p < 0.6;
+          return [okLic && okHash && okSom, 'Licença definitiva ' + (okLic ? 'OK' : 'ERRO') + ', hash do e-mail ' + (okHash ? 'OK' : 'ERRO') + ', toque Asas ' + (okSom ? 'gerado (pico ' + p.toFixed(2) + ')' : 'ERRO') + '.'];
+        });
+      });
+    } },
+  { n:'CEP pela BrasilAPI (buscarPorCEPBrasilAPI), 01310-100', f:function (F) { return F.localidades.buscarPorCEPBrasilAPI('01310-100').then(function (r) {
+      return r && r.cidade ? [true, [r.logradouro, r.bairro, r.cidade + '/' + r.uf].filter(Boolean).join(' · ')] : [false, 'CEP não encontrado.'];
+    }); } }
+];
+function montarAoVivo() {
+  $('lv-lista').innerHTML = AOVIVO.map(function (t, i) {
+    return '<div class="nome" style="margin-top:10px"><span>' + t.n + '</span><span class="chip" id="lv-c' + i + '">não testado</span></div><div class="msg" id="lv-m' + i + '"></div>';
+  }).join('');
+}
+function rodarAoVivo() {
+  var bt = $('btLive'); bt.disabled = true; bt.textContent = 'Testando…';
+  AOVIVO.forEach(function (t, i) { $('lv-c' + i).className = 'chip'; $('lv-c' + i).textContent = 'testando…'; $('lv-m' + i).textContent = ''; });
+  var ok = 0;
+  import(urlDe(GRUPOS[0].itens[0])).then(function (mod) {
+    var F = mod.FenixCore;
+    return AOVIVO.reduce(function (p, t, i) {
+      return p.then(function () {
+        return t.f(F).then(function (r) { return r; }, function (e) { return [false, 'Falhou: ' + (e && e.message ? e.message : e)]; }).then(function (r) {
+          $('lv-c' + i).className = 'chip ' + (r[0] ? 'ok' : 'erro'); $('lv-c' + i).textContent = r[0] ? 'OK' : 'Falhou'; $('lv-m' + i).textContent = r[1]; if (r[0]) ok++;
+        });
+      });
+    }, Promise.resolve());
+  }).catch(function () {
+    AOVIVO.forEach(function (t, i) { $('lv-c' + i).className = 'chip erro'; $('lv-c' + i).textContent = 'Falhou'; $('lv-m' + i).textContent = 'O core não carregou. Confira o endereço e a internet.'; });
+  }).then(function () {
+    var c = $('lv-chip'); c.textContent = ok + '/' + AOVIVO.length + ' OK'; c.className = 'chip ' + (ok === AOVIVO.length ? 'ok' : 'erro');
+    bt.disabled = false; bt.textContent = 'Rodar de novo';
+  });
+}
+$('detMasc').addEventListener('toggle', function () {
+  if (!this.open || this.getAttribute('data-ok')) return;
+  this.setAttribute('data-ok', '1');
+  import(urlDe(GRUPOS[0].itens[0])).then(function (mod) { mod.FenixCore.mascaras.auto($('mascCampos')); }).catch(function () {
+    var m = document.createElement('div'); m.className = 'msg'; m.textContent = 'O core não carregou. Confira o endereço e a internet.'; $('mascCampos').appendChild(m);
+  });
+});
+$('detLic').addEventListener('toggle', function () {
+  if (!this.open || this.getAttribute('data-ok')) return;
+  this.setAttribute('data-ok', '1');
+  var carregar = function () { return import(urlDe(GRUPOS[0].itens[0])).then(function (m) { return m.FenixCore; }); };
+  carregar().then(function (F) { if (F.preferencias) F.preferencias.montarTela($('prefTela')); }).catch(function () {});
+  $('btToque').addEventListener('click', function () { carregar().then(function (F) { F.som.tocarAbertura({ forcar: true }); }).catch(function () { $('licId').textContent = 'O core não carregou. Confira o endereço e a internet.'; }); });
+  $('licEmail').addEventListener('input', function () {
+    var v = this.value; if (!v.trim()) { $('licId').textContent = ''; return; }
+    carregar().then(function (F) { return F.licenca.hashEmail(v); }).then(function (h) { $('licId').textContent = h; }).catch(function () { $('licId').textContent = 'Não foi possível gerar o ID (core v4.3 e navegador com HTTPS).'; });
+  });
+});
+$('detDisp').addEventListener('toggle', function () {
+  if (!this.open) return;
+  var carregar = function () { return import(urlDe(GRUPOS[0].itens[0])).then(function (m) { return m.FenixCore; }); };
+  var recarregar = function () { $('dispLogin').src = urlDe({ p:'templates/fenix-template-login.html' }) + '?t=' + Date.now(); $('dispSplash').src = urlDe({ p:'templates/fenix-template-splash.html' }) + '?t=' + Date.now(); };
+  var mq = function (q) { try { return window.matchMedia(q).matches; } catch (e) { return false; } };
+  var ls; try { localStorage.setItem('fenix_teste', '1'); localStorage.removeItem('fenix_teste'); ls = 'funciona'; } catch (e) { ls = 'bloqueado'; }
+  var linhas = [
+    ['Tela', window.innerWidth + ' × ' + window.innerHeight + ' px (densidade ' + (window.devicePixelRatio || 1) + ')'],
+    ['Conexão', navigator.onLine ? 'online' : 'offline'],
+    ['App instalado (PWA)', mq('(display-mode: standalone)') ? 'sim, aberto como app' : 'não, aberto no navegador'],
+    ['Tema do sistema', mq('(prefers-color-scheme: dark)') ? 'escuro' : 'claro'],
+    ['Reduzir movimento (sistema)', mq('(prefers-reduced-motion: reduce)') ? 'ligado: as animações ficam paradas' : 'desligado'],
+    ['Armazenamento local', ls],
+    ['Áudio do navegador', (window.AudioContext || window.webkitAudioContext) ? 'disponível' : 'indisponível']
+  ];
+  $('dispInfo').innerHTML = linhas.map(function (l) { return '<div><b>' + l[0] + ':</b> ' + l[1] + '</div>'; }).join('');
+  recarregar();
+  $('btDispRepetir').addEventListener('click', recarregar);
+  $('btToque2').addEventListener('click', function () { carregar().then(function (F) { F.som.tocarAbertura({ forcar: true }); }).catch(function () { $('dispSelo').textContent = 'O core não carregou. Confira o endereço e a internet.'; }); });
+  carregar().then(function (F) { F.versoes.montarSelo($('dispSelo'), VERSAO, { livro: VERSAO, detalhe: true }); }).catch(function () { $('dispSelo').textContent = 'O core não carregou. Confira o endereço e a internet.'; });
+});
+montarAoVivo();
+$('btLive').addEventListener('click', rodarAoVivo);
+</script>
+</body>
+</html>
