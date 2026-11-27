@@ -1,4 +1,4 @@
-# RESUMO DO LIVRO DAS REGRAS FÊNIX (v6.1)
+# RESUMO DO LIVRO DAS REGRAS FÊNIX (v6.5)
 
 Uma folha para começar. Ela diz **quais regras valem em cada tipo de trabalho**. Os detalhes de cada regra estão no Livro das Regras; o que cada função do core faz está no Guia da biblioteca. Se o resumo e o livro divergirem, vale o livro.
 
@@ -9,12 +9,12 @@ Endereço base: https://fenicris-dev.github.io/Fenix-Core/
 - **Versão:** sobe a cada alteração, sem pular número, com uma casa decimal; declare a versão no texto da entrega (regras 7 a 9).
 - **Nome e cópias:** `fenix-nome-do-app-vX.X.html` mais a cópia neutra sem versão; tudo que tem versão sai em duas cópias; mais de um arquivo leva também um `.zip` com `LEIAME.txt` (regras 10 e 11).
 - **Core:** o app carrega o `fenix-core.js` oficial, com o banco desligado até eu dar o sinal (regras 1 e 2). Nada de cópia do core dentro do app.
-- **Selo:** `fenix-livro` e `fenix-ficha` no `<head>` (regra 53) e o selo de versões `v3.2 | c 6.1` (regra 61).
+- **Selo:** `fenix-livro` e `fenix-ficha` no `<head>` (regra 53) e o selo de versões `v3.2 | c 6.5` (regra 61).
 - **Visual:** paleta, degradê, fundo, rodapé, águia e toque de 44 px (regras 14 a 22).
 - **Splash, animações e preferências:** regras 32, 59 e 60.
 - **Texto e formato:** mensagens em português claro, moeda `R$ 0.000,00`, datas `dd/mm/aaaa` (regras 21, 39 e 40).
 - **Ajuda:** Changelog, Manual e tela Sobre dentro do app (regras 12 e 13).
-- **Qualidade:** apagar exige digitar APAGAR; `node --check` igual a 0; teste em 360 px e sem internet (regras 47 a 51).
+- **Qualidade:** excluir um item pede "Tem certeza que quer excluir X?" e as ações em massa exigem digitar APAGAR (regra 47); `node --check` igual a 0; teste em 360 px e sem internet (regras 47 a 51).
 - **Teste de 15 dias:** o cliente usa tudo por 15 dias; depois, sem licença por tempo ou definitiva, só lê e exporta o backup. Chame `licenca.carregar`, mostre `montarAviso` e trate `FENIX_SOMENTE_LEITURA` (regra 62). Desde a v5.6 o core mostra a faixa de aviso sozinho nos apps com login, até nos antigos.
 - **Texto seguro:** texto de usuário na tela com `textContent` ou `FenixCore.seguranca`, nunca cru em `innerHTML` (regra 64).
 - **Dados:** versão do esquema e migração com backup (regra 65, `FenixCore.esquema`).
@@ -67,6 +67,8 @@ Endereço base: https://fenicris-dev.github.io/Fenix-Core/
 | Tema escuro | 60 (grupo J) |
 | Estudo, treino ou preparação para provas | 79 (aviso de apoio a cada 7 dias, verde e vermelho só no retorno da resposta, anexo nos Termos e na Política, menores só com autorização do responsável, explicação da resposta, IA conferida) |
 | Salas online (jogo, estudo em grupo, simulado) | 80 (`FenixCore.salas`, login anônimo e apelido, gabarito separado, prazo da sala, máximo de 50 perguntas, "Anônimo" ligado e regras das salas publicadas) |
+| Agenda de profissional com página pública e cliente final (Fênix Go) | 81 (`FenixCore.reservas`, reserva atômica em blocos de 15 min, contrato sem CPF, Google do passageiro sem licença definitiva, anexo nos Termos e na Política) |
+| Dados dos clientes pelos meios do cliente (Fênix Cofre Digital) | 82 (pergunte antes: core da Fênix ou meios do cliente; dados cifrados no aparelho, a Fênix não lê; exceção à regra 77) |
 
 ## 6. Biblioteca (core, templates, regras do Firestore)
 
