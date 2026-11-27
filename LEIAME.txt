@@ -1,4 +1,4 @@
-Biblioteca Fênix v6.1
+Biblioteca Fênix v6.5
 
 ESTRUTURA DO REPOSITÓRIO (regra 78): na raiz só o que precisa estar na raiz.
 Raiz       : index.html (Painel), fenix-core.js, versao.json, firestore.rules, LEIAME.txt, fenix-admin.html (só redireciona para admin/fenix-admin.html; transitório)
@@ -19,7 +19,24 @@ COMO SUBIR (atenção: o GitHub não apaga sozinho o que ficou para trás):
 3) Abra o Painel (index.html) e toque em "Testar tudo": nenhum item pode ficar em amarelo.
 4) Troque o favorito do Painel administrativo para .../admin/fenix-admin.html.
 
-Novo na v6.1 (consolida o pacote do colaborador v5.9 e v6.0; tudo no mesmo número):
+Novo na v6.5 (SÓ MUDA O firestore.rules; o resto sobe o número):
+- O firestore.rules agora junta três coisas que estavam separadas: a biblioteca v6.4, as regras que estão PUBLICADAS no seu console (Controle de Compras: ambientes e catálogo de produtos; administração raiz; reforços v5.9) e o bloco novo do app Laudos Técnicos (verificação por QR Code).
+- ESTE ARQUIVO PRECISA SER PUBLICADO no console (diferente da v6.4). Ordem: 1) publique core e documentos; 2) no seu computador, rode npm install e npm test em testes/regras/ (casos novos incluídos; não executei por falta de emulador); 3) teste no Playground; 4) publique.
+- CUIDADO: ao publicar, passam a valer no banco o teste de 15 dias com modo somente leitura, a equipe Fênix e os prêmios, que o console de hoje NÃO aplica. Empresa com teste vencido e sem licença fica só em leitura; app com cópia do core anterior à 4.9 não cria empresa. Confira o selo de core dos apps antes.
+- Regra 46: sempre cole no chat as regras que estão no console antes de publicar, para não perder blocos de outros apps.
+- Ainda fora do arquivo: go_publico/go_reservas (Fênix Go, regra 81) e storage.rules (regra 82e). Envie para a próxima versão.
+- Nada muda no core, nos Termos nem na Política, a não ser o número.
+
+Da v6.4 continuam (consolida as versões 6.2 e 6.3, feitas em outro app):
+- Regra 81 (agendamento com página pública e cliente final) e módulo FenixCore.reservas no core; exceção do cliente final na regra 58.
+- Regra 82 (dados dos clientes: core ou meios do cliente; hoje, Fênix | Cofre Digital).
+- Regra 47 reescrita: excluir um item pede "Tem certeza que quer excluir X?"; digitar APAGAR só nas ações em massa. Resumo, manual e Guia agora dizem o mesmo que o Livro.
+- Termos de Uso e Política de Privacidade: anexo novo "Aplicativos de agendamento" (faltava; a regra 81i o exigia), além do anexo do Cofre Digital. "Atualizado em" 25/11/2026. Texto redigido sem advogado: publique a pasta Termos/ e peça revisão antes do lançamento público.
+- Guia: seção 2.27 (reservas), Seção 18 e a entrada da v6.2, que faltavam. Core: só a versão sobe (saíram marcas de edição dos comentários).
+- NÃO está neste pacote (não foi enviado): o bloco go_publico/go_reservas do firestore.rules e o storage.rules. Sem o bloco, o Firestore recusa FenixCore.reservas. O firestore.rules só sobe o número: não precisa publicar de novo no console.
+- Nada muda para os apps já publicados.
+
+Da v6.1 continuam (consolida o pacote do colaborador v5.9 e v6.0; tudo no mesmo número):
 - Regras 79 (apps de estudo) e 80 (salas online) do pacote do colaborador, conferidas e mantidas. O Resumo agora traz as duas.
 - O bloco das salas está DENTRO do firestore.rules. O arquivo firestore.rules-salas deixou de existir: se você o subiu para a raiz do repositório, APAGUE-o.
 - Core: entrarAnonimo espera o Firebase restaurar o login (authStateReady), para não trocar por anônimo quem já está logado. Só correção.

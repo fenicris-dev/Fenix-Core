@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v6.1
+ * FÊNIX CORE v6.5
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -321,6 +321,15 @@
         botão Voltar do celular e puxar para atualizar desligado) e
         formulario(form) (detecta campos alterados). Só acréscimos.
  * v5.3 — só a versão sobe (nenhuma função nova): nivelamento com o livro.
+ * v6.5 — só a versão sobe (nenhuma função nova): nivelamento com o livro; o firestore.rules ganha a mescla com as regras do console e o bloco dos Laudos.
+ * v6.4 — só a versão sobe (nenhuma função nova): consolidação das versões 6.2 e 6.3 (regras 81 e 82) com o livro; saem marcas de edição que ficaram nos comentários.
+ * v6.3 — só a versão sobe (nenhuma função nova): nivelamento com o livro (regra 82, dados dos clientes: core ou meios do cliente).
+ * v6.2 — NOVO (regra 81): FenixCore.reservas — agenda com reserva atômica de horários
+ *        para apps com página pública e cliente final (Fênix | Go). Blocos de 15 min,
+ *        buffer, série recorrente, bloqueios, cancelamento e perfil público do motorista.
+ *        Regra 58: licenca.liberaGoogle e licenca.confirmarAposGoogle aceitam
+ *        { clienteFinal: true } (passageiro entra com Google sem licença definitiva).
+ *        Só acréscimos. Exige o bloco go_publico/go_reservas no firestore.rules v6.2.
  * v6.1 — correção em FenixCore.salas.entrarAnonimo: espera authStateReady() antes de decidir, para não trocar por anônimo quem já está logado (ex.: o anfitrião). Nenhuma função nova; nivelamento com o livro. O bloco das salas passou para dentro do firestore.rules.
  * v6.0 — NOVO (regra 80): FenixCore.salas — salas ao vivo para apps de estudo (jogo
         estilo quiz, estudo em grupo e simulado cronometrado da turma). Entrada sem
@@ -3061,7 +3070,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "6.1";
+const _CORE_VERSAO = "6.5";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas
@@ -4276,11 +4285,303 @@ const salas = (() => {
 })();
 
 // ============================================================================
+// RESERVAS (v6.2, regra 81) — agenda com reserva atômica de horários
+// ============================================================================
+/**
+ * Modelo de dados:
+ *   go_publico/{slug}                  perfil público do motorista (leitura aberta). Precisa ter:
+ *                                      { empresaId, donoUid, valorKm, taxaBase, bufferMin, ... }
+ *   go_publico/{slug}/ocupados/{bloco} { bloco, reservaId }  SEM dado pessoal; id = número do bloco de 15 min
+ *   go_reservas/{id}                   a reserva completa (só o passageiro e o motorista leem)
+ *
+ * Como a reserva é atômica: reservar() grava, em UM lote, a reserva e um documento "ocupado" por
+ * bloco. As regras do Firestore só deixam CRIAR um ocupado (nunca alterar); se outro passageiro já
+ * ocupou o bloco, o lote inteiro falha e nada é gravado. Por isso não há transação nem servidor.
+ *
+ * Horário: blocos de 15 minutos, contados em ms desde 1970 (UTC). O fuso é fixo em UTC-3
+ * (Brasil, sem horário de verão). A reserva ocupa [início, fim + buffer): assim cada corrida
+ * fica separada da seguinte por pelo menos o buffer.
+ *
+ * Limites: série de até 400 blocos por reserva (o lote aceita 500 gravações); as regras só
+ * conferem preço unitário e buffer (o km é calculado no aparelho e fica registrado no contrato);
+ * os horários de atendimento por dia da semana são aplicados pelo app, não pelas regras.
+ */
+const reservas = (() => {
+  const BLOCO_MIN = 15;
+  const BLOCO_MS = BLOCO_MIN * 60000;
+  const DIA_MS = 86400000;
+  const FUSO_MS = 3 * 3600000;            // Brasil (Aracaju/SE): UTC-3
+  const MAX_BLOCOS = 400;                 // 1 reserva + 400 blocos = 401 gravações (limite do lote: 500)
+  const SLUG_RE = /^[a-z0-9][a-z0-9-]{2,39}$/;
+
+  function _erro(codigo, msg) { const e = new Error(msg); e.codigo = codigo; return e; }
+  function _slug(s) {
+    const x = String(s == null ? "" : s).trim().toLowerCase();
+    if (!SLUG_RE.test(x)) throw _erro("FENIX_SLUG_INVALIDO", "O endereço do motorista deve ter de 3 a 40 caracteres: letras minúsculas, números e hífen.");
+    return x;
+  }
+  function _usuario() {
+    const u = getAuth(_obterAppFirebase(firebaseConfig)).currentUser;
+    if (!u) throw _erro("FENIX_LOGIN_NECESSARIO", "Entre na sua conta para continuar.");
+    return u;
+  }
+
+  // ---------- tempo e blocos (funções puras, sem banco) ----------
+  function blocoDe(ms) { return Math.floor(Number(ms) / BLOCO_MS); }
+  function inicioDoBloco(b) { return Number(b) * BLOCO_MS; }
+  /** Meia-noite (horário de Brasília) do dia de `ms`, em ms. */
+  function inicioDoDia(ms) { return Math.floor((Number(ms) - FUSO_MS) / DIA_MS) * DIA_MS + FUSO_MS; }
+  /** Dia da semana em Brasília: 0 = domingo ... 6 = sábado. */
+  function diaDaSemana(ms) { return new Date(Number(ms) - FUSO_MS).getUTCDay(); }
+
+  /** Blocos ocupados por uma corrida: de `iniMs` até `fimMs` mais o buffer (minutos). */
+  function blocos(iniMs, fimMs, bufferMin) {
+    const ini = blocoDe(iniMs);
+    const fim = Math.ceil((Number(fimMs) + (Number(bufferMin) || 0) * 60000) / BLOCO_MS); // exclusivo
+    if (!(fim > ini)) throw _erro("FENIX_INTERVALO_INVALIDO", "Intervalo de horário inválido.");
+    const r = [];
+    for (let b = ini; b < fim; b++) r.push(b);
+    return r;
+  }
+
+  /**
+   * Série recorrente: mesmo horário nos dias da semana escolhidos, durante um período.
+   * @param {object} o - { primeiroMs, duracaoMin, diasSemana: [1,2,3,4,5], periodoDias: 30 }
+   * @returns {Array<{iniMs, fimMs}>}  (preço total = preço unitário × resultado.length)
+   */
+  function serie(o) {
+    const dias = new Set((o.diasSemana || []).map(Number));
+    const r = [];
+    for (let d = 0; d < (Number(o.periodoDias) || 1); d++) {
+      const ini = Number(o.primeiroMs) + d * DIA_MS;
+      if (dias.size && !dias.has(diaDaSemana(ini))) continue;
+      r.push({ iniMs: ini, fimMs: ini + Number(o.duracaoMin) * 60000 });
+    }
+    return r;
+  }
+
+  /**
+   * Horários de início possíveis num dia.
+   * @param {object} o - { diaMs (inicioDoDia), faixas: [{deMin, ateMin}] (minutos desde 00:00),
+   *   duracaoMin, bufferMin, ocupados: Set de blocos, agoraMs (opcional: ignora o passado) }
+   * A corrida precisa terminar dentro da faixa; o buffer pode passar do fim dela.
+   */
+  function iniciosLivres(o) {
+    const r = [];
+    const oc = o.ocupados || new Set();
+    (o.faixas || []).forEach(f => {
+      for (let m = f.deMin; m + o.duracaoMin <= f.ateMin; m += BLOCO_MIN) {
+        const ini = o.diaMs + m * 60000;
+        if (o.agoraMs && ini <= o.agoraMs) continue;
+        if (!blocos(ini, ini + o.duracaoMin * 60000, o.bufferMin).some(b => oc.has(b))) r.push(ini);
+      }
+    });
+    return r;
+  }
+
+  // ---------- leitura (a página do motorista funciona sem login) ----------
+  function _consultaOcupados(slug, deMs, ateMs) {
+    _garantirInit();
+    return query(collection(_db, "go_publico", _slug(slug), "ocupados"),
+      where("bloco", ">=", blocoDe(deMs)), where("bloco", "<=", blocoDe(ateMs)));
+  }
+  /** Conjunto de blocos ocupados entre duas datas (ms). Sem login. */
+  async function ocupados(slug, deMs, ateMs) {
+    const snap = await getDocs(_consultaOcupados(slug, deMs, ateMs));
+    return new Set(snap.docs.map(d => d.data().bloco));
+  }
+  /** Tempo real dos blocos ocupados. Devolve a função que para de escutar. */
+  function ouvirOcupados(slug, deMs, ateMs, aoMudar, aoErro) {
+    return onSnapshot(_consultaOcupados(slug, deMs, ateMs),
+      snap => aoMudar(new Set(snap.docs.map(d => d.data().bloco))), aoErro || function () {});
+  }
+  /** As ocorrências (e o buffer) estão livres agora? */
+  async function livre(slug, ocorrencias, bufferMin) {
+    const todos = [];
+    (ocorrencias || []).forEach(x => blocos(x.iniMs, x.fimMs, bufferMin).forEach(b => todos.push(b)));
+    if (!todos.length) return true;
+    const oc = await ocupados(slug, inicioDoBloco(Math.min.apply(null, todos)), inicioDoBloco(Math.max.apply(null, todos)));
+    return !todos.some(b => oc.has(b));
+  }
+  /** Perfil público do motorista (QR/link), ou null. Sem login. */
+  async function perfil(slug) {
+    _garantirInit();
+    const s = await getDoc(doc(_db, "go_publico", _slug(slug)));
+    return s.exists() ? { slug: s.id, ...s.data() } : null;
+  }
+
+  // ---------- motorista: perfil público ----------
+  /**
+   * Cria ou atualiza o perfil público. Na criação `dados.empresaId` é obrigatório; deve incluir
+   * valorKm, taxaBase e bufferMin (as regras os usam para conferir cada reserva).
+   */
+  async function salvarPerfil(slug, dados) {
+    { const b = _barrarGravacao(); if (b) return b; }
+    _garantirInit();
+    const u = _usuario();
+    const s = _slug(slug);
+    const ref = doc(_db, "go_publico", s);
+    const ex = await getDoc(ref);
+    const base = { ..._limparParaFirestore(dados || {}), slug: s, atualizadoEm: serverTimestamp() };
+    if (!ex.exists()) {
+      if (!base.empresaId) throw _erro("FENIX_EMPRESA_OBRIGATORIA", "Informe empresaId ao criar o perfil público.");
+      await setDoc(ref, { ...base, donoUid: u.uid, criadoEm: serverTimestamp() });
+    } else {
+      delete base.empresaId; delete base.donoUid; delete base.criadoEm;
+      await updateDoc(ref, base);
+    }
+    return s;
+  }
+
+  // ---------- reservar, bloquear e cancelar (precisam de login) ----------
+  async function _gravarLote(slug, id, docReserva, listaBlocos, oc, bufferMin) {
+    const lote = writeBatch(_db);
+    lote.set(doc(_db, "go_reservas", id), docReserva);
+    listaBlocos.forEach(b => lote.set(doc(_db, "go_publico", slug, "ocupados", String(b)), { bloco: b, reservaId: id }));
+    try {
+      await lote.commit();
+    } catch (e) {
+      // As regras só permitem CRIAR um ocupado: se um bloco já existe, o lote todo é recusado.
+      let tomado = false;
+      try { tomado = !(await livre(slug, oc, bufferMin)); } catch (e2) { tomado = false; }
+      if (tomado) throw _erro("FENIX_HORARIO_OCUPADO", "Este horário acabou de ser reservado por outra pessoa. Escolha outro.");
+      throw e;
+    }
+  }
+
+  /**
+   * Reserva uma ou mais ocorrências (série) numa só gravação: todas ou nenhuma.
+   * @param {object} o - { slug, empresaId, ocorrencias: [{iniMs, fimMs}], bufferMin,
+   *   dados: { nome, whatsapp, origem, destino, km, valorKm, taxaBase, precoUnitario, precoTotal, contratoVersao } }
+   * @returns {Promise<{id, blocos, reserva}>}
+   * Erros (campo codigo): FENIX_LOGIN_NECESSARIO, FENIX_HORARIO_OCUPADO, FENIX_SERIE_GRANDE.
+   */
+  async function reservar(o) {
+    _garantirInit();
+    const u = _usuario();
+    const slug = _slug(o.slug);
+    const oc = (o.ocorrencias || []).map(x => ({ iniMs: Number(x.iniMs), fimMs: Number(x.fimMs) }));
+    if (!oc.length) throw _erro("FENIX_INTERVALO_INVALIDO", "Escolha ao menos um horário.");
+    const buffer = Number(o.bufferMin) || 0;
+    const todos = new Set();
+    oc.forEach(x => blocos(x.iniMs, x.fimMs, buffer).forEach(b => todos.add(b)));
+    const lista = Array.from(todos).sort((a, b) => a - b);
+    if (lista.length > MAX_BLOCOS) throw _erro("FENIX_SERIE_GRANDE", "A série é longa demais. Reduza o período ou os dias da semana.");
+    const d = o.dados || {};
+    for (const campo of ["valorKm", "taxaBase", "precoUnitario", "precoTotal"]) {
+      if (!isFinite(Number(d[campo]))) throw _erro("FENIX_DADOS_INVALIDOS", "Falta o valor: " + campo + ".");
+    }
+    const id = doc(collection(_db, "go_reservas")).id;
+    const reserva = {
+      tipo: "agendamento", slug, empresaId: String(o.empresaId || ""),
+      passageiroUid: u.uid, passageiroNome: String(d.nome || u.displayName || "").slice(0, 80),
+      passageiroEmail: u.email || null, whatsapp: String(d.whatsapp || "").slice(0, 20),
+      ocorrencias: oc, blocos: lista, bufferMin: buffer,
+      origem: _limparParaFirestore(d.origem || null), destino: _limparParaFirestore(d.destino || null),
+      km: Number(d.km) || 0, valorKm: Number(d.valorKm), taxaBase: Number(d.taxaBase),
+      precoUnitario: Number(d.precoUnitario), precoTotal: Number(d.precoTotal),
+      contratoVersao: String(d.contratoVersao || ""),
+      status: "confirmado", aceiteEm: serverTimestamp(), criadoEm: serverTimestamp()
+    };
+    await _gravarLote(slug, id, reserva, lista, oc, buffer);
+    return { id, blocos: lista, reserva };
+  }
+
+  /** Motorista: bloqueio pontual de um intervalo (sem buffer). Mesmo caminho da reserva, tipo "bloqueio". */
+  async function bloquear(o) {
+    { const b = _barrarGravacao(); if (b) return b; }
+    _garantirInit();
+    const u = _usuario();
+    const slug = _slug(o.slug);
+    const lista = blocos(o.iniMs, o.fimMs, 0);
+    if (lista.length > MAX_BLOCOS) throw _erro("FENIX_SERIE_GRANDE", "O bloqueio é longo demais.");
+    const id = doc(collection(_db, "go_reservas")).id;
+    const reserva = {
+      tipo: "bloqueio", slug, empresaId: String(o.empresaId || ""), passageiroUid: u.uid,
+      ocorrencias: [{ iniMs: Number(o.iniMs), fimMs: Number(o.fimMs) }], blocos: lista, bufferMin: 0,
+      motivo: String(o.motivo || "").slice(0, 100),
+      status: "confirmado", aceiteEm: serverTimestamp(), criadoEm: serverTimestamp()
+    };
+    await _gravarLote(slug, id, reserva, lista, reserva.ocorrencias, 0);
+    return { id, blocos: lista };
+  }
+
+  /** Cancela uma reserva ou remove um bloqueio, liberando os blocos. Passageiro (dono) ou motorista. */
+  async function cancelar(reservaId, motivo) {
+    _garantirInit();
+    const u = _usuario();
+    const ref = doc(_db, "go_reservas", String(reservaId));
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw _erro("FENIX_NAO_ENCONTRADA", "Reserva não encontrada.");
+    const r = snap.data();
+    if (r.status === "cancelado") return false;
+    const lote = writeBatch(_db);
+    lote.update(ref, { status: "cancelado", canceladoEm: serverTimestamp(), canceladoPor: u.uid, motivoCancelamento: String(motivo || "").slice(0, 200) });
+    (r.blocos || []).forEach(b => lote.delete(doc(_db, "go_publico", r.slug, "ocupados", String(b))));
+    await lote.commit();
+    return true;
+  }
+
+  // ---------- listas ----------
+  /** Reservas do passageiro logado (mais recentes primeiro). */
+  async function doPassageiro() {
+    _garantirInit();
+    const u = _usuario();
+    const snap = await getDocs(query(collection(_db, "go_reservas"), where("passageiroUid", "==", u.uid)));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.tipo === "agendamento")
+      .sort((a, b) => ((b.ocorrencias && b.ocorrencias[0] && b.ocorrencias[0].iniMs) || 0) - ((a.ocorrencias && a.ocorrencias[0] && a.ocorrencias[0].iniMs) || 0));
+  }
+  /** Reservas e bloqueios de uma empresa (motorista). */
+  async function doMotorista(empresaId) {
+    _garantirInit();
+    const snap = await getDocs(query(collection(_db, "go_reservas"), where("empresaId", "==", String(empresaId))));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+  /** Tempo real das reservas da empresa. Devolve a função que para de escutar. */
+  function ouvirDoMotorista(empresaId, aoMudar, aoErro) {
+    _garantirInit();
+    return onSnapshot(query(collection(_db, "go_reservas"), where("empresaId", "==", String(empresaId))),
+      snap => aoMudar(snap.docs.map(d => ({ id: d.id, ...d.data() }))), aoErro || function () {});
+  }
+
+  return {
+    BLOCO_MIN, MAX_BLOCOS,
+    blocoDe, inicioDoBloco, inicioDoDia, diaDaSemana, blocos, serie, iniciosLivres,
+    ocupados, ouvirOcupados, livre, perfil, salvarPerfil,
+    reservar, bloquear, cancelar, doPassageiro, doMotorista, ouvirDoMotorista
+  };
+})();
+
+// ============================================================================
+// REGRA 58 — EXCEÇÃO PARA O CLIENTE FINAL (v6.2)
+// ============================================================================
+/**
+ * Em app com cliente final (Fênix | Go), o PASSAGEIRO pode entrar com Google sem licença
+ * definitiva: o app passa { clienteFinal: true } às duas funções abaixo. O DONO/MOTORISTA
+ * continua sob a regra 58: Google só com licença definitiva da empresa. Por isso o app deve ter
+ * entradas separadas ("Sou passageiro" e "Sou motorista"); a do motorista NUNCA passa clienteFinal
+ * e mostra o botão do Google só depois de liberaGoogle() devolver true.
+ *   licenca.liberaGoogle(db, { app, email, clienteFinal: true })                 -> true
+ *   licenca.confirmarAposGoogle(db, modAuth, usuario, app, { clienteFinal: true }) -> true (não desloga)
+ */
+const _liberaGoogleBase = licenca.liberaGoogle;
+licenca.liberaGoogle = async function (db, o) {
+  if (o && o.clienteFinal === true) return true;
+  return _liberaGoogleBase.call(licenca, db, o);
+};
+const _confirmarAposGoogleBase = licenca.confirmarAposGoogle;
+licenca.confirmarAposGoogle = async function (db, modAuth, usuario, app, opcoes) {
+  if (opcoes && opcoes.clienteFinal === true) return true;
+  return _confirmarAposGoogleBase.call(licenca, db, modAuth, usuario, app);
+};
+
+// ============================================================================
 // EXPORTAÇÃO
 // ============================================================================
 
 export const FenixCore = {
   salas,
+  reservas,
   init,
   initFirebase,
   initFirebaseComCache,
