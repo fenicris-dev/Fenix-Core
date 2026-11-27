@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v6.5
+ * FÊNIX CORE v6.6
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -321,6 +321,7 @@
         botão Voltar do celular e puxar para atualizar desligado) e
         formulario(form) (detecta campos alterados). Só acréscimos.
  * v5.3 — só a versão sobe (nenhuma função nova): nivelamento com o livro.
+ * v6.6 — administração (regra 63): os 4 e-mails raiz (entra baudofenix@gmail.com e trampodofenix@gmail.com na lista do core); Supremo = fenicris@gmail.com (`admin.SUPREMO`, `admin.ehSupremo`); hierarquia na equipe: `criadoPor`/`criadoEm`, `admin.equipe.podeGerir`; `admin.equipe.salvar(db, membro, por)` grava quem criou. Só acréscimos; chamadas antigas continuam valendo (o 3º argumento só é exigido ao CRIAR um membro novo).
  * v6.5 — só a versão sobe (nenhuma função nova): nivelamento com o livro; o firestore.rules ganha a mescla com as regras do console e o bloco dos Laudos.
  * v6.4 — só a versão sobe (nenhuma função nova): consolidação das versões 6.2 e 6.3 (regras 81 e 82) com o livro; saem marcas de edição que ficaram nos comentários.
  * v6.3 — só a versão sobe (nenhuma função nova): nivelamento com o livro (regra 82, dados dos clientes: core ou meios do cliente).
@@ -3070,7 +3071,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "6.5";
+const _CORE_VERSAO = "6.6";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas
@@ -3432,19 +3433,27 @@ Object.assign(licenca, {
  *   suporte   só consulta clientes.
  * Administradores raiz (não dependem do banco, nunca ficam trancados para fora):
  * os e-mails de EMAILS_RAIZ, desde que verificados pelo Google.
- * Equipe no banco: equipe_fenix/{e-mail em minúsculas} = { email, nome, nivel, ativo }.
+ * Equipe no banco: equipe_fenix/{e-mail em minúsculas} = { email, nome, nivel, ativo, criadoPor, criadoEm }.
+ * Hierarquia (v6.6): Supremo (fenicris@gmail.com) > raiz > administradores > auxiliares. Ninguém apaga administrador, exceto o Supremo; administrador gere só os auxiliares que criou.
  */
-const _ADMIN_RAIZ = ["fenicris@gmail.com", "fenicris.dev@gmail.com"];
+const _ADMIN_RAIZ = ["fenicris@gmail.com", "fenicris.dev@gmail.com", "trampodofenix@gmail.com", "baudofenix@gmail.com"];
+/** v6.6: o Supremo é o único que remove/altera administradores e auxiliares criados por outros. Trocar exige editar aqui e no firestore.rules. */
+const _SUPREMO = "fenicris@gmail.com";
 const _NIVEIS = { admin: "Administrador", comercial: "Comercial", suporte: "Suporte" };
 const _emailMin = (e) => String(e || "").trim().toLowerCase();
 
 const admin = {
   EMAILS_RAIZ: Object.freeze(_ADMIN_RAIZ.slice()),
   NIVEIS: Object.freeze({ ..._NIVEIS }),
+  SUPREMO: _SUPREMO,
 
   /** true se o usuário (objeto do Firebase Auth) é administrador raiz. */
   ehRaiz(usuario) {
     return !!usuario && usuario.emailVerified === true && _ADMIN_RAIZ.includes(_emailMin(usuario.email));
+  },
+  /** v6.6: true se o usuário é o Supremo (e-mail verificado). */
+  ehSupremo(usuario) {
+    return !!usuario && usuario.emailVerified === true && _emailMin(usuario.email) === _SUPREMO;
   },
   /** Nível do usuário: "admin" | "comercial" | "suporte" | null (sem acesso). */
   async meuNivel(db, usuario) {
@@ -3466,14 +3475,34 @@ const admin = {
       const snaps = await getDocs(collection(db, "equipe_fenix"));
       return snaps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.nome || a.email).localeCompare(String(b.nome || b.email)));
     },
-    /** Cria ou atualiza um colaborador: { email, nome, nivel, ativo }. */
-    salvar(db, m) {
+    /**
+     * v6.6: o usuário pode alterar/remover este membro? (as regras do Firestore são a barreira real)
+     * Supremo: qualquer um. Administrador: só auxiliar (comercial/suporte) criado por ele mesmo.
+     * Documento sem `criadoPor` (anterior à v6.6): só o Supremo.
+     */
+    podeGerir(usuario, membro) {
+      if (!usuario || usuario.emailVerified !== true || !membro) return false;
+      if (admin.ehSupremo(usuario)) return true;
+      return membro.nivel !== "admin" && !!membro.criadoPor && _emailMin(membro.criadoPor) === _emailMin(usuario.email);
+    },
+    /**
+     * Cria ou atualiza um colaborador: { email, nome, nivel, ativo }.
+     * v6.6: `por` = e-mail de quem está criando (obrigatório ao CRIAR; grava criadoPor/criadoEm, que nunca mais mudam).
+     */
+    async salvar(db, m, por) {
       const email = _emailMin(m && m.email);
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return Promise.reject(new Error("Informe um e-mail válido."));
-      if (!_NIVEIS[m.nivel]) return Promise.reject(new Error("Escolha o nível: administrador, comercial ou suporte."));
-      return setDoc(doc(db, "equipe_fenix", email), {
-        email, nome: String(m.nome || "").trim(), nivel: m.nivel, ativo: m.ativo !== false, atualizadoEm: serverTimestamp()
-      }, { merge: true }).then(() => true);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("Informe um e-mail válido.");
+      if (!_NIVEIS[m.nivel]) throw new Error("Escolha o nível: administrador, comercial ou suporte.");
+      const ref = doc(db, "equipe_fenix", email);
+      const dados = { email, nome: String(m.nome || "").trim(), nivel: m.nivel, ativo: m.ativo !== false, atualizadoEm: serverTimestamp() };
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        const p = _emailMin(por);
+        if (!p) throw new Error("Informe quem está criando o colaborador (3º argumento).");
+        dados.criadoPor = p; dados.criadoEm = serverTimestamp();
+      }
+      await setDoc(ref, dados, { merge: true });
+      return true;
     },
     excluir(db, email) { return deleteDoc(doc(db, "equipe_fenix", _emailMin(email))).then(() => true); }
   },

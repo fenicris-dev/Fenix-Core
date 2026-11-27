@@ -1,4 +1,4 @@
-Biblioteca Fênix v6.5
+Biblioteca Fênix v6.6
 
 ESTRUTURA DO REPOSITÓRIO (regra 78): na raiz só o que precisa estar na raiz.
 Raiz       : index.html (Painel), fenix-core.js, versao.json, firestore.rules, LEIAME.txt, fenix-admin.html (só redireciona para admin/fenix-admin.html; transitório)
@@ -19,7 +19,14 @@ COMO SUBIR (atenção: o GitHub não apaga sozinho o que ficou para trás):
 3) Abra o Painel (index.html) e toque em "Testar tudo": nenhum item pode ficar em amarelo.
 4) Troque o favorito do Painel administrativo para .../admin/fenix-admin.html.
 
-Novo na v6.5 (SÓ MUDA O firestore.rules; o resto sobe o número):
+Novo na v6.6 (administração; PRECISA PUBLICAR o firestore.rules):
+- Os 4 e-mails raiz valem em tudo: fenicris@gmail.com (SUPREMO), fenicris.dev@gmail.com, trampodofenix@gmail.com e baudofenix@gmail.com.
+- Hierarquia: qualquer administrador cadastra administradores e auxiliares; nenhum administrador altera ou apaga outro administrador; cada administrador gere só os auxiliares que ele criou; só o Supremo remove administradores e auxiliares de outros. Cadastros antigos (sem criadoPor) ficam com o Supremo.
+- Core: só acréscimos. Painel administrativo ajustado. Apps: nada a fazer.
+- Publicar: regra 46 (copie as regras do console, compare, npm test em testes/regras/, Playground, publicar). Os testes NÃO foram executados por mim.
+- Recomendado: verificação em duas etapas na conta fenicris@gmail.com (ponto único). Trocar o Supremo exige editar regras e core.
+
+Da v6.5 continuam (SÓ MUDA O firestore.rules; o resto sobe o número):
 - O firestore.rules agora junta três coisas que estavam separadas: a biblioteca v6.4, as regras que estão PUBLICADAS no seu console (Controle de Compras: ambientes e catálogo de produtos; administração raiz; reforços v5.9) e o bloco novo do app Laudos Técnicos (verificação por QR Code).
 - ESTE ARQUIVO PRECISA SER PUBLICADO no console (diferente da v6.4). Ordem: 1) publique core e documentos; 2) no seu computador, rode npm install e npm test em testes/regras/ (casos novos incluídos; não executei por falta de emulador); 3) teste no Playground; 4) publique.
 - CUIDADO: ao publicar, passam a valer no banco o teste de 15 dias com modo somente leitura, a equipe Fênix e os prêmios, que o console de hoje NÃO aplica. Empresa com teste vencido e sem licença fica só em leitura; app com cópia do core anterior à 4.9 não cria empresa. Confira o selo de core dos apps antes.

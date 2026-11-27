@@ -1,5 +1,5 @@
 // ============================================================================
-// FÊNIX | firestore.rules (Biblioteca Fênix v6.5)
+// FÊNIX | firestore.rules (Biblioteca Fênix v6.6)
 //
 // BASE: as regras publicadas no console do Firebase (projeto fenix-core), nas
 // versões registradas abaixo, enviadas pelo Cristiano em 21/10/2026. O que já
@@ -37,7 +37,7 @@
 //   reforços [v5.9] em pessoas, produtos_servicos, cidades, empresas e dados_pessoais, e regra final que nega o resto)
 // Essa linhagem NÃO tinha o que a biblioteca fez da v4.9 à v6.1 (teste de 15 dias e somente leitura, equipe Fênix e níveis,
 // config/indicacoes, prêmios, salas). A biblioteca, por sua vez, NÃO tinha os blocos do console. A v6.5 junta as duas.
-// firestore-rules-v23-biblioteca-v6.5 (MESCLA: tudo da biblioteca v6.4 + tudo do console [v5.9, Controle de Compras] + verificacoes_laudos [v6.5])
+// firestore-rules-v24-biblioteca-v6.6 (v6.6: 4 e-mails raiz, Supremo e hierarquia da equipe, regra 63). Anterior: v23-biblioteca-v6.5 (MESCLA: tudo da biblioteca v6.4 + tudo do console [v5.9, Controle de Compras] + verificacoes_laudos [v6.5])
 //
 // O QUE A v6.5 FEZ (nada foi apagado do que está em produção; onde as duas linhagens divergiam, valeu a mais restritiva):
 //   + do console: funções fxVerificado, fxEmail, fxRaiz e fxAdmin; blocos ambientes_compartilhados, catalogo_produtos,
@@ -110,7 +110,7 @@ service cloud.firestore {
     }
     function fxRaiz() {
       return fxVerificado() && fxEmail() in [
-        'fenicris@gmail.com', 'fenicris.dev@gmail.com', 'trampodofenix@gmail.com'
+        'fenicris@gmail.com', 'fenicris.dev@gmail.com', 'trampodofenix@gmail.com', 'baudofenix@gmail.com'
       ];
     }
     function fxAdmin() {
@@ -136,7 +136,13 @@ service cloud.firestore {
     }
     function adminRaiz() {
       return emailVerificado()
-        && request.auth.token.email.lower() in ['fenicris@gmail.com', 'fenicris.dev@gmail.com'];
+        && request.auth.token.email.lower() in [
+          'fenicris@gmail.com', 'fenicris.dev@gmail.com', 'trampodofenix@gmail.com', 'baudofenix@gmail.com'
+        ];
+    }
+    // [v6.6] Supremo: único que altera/remove administradores e auxiliares criados por outros.
+    function supremo() {
+      return emailVerificado() && request.auth.token.email.lower() == 'fenicris@gmail.com';
     }
     function temEquipeAtiva() {
       return emailVerificado()
@@ -277,13 +283,31 @@ service cloud.firestore {
     }
 
     // ---------- [v4.9] Equipe Fênix ----------
+    // [v6.6] Hierarquia: Supremo (fenicris@gmail.com) > raiz (os outros 3 e-mails) > administradores > auxiliares.
+    // - criar: qualquer administrador (raiz incluídos) cria administrador ou auxiliar, e o documento TEM de registrar
+    //   criadoPor = o próprio e-mail de quem cria;
+    // - criadoPor nunca muda; documento sem criadoPor (anterior à v6.6) fica sob a guarda do Supremo;
+    // - alterar/apagar: o Supremo, qualquer um; um administrador, SÓ auxiliares (não 'admin') criados por ele mesmo;
+    // - nenhum administrador altera ou apaga outro administrador; os raiz que não são o Supremo também não mexem
+    //   em administradores e auxiliares alheios. (Prefira desativar com ativo=false a apagar.)
     match /equipe_fenix/{email} {
       allow get: if emailVerificado() && (request.auth.token.email.lower() == email || equipeSuporte());
       allow list: if equipeAdmin();
-      allow create, update: if equipeAdmin()
+      allow create: if equipeAdmin()
         && request.resource.data.get('nivel', '') in ['admin', 'comercial', 'suporte']
-        && request.resource.data.get('email', '') == email;
-      allow delete: if equipeAdmin();
+        && request.resource.data.get('email', '') == email
+        && request.resource.data.get('criadoPor', '') == request.auth.token.email.lower();
+      allow update: if request.resource.data.get('nivel', '') in ['admin', 'comercial', 'suporte']
+        && request.resource.data.get('email', '') == email
+        && request.resource.data.get('criadoPor', '') == resource.data.get('criadoPor', '')
+        && (supremo()
+            || (equipeAdmin()
+                && resource.data.get('nivel', '') != 'admin'
+                && resource.data.get('criadoPor', '') == request.auth.token.email.lower()));
+      allow delete: if supremo()
+        || (equipeAdmin()
+            && resource.data.get('nivel', '') != 'admin'
+            && resource.data.get('criadoPor', '') == request.auth.token.email.lower());
     }
 
     // ---------- Vínculo usuário -> empresa ----------
@@ -498,16 +522,17 @@ service cloud.firestore {
 
     // ---------- [v5.9] Administração raiz: administradores e arquivo (apps PRIVADOS, ex.: Gerador de Apps) ----------
     // Os nomes _fenix_equipe e _fenix_admin são reservados (nenhum usuário tem esse uid).
-    // Administradores: só os raiz criam, alteram e excluem, sempre vinculados a uma raiz.
+    // Administradores: os raiz criam e alteram, sempre vinculados a uma raiz; só o Supremo (fenicris@gmail.com) exclui (v6.6).
     // Cada pessoa lê o próprio documento (o app precisa saber se ela é administradora).
     match /dados_pessoais/_fenix_equipe/admins/{email} {
       allow get: if fxVerificado() && (email == fxEmail() || fxAdmin());
       allow list: if fxRaiz();
       allow create, update: if fxRaiz()
         && request.resource.data.dados.vinculadoA in [
-          'fenicris@gmail.com', 'fenicris.dev@gmail.com', 'trampodofenix@gmail.com'
+          'fenicris@gmail.com', 'fenicris.dev@gmail.com', 'trampodofenix@gmail.com', 'baudofenix@gmail.com'
         ];
-      allow delete: if fxRaiz();
+      // [v6.6] só o Supremo remove administradores (regra 63)
+      allow delete: if fxVerificado() && fxEmail() == 'fenicris@gmail.com';
     }
     // Arquivo da administração: cópia dos itens de quem usa a nuvem em app privado.
     // O usuário logado cria e atualiza só a cópia dos próprios itens (nunca lê nem apaga);
