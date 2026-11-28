@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * FÊNIX CORE v6.6
+ * FÊNIX CORE v6.7
  *
  * CONVENÇÃO DE NOME (DUAS CÓPIAS A CADA ENTREGA):
  * O endereço oficial é SEMPRE fenix-core.js (sem número de versão no nome nem
@@ -321,6 +321,7 @@
         botão Voltar do celular e puxar para atualizar desligado) e
         formulario(form) (detecta campos alterados). Só acréscimos.
  * v5.3 — só a versão sobe (nenhuma função nova): nivelamento com o livro.
+ * v6.7 — NOVAS MÁSCARAS E VALIDADORES (só acréscimos): `mascaras.validar(tipo, valor)` (formato e dígito verificador) para cpf, cnpj, pis, titulo, cnh, cns, nfe, boleto, cartao, imei, ean, isbn, issn, renavam etc.; 24 tipos novos de data-mask (pis, titulo, cnh, cns, pix, nfe, boleto, cartao, validadecartao, imei, ean, isbn, issn, ncm, cfop, chassi, renavam, cnpjalfa, cpfcnpjalfa, email, latitude, longitude, duracao, mesano); CNPJ alfanumérico (cnpjalfa); `isbn10para13`, `isbn13para10`, `pixTipo`; `valorLimpo` entende os tipos novos. Os tipos antigos não mudaram.
  * v6.6 — administração (regra 63): os 4 e-mails raiz (entra baudofenix@gmail.com e trampodofenix@gmail.com na lista do core); Supremo = fenicris@gmail.com (`admin.SUPREMO`, `admin.ehSupremo`); hierarquia na equipe: `criadoPor`/`criadoEm`, `admin.equipe.podeGerir`; `admin.equipe.salvar(db, membro, por)` grava quem criou. Só acréscimos; chamadas antigas continuam valendo (o 3º argumento só é exigido ao CRIAR um membro novo).
  * v6.5 — só a versão sobe (nenhuma função nova): nivelamento com o livro; o firestore.rules ganha a mescla com as regras do console e o bloco dos Laudos.
  * v6.4 — só a versão sobe (nenhuma função nova): consolidação das versões 6.2 e 6.3 (regras 81 e 82) com o livro; saem marcas de edição que ficaram nos comentários.
@@ -2196,7 +2197,7 @@ Object.assign(pessoas, {
  *
  *   <input data-mask="cpfcnpj">   <input data-mask="moeda">   <input data-mask="telefone">
  *
- * Tipos: cpfcnpj (até 11 dígitos é CPF; passou de 11 vira CNPJ), cpf, cnpj,
+ * Tipos (v6.7 acrescentou mais 24, com mascaras.validar; veja o bloco "MAIS MÁSCARAS" abaixo): cpfcnpj (até 11 dígitos é CPF; passou de 11 vira CNPJ), cpf, cnpj,
  * cep, telefone (fixo ou celular), moeda, percentual, data, hora, placa,
  * ip, mac, numero, ie (com data-mask-uf="SE"), rg, uf. Campos que aparecerem depois na tela também são cobertos.
  *
@@ -2374,6 +2375,14 @@ const mascaras = {
       case "placa": return String(texto || "").replace(/-/g, "");
       case "rg": return String(texto || "").toUpperCase().replace(/[^0-9X]/g, "");
       case "ip": case "mac": return String(texto || "");
+      // v6.7: tipos novos
+      case "email": return String(texto || "").trim().toLowerCase();
+      case "pix": return String(texto || "").trim();
+      case "isbn": case "issn": case "chassi": case "cnpjalfa": case "cpfcnpjalfa": return _alnum(texto);
+      case "latitude": case "longitude": { const n = Number(String(texto || "").replace(",", ".")); return String(texto || "").trim() === "" || !isFinite(n) ? null : n; }
+      case "duracao": { const m = /^(\d+):(\d{2}):(\d{2})$/.exec(String(texto || "")); return m ? +m[1] * 3600 + +m[2] * 60 + +m[3] : null; }
+      case "mesano": { const m = /^(\d{2})\/(\d{4})$/.exec(String(texto || "")); return m ? m[2] + "-" + m[1] : null; }
+      case "validadecartao": { const m = /^(\d{2})\/(\d{2})$/.exec(String(texto || "")); return m ? "20" + m[2] + "-" + m[1] : null; }
       default: return _soDigitos(texto);
     }
   },
@@ -2386,8 +2395,8 @@ const mascaras = {
     if (input._fenixMascara === t) return input;
     input._fenixMascara = t;
     const numerico = ["cpfcnpj", "cpf", "cnpj", "cep", "telefone", "moeda", "percentual", "data", "hora", "numero"].includes(t);
-    input.setAttribute("inputmode", t === "ip" ? "decimal" : numerico ? "numeric" : "text");
-    input.setAttribute("maxlength", String({ cpfcnpj: 18, cpf: 14, cnpj: 18, cep: 9, telefone: 16, moeda: 24, percentual: 11, data: 10, hora: 5, placa: 8, ip: 15, mac: 17, numero: 20, ie: 18, rg: 12, uf: 2 }[t]));
+    input.setAttribute("inputmode", t === "ip" || t === "latitude" || t === "longitude" ? "decimal" : (numerico || _MASCARA_NUM.includes(t)) ? "numeric" : t === "email" ? "email" : "text");
+    input.setAttribute("maxlength", String({ cpfcnpj: 18, cpf: 14, cnpj: 18, cep: 9, telefone: 16, moeda: 24, percentual: 11, data: 10, hora: 5, placa: 8, ip: 15, mac: 17, numero: 20, ie: 18, rg: 12, uf: 2 }[t] || _MASCARA_MAX[t]));
     if (t === "ip") input.setAttribute("autocomplete", "off");
     const fimDoTexto = t === "moeda" || t === "percentual";
     input.addEventListener("input", () => {
@@ -2436,6 +2445,286 @@ const mascaras = {
     return n;
   }
 };
+// ----------------------------------------------------------------------------
+// v6.7 — MAIS MÁSCARAS E VALIDADORES (só acréscimos ao objeto `mascaras`)
+// ----------------------------------------------------------------------------
+/**
+ * Novos tipos (data-mask="..."): pis, titulo (título de eleitor), cnh, cns (cartão do SUS),
+ * pix, nfe (chave de 44 dígitos), boleto (linha digitável 47 ou 48), cartao, validadecartao,
+ * imei, ean (código de barras GTIN 8/12/13/14), isbn (10 ou 13), issn, ncm, cfop, chassi,
+ * renavam, cnpjalfa e cpfcnpjalfa (CNPJ alfanumérico), email, latitude, longitude,
+ * duracao (hh:mm:ss) e mesano (MM/AAAA).
+ *
+ * mascaras.validar(tipo, valor) -> true/false: confere formato e, onde existe, o dígito
+ * verificador (cpf, cnpj, cnpjalfa, pis, titulo, cnh, cns, nfe, boleto, cartao, imei, ean,
+ * isbn, issn, renavam). Vazio é false: trate "campo opcional" no app. Também vale para os
+ * tipos antigos (cep, telefone, data, hora, placa, ip, mac, uf...).
+ * mascaras.isbn10para13(v) e mascaras.isbn13para10(v) convertem entre os dois formatos.
+ * mascaras.pixTipo(v) -> "email" | "evp" | "telefone" | "cpf" | "cnpj" | "cpf_ou_telefone" | null.
+ * Limites honestos: ISBN só separa prefixo e grupo (a divisão editora/título depende de tabela
+ * oficial); título e CNH seguem o algoritmo publicado, mas o dígito não prova que o documento
+ * existe; chassi confere só tamanho e letras proibidas (I, O, Q).
+ */
+const _alnum = v => String(v == null ? "" : v).toUpperCase().replace(/[^0-9A-Z]/g, "");
+const _digs = v => _soDigitos(v);
+function _luhn(d) {
+  let s = 0, dobra = false;
+  for (let i = d.length - 1; i >= 0; i--) { let n = +d[i]; if (dobra) { n *= 2; if (n > 9) n -= 9; } s += n; dobra = !dobra; }
+  return d.length > 0 && s % 10 === 0;
+}
+function _mod10(d) { // dígito verificador de boleto (pesos 2,1 da direita para a esquerda)
+  let s = 0, p = 2;
+  for (let i = d.length - 1; i >= 0; i--) { let n = +d[i] * p; if (n > 9) n = Math.floor(n / 10) + (n % 10); s += n; p = p === 2 ? 1 : 2; }
+  const r = s % 10; return r === 0 ? 0 : 10 - r;
+}
+function _mod11Pesos2a9(d) { // pesos 2..9 da direita para a esquerda; devolve o resto da soma
+  let s = 0, p = 2;
+  for (let i = d.length - 1; i >= 0; i--) { s += +d[i] * p; p = p === 9 ? 2 : p + 1; }
+  return s;
+}
+function _soma(d, pesos) { let s = 0; for (let i = 0; i < pesos.length; i++) s += +d[i] * pesos[i]; return s; }
+const _UF_COD = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+function _grupoIsbn(d) { // tamanho do "grupo de registro" (país/idioma): aproximação documentada
+  if (!d) return 0;
+  if ("012345".includes(d[0]) || d[0] === "7") return 1;
+  if (d.slice(0, 2) === "65" || d[0] === "8") return 2;
+  return 3;
+}
+function _isbnTexto(v) {
+  const c = _alnum(v);
+  const treze = /^97[89]/.test(c) || c.replace(/X/g, "").length > 10 || (c.length > 10);
+  if (treze) {
+    const d = c.replace(/[^0-9]/g, "").slice(0, 13);
+    const partes = [d.slice(0, 3)];
+    const g = _grupoIsbn(d.slice(3));
+    if (d.length > 3) partes.push(d.slice(3, 3 + g));
+    if (d.length > 3 + g) {
+      const resto = d.slice(3 + g);
+      if (d.length === 13) { partes.push(resto.slice(0, -1)); partes.push(resto.slice(-1)); } else partes.push(resto);
+    }
+    return partes.filter(x => x !== "").join("-");
+  }
+  let d = "";
+  for (const ch of c) { if (/\d/.test(ch) && d.length < 10) d += ch; else if (ch === "X" && d.length === 9) d += ch; }
+  const g = _grupoIsbn(d);
+  const partes = [d.slice(0, g)];
+  if (d.length > g) {
+    const resto = d.slice(g);
+    if (d.length === 10) { partes.push(resto.slice(0, -1)); partes.push(resto.slice(-1)); } else partes.push(resto);
+  }
+  return partes.filter(x => x !== "").join("-");
+}
+function _isbnLimpo(v) { return _alnum(v).replace(/X(?=.)/g, ""); }
+function _isbn10ok(c) {
+  if (!/^[0-9]{9}[0-9X]$/.test(c)) return false;
+  let s = 0; for (let i = 0; i < 10; i++) s += (c[i] === "X" ? 10 : +c[i]) * (10 - i);
+  return s % 11 === 0;
+}
+function _isbn13ok(c) {
+  if (!/^97[89][0-9]{10}$/.test(c)) return false;
+  let s = 0; for (let i = 0; i < 13; i++) s += +c[i] * (i % 2 ? 3 : 1);
+  return s % 10 === 0;
+}
+function _cnpjAlfaOk(c) {
+  if (!/^[0-9A-Z]{12}[0-9]{2}$/.test(c) || /^(.)\1{13}$/.test(c)) return false;
+  const val = ch => ch.charCodeAt(0) - 48;
+  const dv = (base, pesos) => { let s = 0; for (let i = 0; i < pesos.length; i++) s += val(base[i]) * pesos[i]; const r = s % 11; return r < 2 ? 0 : 11 - r; };
+  const d1 = dv(c.slice(0, 12), [5,4,3,2,9,8,7,6,5,4,3,2]);
+  const d2 = dv(c.slice(0, 12) + d1, [6,5,4,3,2,9,8,7,6,5,4,3,2]);
+  return d1 === +c[12] && d2 === +c[13];
+}
+function _grupos(d, n) { return d.replace(new RegExp("(.{" + n + "})(?=.)", "g"), "$1 "); }
+function _hms(v, max, comSeg) {
+  const d = _digs(v).slice(0, comSeg ? 6 : 4);
+  if (!d) return "";
+  const cortar = (x) => x.length === 2 && +x > 59 ? "59" : x;
+  if (comSeg) {
+    let r = d.slice(0, 2);
+    if (d.length > 2) r += ":" + cortar(d.slice(2, 4));
+    if (d.length > 4) r += ":" + cortar(d.slice(4, 6));
+    return r;
+  }
+  return d;
+}
+Object.assign(mascaras, {
+  pis(v) { const d = _digs(v).slice(0, 11); let r = d.slice(0, 3); if (d.length > 3) r += "." + d.slice(3, 8); if (d.length > 8) r += "." + d.slice(8, 10); if (d.length > 10) r += "-" + d.slice(10); return r; },
+  titulo(v) { return _grupos(_digs(v).slice(0, 12), 4); },
+  cnh(v) { return _digs(v).slice(0, 11); },
+  cns(v) { const d = _digs(v).slice(0, 15); let r = d.slice(0, 3); if (d.length > 3) r += " " + d.slice(3, 7); if (d.length > 7) r += " " + d.slice(7, 11); if (d.length > 11) r += " " + d.slice(11); return r; },
+  cartao(v) {
+    const d = _digs(v).slice(0, 19);
+    if (/^3[47]/.test(d)) { const a = d.slice(0, 15); return [a.slice(0, 4), a.slice(4, 10), a.slice(10)].filter(Boolean).join(" "); }
+    return _grupos(d, 4);
+  },
+  validadecartao(v) { const d = _digs(v).slice(0, 4); let m = d.slice(0, 2); if (m.length === 2 && +m > 12) m = "12"; if (m.length === 1 && +m > 1) m = "0" + m; const r = m + d.slice(m.length > 2 ? 2 : (d.length > 2 ? 2 : m.length)); return r.length > 2 ? r.slice(0, 2) + "/" + r.slice(2) : r; },
+  imei(v) { const d = _digs(v).slice(0, 15); let r = d.slice(0, 2); if (d.length > 2) r += "-" + d.slice(2, 8); if (d.length > 8) r += "-" + d.slice(8, 14); if (d.length > 14) r += "-" + d.slice(14); return r; },
+  ean(v) { return _digs(v).slice(0, 14); },
+  nfe(v) { return _grupos(_digs(v).slice(0, 44), 4); },
+  boleto(v) {
+    const d = _digs(v).slice(0, 48);
+    if (d[0] === "8") return d.replace(/(.{11})(.)(?=.)/g, "$1-$2 ").replace(/(\d{11})(\d)$/, "$1-$2");
+    const p = [d.slice(0, 5) + (d.length > 5 ? "." + d.slice(5, 10) : ""), d.length > 10 ? d.slice(10, 15) + (d.length > 15 ? "." + d.slice(15, 21) : "") : "", d.length > 21 ? d.slice(21, 26) + (d.length > 26 ? "." + d.slice(26, 32) : "") : "", d.length > 32 ? d.slice(32, 33) : "", d.length > 33 ? d.slice(33, 47) : ""];
+    return p.filter(Boolean).join(" ");
+  },
+  isbn(v) { return _isbnTexto(v); },
+  issn(v) { let c = ""; for (const ch of _alnum(v)) { if (/\d/.test(ch) && c.length < 8) c += ch; else if (ch === "X" && c.length === 7) c += ch; } return c.length > 4 ? c.slice(0, 4) + "-" + c.slice(4) : c; },
+  ncm(v) { const d = _digs(v).slice(0, 8); let r = d.slice(0, 4); if (d.length > 4) r += "." + d.slice(4, 6); if (d.length > 6) r += "." + d.slice(6); return r; },
+  cfop(v) { const d = _digs(v).slice(0, 4); return d.length > 1 ? d[0] + "." + d.slice(1) : d; },
+  chassi(v) { return _alnum(v).replace(/[IOQ]/g, "").slice(0, 17); },
+  renavam(v) { return _digs(v).slice(0, 11); },
+  cnpjalfa(v) {
+    let c = ""; for (const ch of _alnum(v)) { if (c.length >= 14) break; if (c.length >= 12 && !/\d/.test(ch)) continue; c += ch; }
+    let r = c.slice(0, 2); if (c.length > 2) r += "." + c.slice(2, 5); if (c.length > 5) r += "." + c.slice(5, 8); if (c.length > 8) r += "/" + c.slice(8, 12); if (c.length > 12) r += "-" + c.slice(12, 14); return r;
+  },
+  cpfcnpjalfa(v) { const c = _alnum(v); return /^[0-9]{0,11}$/.test(c) ? mascaras.cpf(c) : mascaras.cnpjalfa(c); },
+  email(v) { return String(v == null ? "" : v).replace(/\s+/g, "").toLowerCase().slice(0, 254); },
+  pix(v) {
+    const t = String(v == null ? "" : v).trim();
+    if (t.includes("@")) return t.replace(/\s+/g, "").toLowerCase().slice(0, 77);
+    if (/^\+/.test(t)) return "+" + _digs(t).slice(0, 13);
+    if (/[a-fA-F]/.test(t) && /^[0-9a-fA-F-]+$/.test(t)) { const h = t.toLowerCase().replace(/-/g, "").slice(0, 32); return h.replace(/^(.{8})(.{0,4})(.{0,4})(.{0,4})(.{0,12})$/, (m, a, b, c, d, e) => [a, b, c, d, e].filter(Boolean).join("-")); }
+    if (/^[0-9.\-\/() ]*$/.test(t)) { const d = _digs(t); if (d.length > 14 && d.length <= 32 && !/[.\/() ]/.test(t)) return d.replace(/^(.{8})(.{0,4})(.{0,4})(.{0,4})(.{0,12})$/, (m, a, b, c, e, f) => [a, b, c, e, f].filter(Boolean).join("-")); return d.slice(0, 32); }
+    return t.slice(0, 77);
+  },
+  latitude(v) { return _decimalSinal(v, 6); },
+  longitude(v) { return _decimalSinal(v, 6); },
+  duracao(v) { return _hms(v, 99, true); },
+  mesano(v) { const d = _digs(v).slice(0, 6); let m = d.slice(0, 2); if (m.length === 2 && +m > 12) m = "12"; if (m.length === 1 && +m > 1) m = "0" + m; const resto = d.slice(d.length > 1 || m.length === 2 ? 2 : 1); const r = m + resto.slice(0, 4); return r.length > 2 ? r.slice(0, 2) + "/" + r.slice(2) : r; },
+
+  pixTipo(v) {
+    const t = String(v == null ? "" : v).trim();
+    if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t)) return "email";
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) return "evp";
+    if (/^\+55[0-9]{10,11}$/.test(t)) return "telefone";
+    const d = _digs(t);
+    if (!/^[0-9.\-\/() ]+$/.test(t)) return null;
+    const cpf = d.length === 11 && validarCPF(d), cnpj = d.length === 14 && validarCNPJ(d);
+    const tel = /^[1-9]{2}9?[0-9]{8}$/.test(d) && (d.length === 10 || (d.length === 11 && d[2] === "9"));
+    if (cpf && tel) return "cpf_ou_telefone";
+    if (cpf) return "cpf"; if (cnpj) return "cnpj"; if (tel) return "telefone";
+    return null;
+  },
+  isbn10para13(v) {
+    const c = _isbnLimpo(v); if (!_isbn10ok(c)) return null;
+    const b = "978" + c.slice(0, 9); let s = 0; for (let i = 0; i < 12; i++) s += +b[i] * (i % 2 ? 3 : 1);
+    return b + String((10 - (s % 10)) % 10);
+  },
+  isbn13para10(v) {
+    const c = _isbnLimpo(v); if (!_isbn13ok(c) || c.slice(0, 3) !== "978") return null;
+    const b = c.slice(3, 12); let s = 0; for (let i = 0; i < 9; i++) s += +b[i] * (10 - i);
+    const r = (11 - (s % 11)) % 11; return b + (r === 10 ? "X" : String(r));
+  },
+
+  validar(tipo, valor, opcoes) {
+    const t = _normalizarTipoMascara(tipo);
+    const txt = String(valor == null ? "" : valor).trim();
+    const d = _digs(txt);
+    if (!txt) return false;
+    switch (t) {
+      case "cpf": return validarCPF(d);
+      case "cnpj": return validarCNPJ(d);
+      case "cpfcnpj": return d.length === 11 ? validarCPF(d) : d.length === 14 ? validarCNPJ(d) : false;
+      case "cnpjalfa": return _cnpjAlfaOk(_alnum(txt));
+      case "cpfcnpjalfa": { const c = _alnum(txt); return /^[0-9]{11}$/.test(c) ? validarCPF(c) : _cnpjAlfaOk(c); }
+      case "cep": return d.length === 8 && !/^0{8}$/.test(d);
+      case "telefone": return (d.length === 10 && /^[1-9]{2}[2-8]/.test(d)) || (d.length === 11 && /^[1-9]{2}9/.test(d));
+      case "data": return mascaras.dataParaISO(txt) !== null;
+      case "hora": return /^([01]\d|2[0-3]):[0-5]\d$/.test(txt);
+      case "placa": return /^[A-Z]{3}-?[0-9][A-Z0-9][0-9]{2}$/.test(txt.toUpperCase());
+      case "ip": { const p = txt.split("."); return p.length === 4 && p.every(x => /^\d{1,3}$/.test(x) && +x <= 255); }
+      case "mac": return /^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/i.test(txt) || /^[0-9A-F]{12}$/i.test(txt);
+      case "uf": return _UF_COD.includes(txt.toUpperCase());
+      case "rg": return /^[0-9]{8}[0-9X]$/i.test(txt.replace(/[.\-\s]/g, ""));
+      case "ie": return /^ISENTO$/i.test(txt) || d.length >= 8;
+      case "moeda": case "percentual": return mascaras.moedaParaNumero(txt) !== null;
+      case "numero": return d.length > 0;
+      case "email": return /^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/.test(txt) && txt.length <= 254;
+      case "pix": return mascaras.pixTipo(txt) !== null;
+      case "pis": {
+        if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+        const r = 11 - (_soma(d, [3,2,9,8,7,6,5,4,3,2]) % 11);
+        return (r >= 10 ? 0 : r) === +d[10];
+      }
+      case "titulo": {
+        if (d.length !== 12 || /^(\d)\1{11}$/.test(d)) return false;
+        const uf = +d.slice(8, 10); if (uf < 1 || uf > 28) return false;
+        let d1 = _soma(d, [2,3,4,5,6,7,8,9]) % 11; if (d1 === 10) d1 = 0; if (d1 === 0 && uf <= 2) d1 = 1;
+        let d2 = (+d[8] * 7 + +d[9] * 8 + d1 * 9) % 11; if (d2 === 10) d2 = 0; if (d2 === 0 && uf <= 2) d2 = 1;
+        return d1 === +d[10] && d2 === +d[11];
+      }
+      case "cnh": {
+        if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+        let v = 0, j = 9; for (let i = 0; i < 9; i++, j--) v += +d[i] * j;
+        let dsc = 0, v1 = v % 11; if (v1 >= 10) { v1 = 0; dsc = 2; }
+        v = 0; j = 1; for (let i = 0; i < 9; i++, j++) v += +d[i] * j;
+        const x = v % 11; let v2 = x >= 10 ? 0 : x - dsc; if (v2 < 0) v2 += 11; if (v2 >= 10) v2 = 0;
+        return v1 === +d[9] && v2 === +d[10];
+      }
+      case "cns": {
+        if (d.length !== 15 || !"12789".includes(d[0])) return false;
+        let s = 0; for (let i = 0; i < 15; i++) s += +d[i] * (15 - i);
+        return s % 11 === 0;
+      }
+      case "cartao": return d.length >= 13 && d.length <= 19 && _luhn(d);
+      case "validadecartao": { const m = /^(\d{2})\/(\d{2})$/.exec(txt); return !!m && +m[1] >= 1 && +m[1] <= 12; }
+      case "imei": return d.length === 15 && _luhn(d);
+      case "ean": return [8, 12, 13, 14].includes(d.length) && (() => { let s = 0; for (let i = 0; i < d.length - 1; i++) s += +d[d.length - 2 - i] * (i % 2 ? 1 : 3); return (10 - (s % 10)) % 10 === +d[d.length - 1]; })();
+      case "nfe": {
+        if (d.length !== 44) return false;
+        const r = _mod11Pesos2a9(d.slice(0, 43)) % 11; const dv = r < 2 ? 0 : 11 - r;
+        return dv === +d[43] && _UF_COD.length > 0;
+      }
+      case "boleto": {
+        if (d.length === 47) {
+          if (_mod10(d.slice(0, 9)) !== +d[9] || _mod10(d.slice(10, 20)) !== +d[20] || _mod10(d.slice(21, 31)) !== +d[31]) return false;
+          const corpo = d.slice(0, 4) + d.slice(33, 47) + d.slice(4, 9) + d.slice(10, 20) + d.slice(21, 31); // código de barras sem o DV geral (43)
+          let dv = 11 - (_mod11Pesos2a9(corpo) % 11); if (dv === 0 || dv === 10 || dv === 11) dv = 1;
+          return dv === +d[32];
+        }
+        if (d.length === 48 && d[0] === "8") {
+          const m10 = "67".includes(d[2]);
+          for (let b = 0; b < 4; b++) {
+            const corpo = d.slice(b * 12, b * 12 + 11), dv = +d[b * 12 + 11];
+            if (m10) { if (_mod10(corpo) !== dv) return false; }
+            else { const r = _mod11Pesos2a9(corpo) % 11; const x = r === 0 || r === 1 ? 0 : 11 - r; if ((x === 10 ? 0 : x) !== dv) return false; }
+          }
+          return true;
+        }
+        return false;
+      }
+      case "isbn": { const c = _isbnLimpo(txt); return c.length === 10 ? _isbn10ok(c) : c.length === 13 ? _isbn13ok(c) : false; }
+      case "issn": {
+        const c = _alnum(txt); if (!/^[0-9]{7}[0-9X]$/.test(c)) return false;
+        let s = 0; for (let i = 0; i < 8; i++) s += (c[i] === "X" ? 10 : +c[i]) * (8 - i);
+        return s % 11 === 0;
+      }
+      case "ncm": return d.length === 8;
+      case "cfop": return /^[123567][0-9]{3}$/.test(d);
+      case "chassi": return /^[A-HJ-NPR-Z0-9]{17}$/.test(txt.toUpperCase());
+      case "renavam": {
+        if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+        const dv = (_soma(d, [3,2,9,8,7,6,5,4,3,2]) * 10) % 11;
+        return (dv === 10 ? 0 : dv) === +d[10];
+      }
+      case "latitude": { const n = Number(txt.replace(",", ".")); return isFinite(n) && n >= -90 && n <= 90; }
+      case "longitude": { const n = Number(txt.replace(",", ".")); return isFinite(n) && n >= -180 && n <= 180; }
+      case "duracao": return /^\d{2,}:[0-5]\d:[0-5]\d$/.test(txt);
+      case "mesano": { const m = /^(\d{2})\/(\d{4})$/.exec(txt); return !!m && +m[1] >= 1 && +m[1] <= 12; }
+      default: return false;
+    }
+  }
+});
+function _decimalSinal(v, casas) {
+  let t = String(v == null ? "" : v).replace(",", ".").replace(/[^0-9.\-]/g, "");
+  const neg = t.startsWith("-"); t = t.replace(/-/g, "");
+  const i = t.indexOf("."); if (i !== -1) t = t.slice(0, i + 1) + t.slice(i + 1).replace(/\./g, "").slice(0, casas);
+  t = t.slice(0, 3 + casas + 1);
+  return (neg ? "-" : "") + t;
+}
+mascaras.tipos = mascaras.tipos.concat(["pis", "titulo", "cnh", "cns", "pix", "nfe", "boleto", "cartao", "validadecartao", "imei", "ean", "isbn", "issn", "ncm", "cfop", "chassi", "renavam", "cnpjalfa", "cpfcnpjalfa", "email", "latitude", "longitude", "duracao", "mesano"]);
+const _MASCARA_MAX = { pis: 14, titulo: 14, cnh: 11, cns: 18, pix: 77, nfe: 54, boleto: 54, cartao: 23, validadecartao: 5, imei: 18, ean: 14, isbn: 17, issn: 9, ncm: 10, cfop: 5, chassi: 17, renavam: 11, cnpjalfa: 18, cpfcnpjalfa: 18, email: 254, latitude: 11, longitude: 12, duracao: 8, mesano: 7 };
+const _MASCARA_NUM = ["pis", "titulo", "cnh", "cns", "nfe", "boleto", "cartao", "validadecartao", "imei", "ean", "issn", "ncm", "cfop", "renavam", "duracao", "mesano"];
+
 function _normalizarTipoMascara(t) {
   t = String(t || "").toLowerCase().replace(/[^a-z]/g, "");
   return t === "documento" || t === "cpfoucnpj" ? "cpfcnpj" : t;
@@ -3071,7 +3360,7 @@ function criarModuloAcesso(db, colecao = "perfis") {
 // 22. SELO DE VERSÕES (v4.6, regra 61) — "v3.2 | c 4.6" + aviso de core novo
 // ============================================================================
 
-const _CORE_VERSAO = "6.6";
+const _CORE_VERSAO = "6.7";
 const _VERSOES_URL = "https://fenicris-dev.github.io/Fenix-Core/versao.json";
 const _VERSOES_CHAVE = "fenix_versoes_check";
 const _VERSOES_INTERVALO = 6 * 60 * 60 * 1000; // consulta a rede no máximo a cada 6 horas

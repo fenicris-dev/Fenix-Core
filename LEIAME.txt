@@ -1,4 +1,4 @@
-Biblioteca Fênix v6.6
+Biblioteca Fênix v6.7
 
 ESTRUTURA DO REPOSITÓRIO (regra 78): na raiz só o que precisa estar na raiz.
 Raiz       : index.html (Painel), fenix-core.js, versao.json, firestore.rules, LEIAME.txt, fenix-admin.html (só redireciona para admin/fenix-admin.html; transitório)
@@ -19,7 +19,13 @@ COMO SUBIR (atenção: o GitHub não apaga sozinho o que ficou para trás):
 3) Abra o Painel (index.html) e toque em "Testar tudo": nenhum item pode ficar em amarelo.
 4) Troque o favorito do Painel administrativo para .../admin/fenix-admin.html.
 
-Novo na v6.6 (administração; PRECISA PUBLICAR o firestore.rules):
+Novo na v6.7 (SÓ O CORE e os documentos; NÃO precisa publicar firestore.rules de novo):
+- 24 máscaras novas e mascaras.validar(tipo, valor): PIS, título, CNH, SUS, PIX, NF-e, boleto, cartão, IMEI, EAN, ISBN (10 e 13), ISSN, NCM, CFOP, chassi, Renavam, CNPJ alfanumérico, e-mail, latitude, longitude, duração e mês/ano.
+- CNPJ alfanumérico: os tipos cnpj e cpfcnpj continuam só numéricos; novos apps devem usar cnpjalfa/cpfcnpjalfa.
+- Core só com acréscimos. Apps: nada a fazer. Publique core e documentos como de costume.
+- O firestore.rules da v6.6 (4 e-mails raiz e hierarquia) continua valendo e CONTINUA precisando ser publicado, se ainda não foi.
+
+Da v6.6 continuam (administração; PRECISA PUBLICAR o firestore.rules):
 - Os 4 e-mails raiz valem em tudo: fenicris@gmail.com (SUPREMO), fenicris.dev@gmail.com, trampodofenix@gmail.com e baudofenix@gmail.com.
 - Hierarquia: qualquer administrador cadastra administradores e auxiliares; nenhum administrador altera ou apaga outro administrador; cada administrador gere só os auxiliares que ele criou; só o Supremo remove administradores e auxiliares de outros. Cadastros antigos (sem criadoPor) ficam com o Supremo.
 - Core: só acréscimos. Painel administrativo ajustado. Apps: nada a fazer.
