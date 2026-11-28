@@ -1,4 +1,4 @@
-Teste de fumaça dos apps Fênix (regra 68, biblioteca v6.6)
+Teste de fumaça dos apps Fênix (regra 68, biblioteca v6.7)
 
 Para que serve: conferir, antes de entregar um app, o básico que não pode quebrar: abre sem erro de JavaScript, sem rolagem horizontal em 360 px e em tela maior, toques de 44 px, campos com rótulo, imagens com alt, roteiro de criar/editar/apagar um registro, texto digitado que não vira código (regra 64) e abertura sem internet.
 
@@ -9,3 +9,5 @@ Como usar:
 4) FALHA impede a entrega; AVISO é combinado comigo. Informe o resultado na entrega.
 
 Roda no seu computador (Node 18 ou mais novo). Não toca no banco real. Não vai para o GitHub Pages.
+
+Novo na v6.7: teste-mascaras.mjs testa as máscaras e validadores novos do core (102 casos; ISBN, EAN, cartão, IMEI, CPF, CNPJ alfanumérico e CNH contra números de referência publicados; PIS, NF-e, boleto, Renavam e CNS contra o algoritmo escrito, com número montado no próprio teste). Ele usa o harness de teste do core: ajuste o caminho do arquivo gerado se for rodar fora do ambiente de montagem.
