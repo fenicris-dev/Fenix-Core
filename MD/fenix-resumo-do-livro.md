@@ -1,4 +1,4 @@
-# RESUMO DO LIVRO DAS REGRAS FÊNIX (v6.6)
+# RESUMO DO LIVRO DAS REGRAS FÊNIX (v6.7)
 
 Uma folha para começar. Ela diz **quais regras valem em cada tipo de trabalho**. Os detalhes de cada regra estão no Livro das Regras; o que cada função do core faz está no Guia da biblioteca. Se o resumo e o livro divergirem, vale o livro.
 
@@ -9,7 +9,7 @@ Endereço base: https://fenicris-dev.github.io/Fenix-Core/
 - **Versão:** sobe a cada alteração, sem pular número, com uma casa decimal; declare a versão no texto da entrega (regras 7 a 9).
 - **Nome e cópias:** `fenix-nome-do-app-vX.X.html` mais a cópia neutra sem versão; tudo que tem versão sai em duas cópias; mais de um arquivo leva também um `.zip` com `LEIAME.txt` (regras 10 e 11).
 - **Core:** o app carrega o `fenix-core.js` oficial, com o banco desligado até eu dar o sinal (regras 1 e 2). Nada de cópia do core dentro do app.
-- **Selo:** `fenix-livro` e `fenix-ficha` no `<head>` (regra 53) e o selo de versões `v3.2 | c 6.6` (regra 61).
+- **Selo:** `fenix-livro` e `fenix-ficha` no `<head>` (regra 53) e o selo de versões `v3.2 | c 6.7` (regra 61).
 - **Visual:** paleta, degradê, fundo, rodapé, águia e toque de 44 px (regras 14 a 22).
 - **Splash, animações e preferências:** regras 32, 59 e 60.
 - **Texto e formato:** mensagens em português claro, moeda `R$ 0.000,00`, datas `dd/mm/aaaa` (regras 21, 39 e 40).
